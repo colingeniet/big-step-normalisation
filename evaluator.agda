@@ -114,17 +114,25 @@ data norm_⇒_ : {Γ : Con} {A : Ty} (u : Tm Γ A) → Nf u → Set where
 
 
 -- In the big annoying technical lemmas serie: all computation can be weakened below a context.
-{-
-evalwk : {Γ Δ : Con} {A : Ty} {ρ : Tms Γ Δ} {u : Tm Δ A} {envρ : Env ρ}
-         {valu : Val (u [ ρ ])} →
-         eval u > envρ ⇒ valu → (B : Ty) →
-         eval u > (envρ +E B) ⇒ tr Val ([][] ⁻¹) (valu +V B)
-evalswk : {Γ Δ Θ : Con} {ρ : Tms Γ Δ} {σ : Tms Δ Θ} {envρ : Env ρ}
-          {envσρ : Env (σ ∘ ρ)} →
-          evals σ > envρ ⇒ envσρ → (B : Ty) →
-          evals σ > (envρ +E B) ⇒ tr Env ∘∘ (envσρ +E B)
-$wk : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} {u : Tm Γ A}
-      {valf : Val f} {valu : Val u} {valfu : Val (f $ u)} →
-      valf $ valu ⇒ valfu → (B : Ty) →
-      (valf +V B) $ (valu +V B) ⇒ tr Val $[] (valfu +V B)
--}
+postulate
+  evalwk : {Γ Δ : Con} {A : Ty} {ρ : Tms Γ Δ} {u : Tm Δ A} {envρ : Env ρ}
+           {valu : Val (u [ ρ ])} →
+           eval u > envρ ⇒ valu → (B : Ty) →
+           eval u > (envρ +E B) ⇒ tr Val ([][] ⁻¹) (valu +V B)
+  evalswk : {Γ Δ Θ : Con} {ρ : Tms Γ Δ} {σ : Tms Δ Θ} {envρ : Env ρ}
+            {envσρ : Env (σ ∘ ρ)} →
+            evals σ > envρ ⇒ envσρ → (B : Ty) →
+            evals σ > (envρ +E B) ⇒ tr Env ∘∘ (envσρ +E B)
+  $wk : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} {u : Tm Γ A}
+        {valf : Val f} {valu : Val u} {valfu : Val (f $ u)} →
+        valf $ valu ⇒ valfu → (B : Ty) →
+        (valf +V B) $ (valu +V B) ⇒ tr Val $[] (valfu +V B)
+  qwk : {Γ : Con} {A : Ty} {u : Tm Γ A} {valu : Val u} {nfu : Nf u} →
+        q valu ⇒ nfu → (B : Ty) →
+        q (valu +V B) ⇒ (nfu +N B)
+  qswk : {Γ : Con} {A : Ty} {u : Tm Γ A} {nevu : Ne Val u} {nefu : Ne Nf u} →
+         qs nevu ⇒ nefu → (B : Ty) →
+         qs (nevu +NV B) ⇒ (nefu +NN B)
+  normwk : {Γ : Con} {A : Ty} {u : Tm Γ A} {nfu : Nf u} →
+           norm u ⇒ nfu → (B : Ty) →
+           norm (u + B) ⇒ (nfu +N B)
