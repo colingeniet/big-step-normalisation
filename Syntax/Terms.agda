@@ -14,22 +14,22 @@ open import Syntax.Types
    and with appropriate definitions, it is no harder to use.
 -}
 
-data terms-indices : Set where
-  Tm-i : Con → Ty → terms-indices
-  Tms-i : Con → Con → terms-indices
+data term-index : Set where
+  Tm-i : Con → Ty → term-index
+  Tms-i : Con → Con → term-index
   
-data terms : terms-indices → Set
+data term : term-index → Set
 
 Tm : Con → Ty → Set
-Tm Γ A = terms (Tm-i Γ A)
+Tm Γ A = term (Tm-i Γ A)
 Tms : Con → Con → Set
-Tms Γ Δ = terms (Tms-i Γ Δ)
+Tms Γ Δ = term (Tms-i Γ Δ)
 
 infixr 10 _,_
 infixr 20 _∘_
 infixl 30 _[_]
 
-data terms where
+data term where
   -- Terms.
   _[_] : {Γ Δ : Con} {A : Ty} → Tm Δ A → Tms Γ Δ → Tm Γ A
   π₂ : {Γ Δ : Con} {A : Ty} → Tms Γ (Δ , A) → Tm Γ A
