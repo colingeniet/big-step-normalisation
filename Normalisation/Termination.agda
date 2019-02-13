@@ -5,6 +5,7 @@ module Normalisation.Termination where
 open import Equality
 open import Syntax
 open import Syntax.Equality
+open import Syntax.Eliminator
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 
@@ -121,33 +122,89 @@ sceid {Γ , A} =
 
 -- Main theorem : Evaluation in a strongly computable environment gives a
 -- strongly computable result.
-evalsce : {Γ Δ : Con} {A : Ty} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) (u : Tm Δ A) →
+evalsceMo : Motives
+Motives.Tmᴹ evalsceMo {Γ = Δ} {A = A} u =
+  {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
+  Σ (Val (u [ ρ ])) λ valu →
+  Σ (eval u > envρ ⇒ valu) λ _ →
+    SCV valu
+Motives.Tmsᴹ evalsceMo {Γ = Δ} {Δ = Θ} σ =
+  {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
+  Σ (Env (σ ∘ ρ)) λ envσ →
+  Σ (evals σ > envρ ⇒ envσ) λ _ →
+    SCE envσ
+
+open Motives evalsceMo
+
+evalsceMe : Methods evalsceMo
+
+evalsce : {Δ : Con} {A : Ty} (u : Tm Δ A)
+          {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
           Σ (Val (u [ ρ ])) λ valu →
           Σ (eval u > envρ ⇒ valu) λ _ →
             SCV valu
-evalssce : {Γ Δ Θ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) (σ : Tms Δ Θ) →
+evalsce = elimTm evalsceMe
+
+evalssce : {Δ Θ : Con} (σ : Tms Δ Θ)
+           {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
            Σ (Env (σ ∘ ρ)) λ envσ →
            Σ (evals σ > envρ ⇒ envσ) λ _ →
              SCE envσ
+evalssce = elimTms evalsceMe
 
-evalsce sceρ (u [ σ ]) =
-  let evalssceσ = evalssce sceρ σ in
-  let envσ = fst evalssceσ in
-  let evalsσ = fst (snd evalssceσ) in
-  let sceσ = snd (snd evalssceσ) in
-  let evalsceu = evalsce sceσ u in
-  let valu = fst evalsceu in
-  let evalu = fst (snd evalsceu) in
-  let scvu = snd (snd evalsceu) in
+Methods._[_]ᴹ evalsceMe IHu IHσ sceρ =
+  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
+  let valu ,, evalu ,, scvu = IHu sceσ in
   let valuσ = tr Val [][] valu in
-  valuσ ,, eval[] evalsσ evalu ,, trd SCV (trfill Val [][] valu) scvu
-evalsce sceρ (π₂ σ) =
-  let evalssceσ = evalssce sceρ σ in
-  let envσ = fst evalssceσ in
-  let evalsσ = fst (snd evalssceσ) in
-  let sceσ = snd (snd evalssceσ) in
+  let valuσ≡ = trfill Val [][] valu in
+  valuσ ,, eval[] evalsσ evalu ,, trd SCV valuσ≡ scvu
+Methods.π₂ᴹ evalsceMe IHσ sceρ =
+  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
   let valπ₂σ = tr Val π₂∘ (π₂list envσ) in
-  valπ₂σ ,, evalπ₂ evalsσ ,, trd SCV (trfill Val π₂∘ (π₂list envσ)) (π₂SCE sceσ)
+  let valπ₂σ≡ = trfill Val π₂∘ (π₂list envσ) in
+  valπ₂σ ,, evalπ₂ evalsσ ,, trd SCV valπ₂σ≡ (π₂SCE sceσ)
+Methods.lamᴹ evalsceMe {u = u} IHu {envρ = envρ} sceρ =
+  vlam u envρ ,, evallam ,,
+  λ {Δ} {u} {valu} scvu →
+  let evalsceu = IHu (sceρ ++SCE Δ ,, scvu) in
+  let valu ,, evalu ,, scvu = evalsceu in
+  let vallamu = tr Val (wkclos[] ⁻¹) valu in
+  let vallamu≡ = trfill Val (wkclos[] ⁻¹) valu in
+  vallamu ,, ? ,, ?
+Methods.appᴹ evalsceMe IHf sceρ =
+  let valf ,, evalf ,, scvf = IHf (π₁SCE sceρ) in
+  let valfρ ,, $fρ ,, scvfρ = scvf (π₂SCE sceρ) in
+  let valappf = tr Val (app[] ⁻¹) valfρ in
+  let valappf≡ = trfill Val (app[] ⁻¹) valfρ in
+  valappf ,, evalapp evalf $fρ ,, trd SCV valappf≡ scvfρ
+
+Methods.idᴹ evalsceMe {envρ = envρ} sceρ =
+  let envidρ = tr Env (id∘ ⁻¹) envρ in
+  let envidρ≡ = trfill Env (id∘ ⁻¹) envρ in
+  envidρ ,, evalsid ,, trd SCE envidρ≡ sceρ
+Methods._∘ᴹ_ evalsceMe IHσ IHν sceρ =
+  let envν ,, evalsν ,, sceν = IHν sceρ in
+  let envσ ,, evalsσ ,, sceσ = IHσ sceν in
+  let envσν = tr Env (∘∘ ⁻¹) envσ in
+  let envσν≡ = trfill Env (∘∘ ⁻¹) envσ in
+  envσν ,, evals∘ evalsν evalsσ ,, trd SCE envσν≡ sceσ
+Methods.εᴹ evalsceMe sceρ =
+  let envερ = tr Env (εη ⁻¹) ε in
+  let envερ≡ = trfill Env (εη ⁻¹) ε in
+  envερ ,, evalsε ,, trd SCE envερ≡ tt
+Methods._,ᴹ_ evalsceMe IHσ IHu sceρ =
+  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
+  let valu ,, evalu ,, scvu = IHu sceρ in
+  let envσu = tr Env (,∘ ⁻¹) (envσ , valu) in
+  let envσu≡ = trfill Env (,∘ ⁻¹) (envσ , valu) in
+  envσu ,, evals, evalsσ evalu ,, trd SCE envσu≡ (sceσ ,, scvu)
+Methods.π₁ᴹ evalsceMe IHσ sceρ =
+  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
+  let envπ₁σ = tr Env π₁∘ (π₁list envσ) in
+  let envπ₁σ≡ = trfill Env π₁∘ (π₁list envσ) in
+  envπ₁σ ,, evalsπ₁ evalsσ ,, trd SCE envπ₁σ≡ (π₁SCE sceσ)
+
+{-
 evalsce {A = A ⟶ B} {ρ = ρ} {envρ = envρ} sceρ (lam u) =
   let vallamu = vlam u envρ in
   vallamu ,, evallam ,,
@@ -163,3 +220,4 @@ evalsce {A = A ⟶ B} {ρ = ρ} {envρ = envρ} sceρ (lam u) =
 evalsce sceρ (app f) = {!!}
 evalsce sceρ (π₂β i) = {!!}
 evalssce = {!!}
+-}
