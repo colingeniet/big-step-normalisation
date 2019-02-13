@@ -1,5 +1,7 @@
 {-# OPTIONS --without-K --safe #-}
 
+module Syntax.Types where
+
 infixr 15 _⟶_
 data Ty : Set where
   o : Ty

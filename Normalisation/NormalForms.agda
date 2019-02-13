@@ -1,7 +1,11 @@
 {-# OPTIONS --cubical #-}
 
-open import equality
-open import terms public
+module Normalisation.NormalForms where
+
+open import Equality
+open import Syntax
+open import Syntax.Equality
+
 
 -- All predicates on terms have this type, and there are quite a few of them.
 Tm-predicate : Set₁

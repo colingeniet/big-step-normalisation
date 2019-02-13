@@ -1,9 +1,11 @@
 {-# OPTIONS --cubical #-}
 
-open import equality
-open import types
-open import terms
-open import normal-forms
+module Normalisation.Evaluator where
+
+open import Equality
+open import Syntax
+open import Syntax.Equality
+open import Normalisation.NormalForms
 
 {- It is by no mean clear that this evaluator terminates, hence it can not be
    defined as a regular function. Instead, it is defined as a relation.
