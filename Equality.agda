@@ -20,10 +20,6 @@ _⁻¹ : ∀ {a} {A : I → Set a} {x : A i0} {y : A i1} →
         PathP A x y → PathP (λ i → A (1- i)) y x
 (p ⁻¹) i = p (1- i)
 
-_∙_ : ∀ {a} {A : Set a} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
-_∙_ {x = x} p q i = hcomp (λ {j (i = i0) → x ; j (i = i1) → q j}) (p i)
-
-
 partial : ∀ {l} {A : Set l} {x y : A} (p : x ≡ y) (i : I) → x ≡ p i
 partial p i j = p (i ∧ j)
 
@@ -56,6 +52,11 @@ trd P p x = (apd P p) * x
 tr : ∀ {l m} {A : Set l} (P : A → Set m) {x y : A} →
        x ≡ y → P x → P y
 tr P = trd P
+
+-- Composition (transitivity) of paths.
+_∙_ : ∀ {a} {A : Set a} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+--_∙_ {x = x} p q i = hcomp (λ {j (i = i0) → x ; j (i = i1) → q j}) (p i)
+_∙_ {x = x} p q = tr (λ w → x ≡ w) q p
         
 infix 5 _≡[_]≡_
 -- Equality through equality of types.
@@ -75,3 +76,11 @@ trdfill P p px = (apd P p) *fill px
 trfill : ∀ {l m} {A : Set l} (P : A → Set m) {x y : A}
            (p : x ≡ y) (px : P x) → px ≡[ ap P p ]≡ tr P p px
 trfill P p px = (ap P p) *fill px
+
+
+-- Composition of paths above paths.
+_d∙_ : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C} {x : A} {y : B} {z : C} →
+         x ≡[ P ]≡ y → y ≡[ Q ]≡ z → x ≡[ P ∙ Q ]≡ z
+_d∙_ {A = A} {P = P} {Q = Q}{x = x} p q =
+  trd (λ {i} w → x ≡[ trfill (λ D → A ≡ D) Q P i  ]≡ w) q p
+
