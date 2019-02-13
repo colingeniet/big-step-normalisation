@@ -34,14 +34,14 @@ data eval_>_⇒_ where
   eval[] : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {σ : Tms Δ Θ} {ρ : Tms Γ Δ} {envρ : Env ρ}
            {envσρ : Env (σ ∘ ρ)} {valu : Val (u [ σ ∘ ρ ])} →
            evals σ > envρ ⇒ envσρ → eval u > envσρ ⇒ valu →
-           eval (u [ σ ]) > envρ ⇒ tr (λ t → Val t) [][] valu
+           eval (u [ σ ]) > envρ ⇒ tr Val [][] valu
   -- eval (π₂ σ) ρ = π₂ (evals σ ρ)
   evalπ₂ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ρ : Tms Γ Δ} {envρ : Env ρ}
            {envσρ : Env (σ ∘ ρ)} → evals σ > envρ ⇒ envσρ →
            eval (π₂ σ) > envρ ⇒ tr Val π₂∘ (π₂list envσρ)
-  -- eval (lam u) ρ = lam (u [ ρ ↑ A ])
+  -- eval (lam u [ σ ]) ρ = lam (u [ ρ ↑ A ])
   evallam : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {envρ : Env ρ} →
-            eval (lam u) > envρ ⇒ tr Val (lam[] ⁻¹) (vlam (u [ ρ ↑ A ]))
+            eval (lam u) > envρ ⇒ vlam u envρ
   -- eval (app f) (σ , u) = (eval f σ) $ u
   evalapp : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {ρ : Tms Γ (Δ , A)} {envρ : Env ρ} →
             {valf : Val (f [ π₁ ρ ])} {valfu : Val (f [ π₁ ρ ] $ π₂ ρ)} →
@@ -65,14 +65,15 @@ data evals_>_⇒_ where
            evals σ > envρ ⇒ envσρ → eval u > envρ ⇒ valuρ →
            evals (σ , u) > envρ ⇒ tr Env (,∘ ⁻¹) (envσρ , valuρ)
   -- evals (π₁ σ) ρ = π₁ (evals σ ρ)
-  evalπ₂ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ρ : Tms Γ Δ} {envρ : Env ρ}
-           {envσρ : Env (σ ∘ ρ)} → evals σ > envρ ⇒ envσρ →
-           evals (π₁ σ) > envρ ⇒ tr Env π₁∘ (π₁list envσρ)
+  evalsπ₁ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ρ : Tms Γ Δ} {envρ : Env ρ}
+            {envσρ : Env (σ ∘ ρ)} → evals σ > envρ ⇒ envσρ →
+            evals (π₁ σ) > envρ ⇒ tr Env π₁∘ (π₁list envσρ)
 data _$_⇒_ where
-  -- (lam u) $ v = eval u (< v >)
-  $lam : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} {v : Tm Γ A} {valv : Val v} {valuv : Val (u [ < v > ])} →
-         eval u > (idenv , valv) ⇒ valuv →
-         (vlam u) $ valv ⇒ tr (λ x → Val (x [ < v > ])) (β ⁻¹) valuv
+  -- (lam u) [ ρ ] $ v = eval u (ρ , v)
+  $lam : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {v : Tm Γ A}
+         {envρ : Env ρ} {valv : Val v} {valuv : Val (u [ ρ , v ])} →
+         eval u > (envρ , valv) ⇒ valuv →
+         (vlam u envρ) $ valv ⇒ tr Val (clos[] ⁻¹) valuv
   -- n $ v = n v
   $app : {Γ : Con} {A B : Ty} {n : Tm Γ (A ⟶ B)} {v : Tm Γ A} (neun : Ne Val n) (valv : Val v) →
          (vneu neun) $ valv ⇒ vneu (app neun valv)
@@ -113,7 +114,7 @@ data norm_⇒_ : {Γ : Con} {A : Ty} (u : Tm Γ A) → Nf u → Set where
 
 
 
--- In the big annoying technical lemmas serie: all computation can be weakened below a context.
+-- In the big annoying technical lemmas serie: all computation can be weakened.
 postulate
   evalwk : {Γ Δ : Con} {A : Ty} {ρ : Tms Γ Δ} {u : Tm Δ A} {envρ : Env ρ}
            {valu : Val (u [ ρ ])} →
@@ -136,3 +137,9 @@ postulate
   normwk : {Γ : Con} {A : Ty} {u : Tm Γ A} {nfu : Nf u} →
            norm u ⇒ nfu → (B : Ty) →
            norm (u + B) ⇒ (nfu +N B)
+
+qswks : {Γ : Con} {A : Ty} {u : Tm Γ A} {nevu : Ne Val u} {nefu : Ne Nf u} →
+        qs nevu ⇒ nefu → (Δ : Con) →
+        qs (nevu ++NV Δ) ⇒ (nefu ++NN Δ)
+qswks qu ● = qu
+qswks qu (Δ , A) = qswk (qswks qu Δ) A

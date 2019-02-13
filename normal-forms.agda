@@ -10,7 +10,8 @@ Tms-predicate : Set₁
 Tms-predicate = {Γ Δ : Con} → Tms Γ Δ → Set
 
 -- Lift a predicate on terms to substitutions
-infix 80 list
+infix 60 list
+infixr 10 _,_
 data list (P : Tm-predicate) : Tms-predicate where
   ε : {Γ : Con} → list P (ε {Γ})
   _,_ : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} → list P σ → P u → list P (σ , u)
@@ -31,12 +32,15 @@ data Ne (P : Tm-predicate) : Tm-predicate where
   var : {Γ : Con} {A : Ty} {u : Tm Γ A} → Var u → Ne P u
   app : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} {u : Tm Γ A} → Ne P f → P u → Ne P (f $ u)
 
-data Val : Tm-predicate where
-  vlam : {Γ : Con} {A B : Ty} → (u : Tm (Γ , A) B) → Val (lam u)
-  vneu : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Val u → Val u
+
+data Val : Tm-predicate
 
 Env : Tms-predicate
 Env = list Val
+
+data Val where
+  vlam : {Γ Δ : Con} {A B : Ty} (u : Tm (Δ , A) B) {ρ : Tms Γ Δ} (envρ : Env ρ) → Val ((lam u) [ ρ ])
+  vneu : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Val u → Val u
 
 data Nf : Tm-predicate where
   nlam : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} → Nf u → Nf (lam u)
@@ -49,12 +53,11 @@ Nfs = list Nf
 -- Weakening for values / environments.
 _+V_ : {Γ : Con} {B : Ty} {u : Tm Γ B} → Val u → (A : Ty) → Val (u + A)
 _+NV_ : {Γ : Con} {B : Ty} {u : Tm Γ B} → Ne Val u → (A : Ty) → Ne Val (u + A)
-(vlam u) +V A = tr Val (lam[] {u = u} {σ = wk} ⁻¹) (vlam (u [ π₁ id ∘ π₁ id , π₂ id ]))
+_+E_ : {Γ Δ : Con} {σ : Tms Γ Δ} → Env σ → (A : Ty) → Env (σ +s A)
+(vlam u ρ) +V A = tr Val [][] (vlam u (ρ +E A))
 (vneu u) +V A = vneu (u +NV A)
 (var x) +NV A   = var (s x)
 (app f u) +NV A = tr (Ne Val) ($[] ⁻¹) (Ne.app (f +NV A) (u +V A))
-
-_+E_ : {Γ Δ : Con} {σ : Tms Γ Δ} → Env σ → (A : Ty) → Env (σ +s A)
 ε +E A       = tr Env (εη ⁻¹) ε
 (σ , u) +E A = tr Env (,∘ ⁻¹) (σ +E A , u +V A)
 
@@ -65,14 +68,8 @@ varlift : {Γ : Con} (Δ : Con) {B : Ty} {u : Tm (Γ ++ Δ) B} → Var u → (A 
 varlift ● u A = s u
 varlift (Δ , C) z A = tr Var (vz[,] ⁻¹) z
 varlift (Δ , C) (s {u = u} varu) A = tr Var
-                                        ([][] ⁻¹
-                                        ∙ ap (λ σ → u [ σ ])
-                                             (π₁β ⁻¹
-                                             ∙ ap π₁ (id∘ ⁻¹)
-                                             ∙ π₁∘)
-                                        ∙ [][])
+                                        ([][] ⁻¹ ∙ ap (λ σ → u [ σ ]) wk, ⁻¹ ∙ [][])
                                         (s (varlift Δ varu A))
-
 
 -- Weakening for normal forms must be done at an arbitrary position in the context
 -- for the induction.
@@ -103,9 +100,19 @@ u ++NV (Δ , A) = (u ++NV Δ) +NV A
 _++N_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Nf u → (Δ : Con) → Nf (u ++t Δ)
 u ++N ● = u
 u ++N (Δ , A) = (u ++N Δ) +N A
+_++NN_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Nf u → (Δ : Con) → Ne Nf (u ++t Δ)
+u ++NN ● = u
+u ++NN (Δ , A) = (u ++NN Δ) +NN A
 
+{-
+[]++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {envρ : Env ρ} →
+        vlam u (envρ ++E Θ) ≡[ ap Val []++ ]≡ (vlam u envρ) ++V Θ
+[]++V {Θ = ●} = refl
+[]++V {Θ = Θ , C} {u = u} {ρ = ρ} {envρ = envρ} =
+  {! ∙d apd (λ x → x +V C) ([]++V {Θ = Θ} {u = u} {envρ = envρ})!}
+-}
 
 -- The identity is an environment.
 idenv : {Γ : Con} → Env (id {Γ})
 idenv {●} = tr Env (εη ⁻¹) ε
-idenv {Γ , A} = tr Env πη (tr Env id∘( idenv +E A) , vneu (var z))
+idenv {Γ , A} = tr Env πη (tr Env id∘ (idenv +E A) , vneu (var z))
