@@ -144,9 +144,14 @@ var≡ = refl
                         ∙ ,∘ ⁻¹
 
 π₁E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≡ π₁ ⌜ σ ⌝E
-π₁E≡ {σ = σ , u} = π₁β ⁻¹
+π₁E≡ {σ = _ , _} = π₁β ⁻¹
 π₂E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≡ π₂ ⌜ σ ⌝E
-π₂E≡ {σ = σ , u} = π₂β ⁻¹
+π₂E≡ {σ = _ , _} = π₂β ⁻¹
+
+π₁+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₁list (σ +E B) ≡ (π₁list σ) +E B
+π₁+ {σ = _ , _} = refl
+π₂+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₂list (σ +E B) ≡ (π₂list σ) +V B
+π₂+ {σ = _ , _} = refl
 
 {-
 postulate

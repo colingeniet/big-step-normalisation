@@ -99,6 +99,9 @@ data qs_⇒_ where
           qs (app f u) ⇒ (app neff nfu)
 
 
+-- Basic lemmas on evaluation.
+
+-- The result of evaluation is equivalent to the input.
 eval≡ : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {uρ : Val Γ A} →
         eval u > ρ ⇒ uρ → u [ ⌜ ρ ⌝E ] ≡ ⌜ uρ ⌝V
 evals≡ : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} {σρ : Env Γ Θ} →
@@ -128,34 +131,65 @@ evals≡ (evalsπ₁ cσ) = π₁∘ ⁻¹ ∙ ap π₁ (evals≡ cσ) ∙ π₁
 $≡ ($lam cu) = clos[] ∙ eval≡ cu
 $≡ ($app n v) = refl
 
-{-
--- In the big annoying technical lemmas serie: all computation can be weakened.
-postulate
-  evalwk : {Γ Δ : Con} {A : Ty} {ρ : Tms Γ Δ} {u : Tm Δ A} {envρ : Env ρ}
-           {valu : Val (u [ ρ ])} →
-           eval u > envρ ⇒ valu → (B : Ty) →
-           eval u > (envρ +E B) ⇒ tr Val ([][] ⁻¹) (valu +V B)
-  evalswk : {Γ Δ Θ : Con} {ρ : Tms Γ Δ} {σ : Tms Δ Θ} {envρ : Env ρ}
-            {envσρ : Env (σ ∘ ρ)} →
-            evals σ > envρ ⇒ envσρ → (B : Ty) →
-            evals σ > (envρ +E B) ⇒ tr Env ∘∘ (envσρ +E B)
-  $wk : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} {u : Tm Γ A}
-        {valf : Val f} {valu : Val u} {valfu : Val (f $ u)} →
-        valf $ valu ⇒ valfu → (B : Ty) →
-        (valf +V B) $ (valu +V B) ⇒ tr Val $[] (valfu +V B)
-  qwk : {Γ : Con} {A : Ty} {u : Tm Γ A} {valu : Val u} {nfu : Nf u} →
-        q valu ⇒ nfu → (B : Ty) →
-        q (valu +V B) ⇒ (nfu +N B)
-  qswk : {Γ : Con} {A : Ty} {u : Tm Γ A} {nevu : Ne Val u} {nefu : Ne Nf u} →
-         qs nevu ⇒ nefu → (B : Ty) →
-         qs (nevu +NV B) ⇒ (nefu +NN B)
-  normwk : {Γ : Con} {A : Ty} {u : Tm Γ A} {nfu : Nf u} →
-           norm u ⇒ nfu → (B : Ty) →
-           norm (u + B) ⇒ (nfu +N B)
+q≡ : {Γ : Con} {A : Ty} {u : Val Γ A} {n : Nf Γ A} →
+     q u ⇒ n → ⌜ u ⌝V ≡ ⌜ n ⌝N
+qs≡ : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
+      qs u ⇒ n → ⌜ u ⌝NV ≡ ⌜ n ⌝NN
+q≡ (qso qn) = qs≡ qn
+q≡ (qs⟶ {f = f} $f qf) =
+  classicη ⁻¹
+  ∙ ap lam (ap (λ u → u $ vz) (+V≡ {u = f}) ⁻¹
+           ∙ $≡ $f ∙ q≡ qf)
+qs≡ qsvar = refl
+qs≡ (qsapp qf qu) = ap (λ f → f $ _) (qs≡ qf) ∙ ap (λ u → _ $ u) (q≡ qu)
 
-qswks : {Γ : Con} {A : Ty} {u : Tm Γ A} {nevu : Ne Val u} {nefu : Ne Nf u} →
-        qs nevu ⇒ nefu → (Δ : Con) →
-        qs (nevu ++NV Δ) ⇒ (nefu ++NN Δ)
+
+-- All computations can be weakened.
+evalwk : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {uρ : Val Γ A} →
+         eval u > ρ ⇒ uρ → (B : Ty) → eval u > (ρ +E B) ⇒ (uρ +V B)
+evalswk : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} {σρ : Env Γ Θ} →
+          evals σ > ρ ⇒ σρ → (B : Ty) → evals σ > (ρ +E B) ⇒ (σρ +E B)
+$wk : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {u : Val Γ A} {fu : Val Γ B} →
+      f $ u ⇒ fu → (B : Ty) → (f +V B) $ (u +V B) ⇒ (fu +V B)
+
+evalwk (eval[] cσ cu) B =
+  eval[] (evalswk cσ B) (evalwk cu B)
+evalwk (evalπ₂ {σρ = σρ} cσ) B =
+  tr (λ u → eval _ > _ ⇒ u) (π₂+ {σ = σρ}) (evalπ₂ (evalswk cσ B))
+evalwk (evallam u ρ) B = evallam u (ρ +E B)
+evalwk (evalapp {ρ = ρ} cf $fρ) B =
+  evalapp
+  (tr (λ ρ → eval _ > ρ ⇒ _) (π₁+ {σ = ρ} ⁻¹) (evalwk cf B))
+  (tr (λ v → _ $ v ⇒ _) (π₂+ {σ = ρ} ⁻¹) ($wk $fρ B))
+
+evalswk evalsid B = evalsid
+evalswk (evals∘ cν cσ) B = evals∘ (evalswk cν B) (evalswk cσ B)
+evalswk evalsε B = evalsε
+evalswk (evals, cσ cu) B = evals, (evalswk cσ B) (evalwk cu B)
+evalswk (evalsπ₁ {σρ = σρ} cσ) B =
+  tr (λ u → evals _ > _ ⇒ u) (π₁+ {σ = σρ}) (evalsπ₁ (evalswk cσ B))
+
+$wk ($lam cu) B = $lam (evalwk cu B)
+$wk ($app n v) B = $app (n +NV B) (v +V B)
+
+
+
+-- BAD !! Weakning for quote must be done at an arbitrary position in the context.
+postulate
+  qwk : {Γ : Con} {A : Ty} {u : Val Γ A} {n : Nf Γ A} →
+        q u ⇒ n → (B : Ty) → q (u +V B) ⇒ (n +N B)
+  qswk : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
+         qs u ⇒ n → (B : Ty) → qs (u +NV B) ⇒ (n +NN B)
+{-
+qwk (qso qn) B = qso (qswk qn B)
+qwk (qs⟶ $f qf) B = {!--qs⟶
+                    ($wk $f B)
+                    --(qwk qf B)!}
+qswk qsvar B = qsvar
+qswk (qsapp qf qu) B = qsapp (qswk qf B) (qwk qu B)
+-}
+
+qswks : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
+        qs u ⇒ n → (Δ : Con) → qs (u ++NV Δ) ⇒ (n ++NN Δ)
 qswks qu ● = qu
 qswks qu (Δ , A) = qswk (qswks qu Δ) A
--}
