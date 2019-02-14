@@ -2,9 +2,9 @@
 
 module Normalisation.NormalForms where
 
-open import Equality
 open import Syntax
 open import Syntax.Equality
+open import Equality
 
 
 -- Variables, values, normal forms, ... all have this type.
@@ -49,6 +49,29 @@ data Val where
 data Nf : Tm-like where
   nlam : {Γ : Con} {A B : Ty} → Nf (Γ , A) B → Nf Γ (A ⟶ B)
   nneu : {Γ : Con} → Ne Nf Γ o → Nf Γ o
+
+
+-- Embeddings.
+⌜_⌝v : {Γ : Con} {A : Ty} → Var Γ A → Tm Γ A
+⌜ z ⌝v = vz
+⌜ s x ⌝v = vs ⌜ x ⌝v
+
+⌜_⌝V : {Γ : Con} {A : Ty} → Val Γ A → Tm Γ A
+⌜_⌝NV : {Γ : Con} {A : Ty} → Ne Val Γ A → Tm Γ A
+⌜_⌝E : {Γ Δ : Con} → Env Γ Δ → Tms Γ Δ
+⌜ vlam u ρ ⌝V = (lam u) [ ⌜ ρ ⌝E ]
+⌜ vneu n ⌝V = ⌜ n ⌝NV
+⌜ var x ⌝NV = ⌜ x ⌝v
+⌜ app n v ⌝NV = ⌜ n ⌝NV $ ⌜ v ⌝V
+⌜ ε ⌝E = ε
+⌜ ρ , v ⌝E = ⌜ ρ ⌝E , ⌜ v ⌝V
+
+⌜_⌝N : {Γ : Con} {A : Ty} → Nf Γ A → Tm Γ A
+⌜_⌝NN : {Γ : Con} {A : Ty} → Ne Nf Γ A → Tm Γ A
+⌜ nlam u ⌝N = lam ⌜ u ⌝N
+⌜ nneu n ⌝N = ⌜ n ⌝NN
+⌜ var x ⌝NN = ⌜ x ⌝v
+⌜ app n u ⌝NN = ⌜ n ⌝NN $ ⌜ u ⌝N
 
 
 -- Weakening for values / environments.
@@ -100,6 +123,30 @@ u ++N (Δ , A) = (u ++N Δ) +N A
 _++NN_ : {Γ : Con} {A : Ty} → Ne Nf Γ A → (Δ : Con) → Ne Nf (Γ ++ Δ) A
 u ++NN ● = u
 u ++NN (Δ , A) = (u ++NN Δ) +NN A
+
+
+-- Embedding commutes with everything as expected.
+var≡ : {Γ : Con} {A B : Ty} {x : Var Γ A} → ⌜ s {B = B} x ⌝v ≡ vs ⌜ x ⌝v
+var≡ = refl
+
++V≡ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≡ ⌜ u ⌝V + A
++NV≡ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≡ ⌜ u ⌝NV + A
++E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≡ ⌜ σ ⌝E +s A
++V≡ {u = vlam u ρ} = ap (λ ρ → lam u [ ρ ]) +E≡ ∙ [][]
++V≡ {u = vneu n} = +NV≡ {u = n}
++NV≡ {u = var x} = var≡
++NV≡ {A = A} {u = app n u} = ap (λ n → n $ ⌜ u +V A ⌝V) (+NV≡ {u = n})
+                           ∙ ap (λ u → ⌜ n ⌝NV + A $ u) (+V≡ {u = u})
+                           ∙ $[] ⁻¹
++E≡ {σ = ε} = εη ⁻¹
++E≡ {A = A} {σ = σ , u} = ap (λ σ → σ , ⌜ u +V A ⌝V) (+E≡ {σ = σ})
+                        ∙ ap (λ u → ⌜ σ ⌝E +s A , u) (+V≡ {u = u})
+                        ∙ ,∘ ⁻¹
+
+π₁E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≡ π₁ ⌜ σ ⌝E
+π₁E≡ {σ = σ , u} = π₁β ⁻¹
+π₂E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≡ π₂ ⌜ σ ⌝E
+π₂E≡ {σ = σ , u} = π₂β ⁻¹
 
 {-
 postulate
