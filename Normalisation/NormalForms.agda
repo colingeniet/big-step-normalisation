@@ -108,12 +108,16 @@ _++NN_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Nf u → (Δ : Con) → Ne Nf 
 u ++NN ● = u
 u ++NN (Δ , A) = (u ++NN Δ) +NN A
 
+
+postulate
+  []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {envρ : Env ρ} →
+          vlam u (envρ ++E Θ) ≡[ ap Val []++ ]≡ (vlam u envρ) ++V Θ
 {-
-[]++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {envρ : Env ρ} →
-        vlam u (envρ ++E Θ) ≡[ ap Val []++ ]≡ (vlam u envρ) ++V Θ
 []++V {Θ = ●} = refl
 []++V {Θ = Θ , C} {u = u} {ρ = ρ} {envρ = envρ} =
-  {! ∙d apd (λ x → x +V C) ([]++V {Θ = Θ} {u = u} {envρ = envρ})!}
+  {!
+  trfill Val [][] (vlam u ((envρ ++E Θ) +E C))
+  d∙ apd (λ v → v +V C) ([]++V {Θ = Θ} {u = u} {envρ = envρ})!}
 -}
 
 -- The identity is an environment.

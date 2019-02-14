@@ -165,8 +165,8 @@ Methods.π₂ᴹ evalsceMe IHσ sceρ =
   valπ₂σ ,, evalπ₂ evalsσ ,, trd SCV valπ₂σ≡ (π₂SCE sceσ)
 Methods.lamᴹ evalsceMe {u = u} IHu {envρ = envρ} sceρ =
   vlam u envρ ,, evallam ,,
-  λ {Δ} {u} {valu} scvu →
-  let evalsceu = IHu (sceρ ++SCE Δ ,, scvu) in
+  λ {Δ} {v} {valv} scvv →
+  let evalsceu = IHu (sceρ ++SCE Δ ,, scvv) in
   let valu ,, evalu ,, scvu = evalsceu in
   let vallamu = tr Val (wkclos[] ⁻¹) valu in
   let vallamu≡ = trfill Val (wkclos[] ⁻¹) valu in
@@ -203,21 +203,3 @@ Methods.π₁ᴹ evalsceMe IHσ sceρ =
   let envπ₁σ = tr Env π₁∘ (π₁list envσ) in
   let envπ₁σ≡ = trfill Env π₁∘ (π₁list envσ) in
   envπ₁σ ,, evalsπ₁ evalsσ ,, trd SCE envπ₁σ≡ (π₁SCE sceσ)
-
-{-
-evalsce {A = A ⟶ B} {ρ = ρ} {envρ = envρ} sceρ (lam u) =
-  let vallamu = vlam u envρ in
-  vallamu ,, evallam ,,
-  λ {Δ = Δ} {u = v} {valu = valv} scvv →
-  let sceρv = (sceρ ++SCE Δ) ,, scvv in
-  let evalsceu = evalsce sceρv u in
-  let valu = fst evalsceu in
-  let evalu = fst (snd evalsceu) in
-  let scvu = snd (snd evalsceu) in
-  let u≡ = clos[] ⁻¹ ∙ ap (λ x → x $ v) []++ in
-  tr Val u≡ valu
-  ,, {!$lam evalu!} ,, {!!}
-evalsce sceρ (app f) = {!!}
-evalsce sceρ (π₂β i) = {!!}
-evalssce = {!!}
--}
