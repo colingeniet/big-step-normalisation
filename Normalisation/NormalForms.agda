@@ -7,112 +7,105 @@ open import Syntax
 open import Syntax.Equality
 
 
--- All predicates on terms have this type, and there are quite a few of them.
-Tm-predicate : Set₁
-Tm-predicate = {Γ : Con} {A : Ty} → Tm Γ A → Set
-Tms-predicate : Set₁
-Tms-predicate = {Γ Δ : Con} → Tms Γ Δ → Set
+-- Variables, values, normal forms, ... all have this type.
+Tm-like : Set₁
+Tm-like = (Γ : Con) (A : Ty) → Set
+Tms-like : Set₁
+Tms-like = (Γ Δ : Con) → Set
 
 -- Lift a predicate on terms to substitutions
 infix 60 list
 infixr 10 _,_
-data list (P : Tm-predicate) : Tms-predicate where
-  ε : {Γ : Con} → list P (ε {Γ})
-  _,_ : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} → list P σ → P u → list P (σ , u)
+data list (X : Tm-like) : Tms-like where
+  ε : {Γ : Con} → list X Γ ●
+  _,_ : {Γ Δ : Con} {A : Ty} → list X Γ Δ → X Γ A → list X Γ (Δ , A)
 
-π₁list : {P : Tm-predicate} {Γ Δ : Con} {A : Ty} {σ : Tms Γ (Δ , A)} → list P σ → list P (π₁ σ)
-π₁list {P = P} (σ , _) = tr (list P) (π₁β ⁻¹) σ
-π₂list : {P : Tm-predicate} {Γ Δ : Con} {A : Ty} {σ : Tms Γ (Δ , A)} → list P σ → P (π₂ σ)
-π₂list {P = P} (_ , u) = tr P (π₂β ⁻¹) u
+π₁list : {X : Tm-like} {Γ Δ : Con} {A : Ty} → list X Γ (Δ , A) → list X Γ Δ
+π₁list (σ , _) = σ
+π₂list : {X : Tm-like} {Γ Δ : Con} {A : Ty} → list X Γ (Δ , A) → X Γ A
+π₂list (_ , u) = u
 
 -- Variables.
-data Var : Tm-predicate where
-  z : {Γ : Con} {A : Ty} → Var (vz {Γ = Γ} {A = A})
-  s : {Γ : Con} {A B : Ty} {u : Tm Γ A} → Var u → Var (vs {B = B} u)
+data Var : Tm-like where
+  z : {Γ : Con} {A : Ty} → Var (Γ , A) A
+  s : {Γ : Con} {A B : Ty} → Var Γ A → Var (Γ , B) A
 
 -- Neutral forms : a variable applied to terms satisfying P.
 -- This is used both for values and normal forms, so here is a generic definition.
-data Ne (P : Tm-predicate) : Tm-predicate where
-  var : {Γ : Con} {A : Ty} {u : Tm Γ A} → Var u → Ne P u
-  app : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} {u : Tm Γ A} → Ne P f → P u → Ne P (f $ u)
+data Ne (X : Tm-like) : Tm-like where
+  var : {Γ : Con} {A : Ty} → Var Γ A → Ne X Γ A
+  app : {Γ : Con} {A B : Ty} → Ne X Γ (A ⟶ B) → X Γ A → Ne X Γ B
 
 
-data Val : Tm-predicate
+data Val : Tm-like
 
-Env : Tms-predicate
+Env : Tms-like
 Env = list Val
 
 data Val where
-  vlam : {Γ Δ : Con} {A B : Ty} (u : Tm (Δ , A) B) {ρ : Tms Γ Δ} (envρ : Env ρ) → Val ((lam u) [ ρ ])
-  vneu : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Val u → Val u
+  vlam : {Γ Δ : Con} {A B : Ty} (u : Tm (Δ , A) B) (ρ : Env Γ Δ) → Val Γ (A ⟶ B)
+  vneu : {Γ : Con} {A : Ty} → Ne Val Γ A → Val Γ A
 
-data Nf : Tm-predicate where
-  nlam : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} → Nf u → Nf (lam u)
-  nneu : {Γ : Con} {u : Tm Γ o} → Ne Nf u → Nf u
-  
-Nfs : Tms-predicate
-Nfs = list Nf
+data Nf : Tm-like where
+  nlam : {Γ : Con} {A B : Ty} → Nf (Γ , A) B → Nf Γ (A ⟶ B)
+  nneu : {Γ : Con} → Ne Nf Γ o → Nf Γ o
 
 
 -- Weakening for values / environments.
-_+V_ : {Γ : Con} {B : Ty} {u : Tm Γ B} → Val u → (A : Ty) → Val (u + A)
-_+NV_ : {Γ : Con} {B : Ty} {u : Tm Γ B} → Ne Val u → (A : Ty) → Ne Val (u + A)
-_+E_ : {Γ Δ : Con} {σ : Tms Γ Δ} → Env σ → (A : Ty) → Env (σ +s A)
-(vlam u ρ) +V A = tr Val [][] (vlam u (ρ +E A))
+_+V_ : {Γ : Con} {B : Ty} → Val Γ B → (A : Ty) → Val (Γ , A) B
+_+NV_ : {Γ : Con} {B : Ty} → Ne Val Γ B → (A : Ty) → Ne Val (Γ , A) B
+_+E_ : {Γ Δ : Con} → Env Γ Δ → (A : Ty) → Env (Γ , A) Δ
+(vlam u ρ) +V A = vlam u (ρ +E A)
 (vneu u) +V A = vneu (u +NV A)
 (var x) +NV A   = var (s x)
-(app f u) +NV A = tr (Ne Val) ($[] ⁻¹) (Ne.app (f +NV A) (u +V A))
-ε +E A       = tr Env (εη ⁻¹) ε
-(σ , u) +E A = tr Env (,∘ ⁻¹) (σ +E A , u +V A)
+(app f u) +NV A = app (f +NV A) (u +V A)
+ε +E A       = ε
+(σ , u) +E A = σ +E A , u +V A
 
 
 -- Weakening of variables below a context.
-varlift : {Γ : Con} (Δ : Con) {B : Ty} {u : Tm (Γ ++ Δ) B} → Var u → (A : Ty) →
-          Var (u [ (wk {A = A}) ↑↑ Δ ])
-varlift ● u A = s u
-varlift (Δ , C) z A = tr Var (vz[,] ⁻¹) z
-varlift (Δ , C) (s {u = u} varu) A = tr Var
-                                        ([][] ⁻¹ ∙ ap (λ σ → u [ σ ]) wk, ⁻¹ ∙ [][])
-                                        (s (varlift Δ varu A))
+varwk : {Γ : Con} (Δ : Con) {B : Ty} → Var (Γ ++ Δ) B → (A : Ty) →
+          Var ((Γ , A) ++ Δ) B
+varwk ● x A = s x
+varwk (Δ , C) z A = z
+varwk (Δ , C) (s x) A = s (varwk Δ x A)
 
 -- Weakening for normal forms must be done at an arbitrary position in the context
 -- for the induction.
-nfgenwk : {Γ : Con} {B : Ty} (Δ : Con) {u : Tm (Γ ++ Δ) B} →
-          Nf u → (A : Ty) → Nf (u [ (wk {A = A}) ↑↑ Δ ])
-nefgenwk : {Γ : Con} {B : Ty} (Δ : Con) {u : Tm (Γ ++ Δ) B} →
-           Ne Nf u → (A : Ty) → Ne Nf (u [ (wk {A = A}) ↑↑ Δ ])
-nfgenwk {B = B ⟶ C} Δ (nlam u) A = tr Nf (lam[] ⁻¹) (nlam (nfgenwk (Δ , B) u A)) 
+nfgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Nf (Γ ++ Δ) B → (A : Ty) → Nf ((Γ , A) ++ Δ) B
+nefgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Ne Nf (Γ ++ Δ) B → (A : Ty) → Ne Nf ((Γ , A) ++ Δ) B
+nfgenwk {B = B ⟶ C} Δ (nlam u) A = nlam (nfgenwk (Δ , B) u A)
 nfgenwk Δ (nneu u) A = nneu (nefgenwk Δ u A)
-nefgenwk Δ (var x) A = var (varlift Δ x A)
-nefgenwk Δ (app f u) A = tr (Ne Nf) ($[] ⁻¹) (Ne.app (nefgenwk Δ f A) (nfgenwk Δ u A))
+nefgenwk Δ (var x) A = var (varwk Δ x A)
+nefgenwk Δ (app f u) A = app (nefgenwk Δ f A) (nfgenwk Δ u A)
 
-_+N_ : {Γ : Con} {B : Ty} {u : Tm Γ B} → Nf u → (A : Ty) → Nf (u + A)
-_+NN_ : {Γ : Con} {B : Ty} {u : Tm Γ B} → Ne Nf u → (A : Ty) → Ne Nf (u + A)
+_+N_ : {Γ : Con} {B : Ty} → Nf Γ B → (A : Ty) → Nf (Γ , A) B
+_+NN_ : {Γ : Con} {B : Ty} → Ne Nf Γ B → (A : Ty) → Ne Nf (Γ , A) B
 u +N A = nfgenwk ● u A
 u +NN A = nefgenwk ● u A
 
--- Weakenings by context extension.
-_++V_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Val u → (Δ : Con) → Val (u ++t Δ)
+-- Weakening by a context.
+_++V_ : {Γ : Con} {A : Ty} → Val Γ A → (Δ : Con) → Val (Γ ++ Δ) A
 u ++V ● = u
 u ++V (Δ , A) = (u ++V Δ) +V A
-_++E_ : {Γ Δ : Con} {σ : Tms Γ Δ} → Env σ → (Θ : Con) → Env (σ ++s Θ)
+_++E_ : {Γ Δ : Con} → Env Γ Δ → (Θ : Con) → Env (Γ ++ Θ) Δ
 σ ++E ● = σ
 σ ++E (Δ , A) = (σ ++E Δ) +E A
-_++NV_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Val u → (Δ : Con) → Ne Val (u ++t Δ)
+_++NV_ : {Γ : Con} {A : Ty} → Ne Val Γ A → (Δ : Con) → Ne Val (Γ ++ Δ) A
 u ++NV ● = u
 u ++NV (Δ , A) = (u ++NV Δ) +NV A
-_++N_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Nf u → (Δ : Con) → Nf (u ++t Δ)
+_++N_ : {Γ : Con} {A : Ty} → Nf Γ A → (Δ : Con) → Nf (Γ ++ Δ) A
 u ++N ● = u
 u ++N (Δ , A) = (u ++N Δ) +N A
-_++NN_ : {Γ : Con} {A : Ty} {u : Tm Γ A} → Ne Nf u → (Δ : Con) → Ne Nf (u ++t Δ)
+_++NN_ : {Γ : Con} {A : Ty} → Ne Nf Γ A → (Δ : Con) → Ne Nf (Γ ++ Δ) A
 u ++NN ● = u
 u ++NN (Δ , A) = (u ++NN Δ) +NN A
 
-
+{-
 postulate
   []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {envρ : Env ρ} →
           vlam u (envρ ++E Θ) ≡[ ap Val []++ ]≡ (vlam u envρ) ++V Θ
-{-
+
 []++V {Θ = ●} = refl
 []++V {Θ = Θ , C} {u = u} {ρ = ρ} {envρ = envρ} =
   {!
@@ -121,6 +114,6 @@ postulate
 -}
 
 -- The identity is an environment.
-idenv : {Γ : Con} → Env (id {Γ})
-idenv {●} = tr Env (εη ⁻¹) ε
-idenv {Γ , A} = tr Env πη (tr Env id∘ (idenv +E A) , vneu (var z))
+idenv : {Γ : Con} → Env Γ Γ
+idenv {●} = ε
+idenv {Γ , A} = idenv +E A , vneu (var z)
