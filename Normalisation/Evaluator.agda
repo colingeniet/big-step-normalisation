@@ -174,7 +174,7 @@ $wk ($app n v) B = $app (n +NV B) (v +V B)
 
 
 
--- BAD !! Weakning for quote must be done at an arbitrary position in the context.
+-- BAD !! Weakening for quote must be done at an arbitrary position in the context.
 postulate
   qwk : {Γ : Con} {A : Ty} {u : Val Γ A} {n : Nf Γ A} →
         q u ⇒ n → (B : Ty) → q (u +V B) ⇒ (n +N B)

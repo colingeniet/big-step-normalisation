@@ -95,88 +95,55 @@ sceid {●} = tt --trd SCE (trfill Env (εη ⁻¹) ε) tt
 sceid {Γ , A} = sceid +SCE A ,, scvvar
 
 
-{-
+
 -- Main theorem : Evaluation in a strongly computable environment gives a
 -- strongly computable result.
 evalsceMo : Motives
 Motives.Tmᴹ evalsceMo {Γ = Δ} {A = A} u =
-  {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
-  Σ (Val (u [ ρ ])) λ valu →
-  Σ (eval u > envρ ⇒ valu) λ _ →
-    SCV valu
+  {Γ : Con} {ρ : Env Γ Δ} (sceρ : SCE ρ) →
+  Σ (Val Γ A) λ uρ →
+  Σ (eval u > ρ ⇒ uρ) λ _ →
+    SCV uρ
 Motives.Tmsᴹ evalsceMo {Γ = Δ} {Δ = Θ} σ =
-  {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
-  Σ (Env (σ ∘ ρ)) λ envσ →
-  Σ (evals σ > envρ ⇒ envσ) λ _ →
-    SCE envσ
+  {Γ : Con} {ρ : Env Γ Δ} (sceρ : SCE ρ) →
+  Σ (Env Γ Θ) λ σρ →
+  Σ (evals σ > ρ ⇒ σρ) λ _ →
+    SCE σρ
 
 open Motives evalsceMo
 
 evalsceMe : Methods evalsceMo
 
-evalsce : {Δ : Con} {A : Ty} (u : Tm Δ A)
-          {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
-          Σ (Val (u [ ρ ])) λ valu →
-          Σ (eval u > envρ ⇒ valu) λ _ →
-            SCV valu
-evalsce = elimTm evalsceMe
-
-evalssce : {Δ Θ : Con} (σ : Tms Δ Θ)
-           {Γ : Con} {ρ : Tms Γ Δ} {envρ : Env ρ} (sceρ : SCE envρ) →
-           Σ (Env (σ ∘ ρ)) λ envσ →
-           Σ (evals σ > envρ ⇒ envσ) λ _ →
-             SCE envσ
-evalssce = elimTms evalsceMe
-
 Methods._[_]ᴹ evalsceMe IHu IHσ sceρ =
-  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
-  let valu ,, evalu ,, scvu = IHu sceσ in
-  let valuσ = tr Val [][] valu in
-  let valuσ≡ = trfill Val [][] valu in
-  valuσ ,, eval[] evalsσ evalu ,, trd SCV valuσ≡ scvu
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  let uσρ ,, evalu ,, scvuσρ = IHu sceσρ in 
+  uσρ ,, eval[] evalsσ evalu ,, scvuσρ
 Methods.π₂ᴹ evalsceMe IHσ sceρ =
-  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
-  let valπ₂σ = tr Val π₂∘ (π₂list envσ) in
-  let valπ₂σ≡ = trfill Val π₂∘ (π₂list envσ) in
-  valπ₂σ ,, evalπ₂ evalsσ ,, trd SCV valπ₂σ≡ (π₂SCE sceσ)
-Methods.lamᴹ evalsceMe {u = u} IHu {envρ = envρ} sceρ =
-  vlam u envρ ,, evallam ,,
-  λ {Δ} {v} {valv} scvv →
-  let evalsceu = IHu (sceρ ++SCE Δ ,, scvv) in
-  let valu ,, evalu ,, scvu = evalsceu in
-  let vallamu = tr Val (wkclos[] ⁻¹) valu in
-  let vallamu≡ = trfill Val (wkclos[] ⁻¹) valu in
-  vallamu ,, ? ,, ?
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  π₂list σρ ,, evalπ₂ evalsσ ,, π₂SCE sceσρ
+Methods.lamᴹ evalsceMe {A = A} {u = u} IHu {Γ = Γ} {ρ = ρ} sceρ =
+  vlam u ρ ,, evallam u ρ ,,
+  λ {Δ : Con} {v : Val (Γ ++ Δ) A} scvv →
+  let uρv ,, evalu ,, scvuρv = IHu (sceρ ++SCE Δ ,, scvv) in
+  let evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Δ}) ($lam evalu) in
+  uρv ,, evallamu ,, scvuρv
 Methods.appᴹ evalsceMe IHf sceρ =
-  let valf ,, evalf ,, scvf = IHf (π₁SCE sceρ) in
-  let valfρ ,, $fρ ,, scvfρ = scvf (π₂SCE sceρ) in
-  let valappf = tr Val (app[] ⁻¹) valfρ in
-  let valappf≡ = trfill Val (app[] ⁻¹) valfρ in
-  valappf ,, evalapp evalf $fρ ,, trd SCV valappf≡ scvfρ
+  let f ,, evalf ,, scvf = IHf (π₁SCE sceρ) in
+  let fρ ,, $fρ ,, scvfρ = scvf (π₂SCE sceρ) in
+  fρ ,, evalapp evalf $fρ ,, scvfρ
 
-Methods.idᴹ evalsceMe {envρ = envρ} sceρ =
-  let envidρ = tr Env (id∘ ⁻¹) envρ in
-  let envidρ≡ = trfill Env (id∘ ⁻¹) envρ in
-  envidρ ,, evalsid ,, trd SCE envidρ≡ sceρ
+Methods.idᴹ evalsceMe {ρ = ρ} sceρ =
+  ρ ,, evalsid ,, sceρ
 Methods._∘ᴹ_ evalsceMe IHσ IHν sceρ =
-  let envν ,, evalsν ,, sceν = IHν sceρ in
-  let envσ ,, evalsσ ,, sceσ = IHσ sceν in
-  let envσν = tr Env (∘∘ ⁻¹) envσ in
-  let envσν≡ = trfill Env (∘∘ ⁻¹) envσ in
-  envσν ,, evals∘ evalsν evalsσ ,, trd SCE envσν≡ sceσ
+  let νρ ,, evalsν ,, sceνρ = IHν sceρ in
+  let σνρ ,, evalsσ ,, sceσνρ = IHσ sceνρ in
+  σνρ ,, evals∘ evalsν evalsσ ,, sceσνρ
 Methods.εᴹ evalsceMe sceρ =
-  let envερ = tr Env (εη ⁻¹) ε in
-  let envερ≡ = trfill Env (εη ⁻¹) ε in
-  envερ ,, evalsε ,, trd SCE envερ≡ tt
+  ε ,, evalsε ,, tt
 Methods._,ᴹ_ evalsceMe IHσ IHu sceρ =
-  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
-  let valu ,, evalu ,, scvu = IHu sceρ in
-  let envσu = tr Env (,∘ ⁻¹) (envσ , valu) in
-  let envσu≡ = trfill Env (,∘ ⁻¹) (envσ , valu) in
-  envσu ,, evals, evalsσ evalu ,, trd SCE envσu≡ (sceσ ,, scvu)
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  let uρ ,, evalu ,, scvuρ = IHu sceρ in
+  σρ , uρ ,, evals, evalsσ evalu ,, (sceσρ ,, scvuρ)
 Methods.π₁ᴹ evalsceMe IHσ sceρ =
-  let envσ ,, evalsσ ,, sceσ = IHσ sceρ in
-  let envπ₁σ = tr Env π₁∘ (π₁list envσ) in
-  let envπ₁σ≡ = trfill Env π₁∘ (π₁list envσ) in
-  envπ₁σ ,, evalsπ₁ evalsσ ,, trd SCE envπ₁σ≡ (π₁SCE sceσ)
--}
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  π₁list σρ ,, evalsπ₁ evalsσ ,, π₁SCE sceσρ

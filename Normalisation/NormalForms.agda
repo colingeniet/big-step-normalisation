@@ -132,6 +132,7 @@ var≡ = refl
 +V≡ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≡ ⌜ u ⌝V + A
 +NV≡ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≡ ⌜ u ⌝NV + A
 +E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≡ ⌜ σ ⌝E +s A
+
 +V≡ {u = vlam u ρ} = ap (λ ρ → lam u [ ρ ]) +E≡ ∙ [][]
 +V≡ {u = vneu n} = +NV≡ {u = n}
 +NV≡ {u = var x} = var≡
@@ -143,6 +144,7 @@ var≡ = refl
                         ∙ ap (λ u → ⌜ σ ⌝E +s A , u) (+V≡ {u = u})
                         ∙ ,∘ ⁻¹
 
+
 π₁E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≡ π₁ ⌜ σ ⌝E
 π₁E≡ {σ = _ , _} = π₁β ⁻¹
 π₂E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≡ π₂ ⌜ σ ⌝E
@@ -153,17 +155,14 @@ var≡ = refl
 π₂+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₂list (σ +E B) ≡ (π₂list σ) +V B
 π₂+ {σ = _ , _} = refl
 
-{-
-postulate
-  []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {envρ : Env ρ} →
-          vlam u (envρ ++E Θ) ≡[ ap Val []++ ]≡ (vlam u envρ) ++V Θ
+
+[]++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →
+        vlam u (ρ ++E Θ) ≡ (vlam u ρ) ++V Θ
 
 []++V {Θ = ●} = refl
-[]++V {Θ = Θ , C} {u = u} {ρ = ρ} {envρ = envρ} =
-  {!
-  trfill Val [][] (vlam u ((envρ ++E Θ) +E C))
-  d∙ apd (λ v → v +V C) ([]++V {Θ = Θ} {u = u} {envρ = envρ})!}
--}
+[]++V {Θ = Θ , C} {u = u} {ρ = ρ} =
+  ap (λ u → u +V C) ([]++V {Θ = Θ} {u = u} {ρ = ρ})
+
 
 -- The identity is an environment.
 idenv : {Γ : Con} → Env Γ Γ
