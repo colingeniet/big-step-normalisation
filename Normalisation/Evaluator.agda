@@ -83,10 +83,10 @@ data qs_⇒_ : {Γ : Con} {A : Ty} → Ne Val Γ A → Ne Nf Γ A → Set
 data q_⇒_ where
   -- q (n : o) = qs n
   -- A value of type o must be neutral !
-  qso : {Γ : Con} {n : Ne Val Γ o} {nf : Ne Nf Γ o} →
+  qo : {Γ : Con} {n : Ne Val Γ o} {nf : Ne Nf Γ o} →
         qs n ⇒ nf → q (vneu n) ⇒ (nneu nf)
   -- q (f : A ⟶ B) = lam (q (f $ vz))
-  qs⟶ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {fz : Val (Γ , A) B} {nffvz : Nf (Γ , A) B} →
+  q⟶ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {fz : Val (Γ , A) B} {nffvz : Nf (Γ , A) B} →
         (f +V A) $ (vneu (var z)) ⇒ fz → q fz ⇒ nffvz →
         q f ⇒ nlam nffvz
 data qs_⇒_ where
@@ -135,8 +135,8 @@ q≡ : {Γ : Con} {A : Ty} {u : Val Γ A} {n : Nf Γ A} →
      q u ⇒ n → ⌜ u ⌝V ≡ ⌜ n ⌝N
 qs≡ : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
       qs u ⇒ n → ⌜ u ⌝NV ≡ ⌜ n ⌝NN
-q≡ (qso qn) = qs≡ qn
-q≡ (qs⟶ {f = f} $f qf) =
+q≡ (qo qn) = qs≡ qn
+q≡ (q⟶ {f = f} $f qf) =
   classicη ⁻¹
   ∙ ap lam (ap (λ u → u $ vz) (+V≡ {u = f}) ⁻¹
            ∙ $≡ $f ∙ q≡ qf)
@@ -181,8 +181,8 @@ postulate
   qswk : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
          qs u ⇒ n → (B : Ty) → qs (u +NV B) ⇒ (n +NN B)
 {-
-qwk (qso qn) B = qso (qswk qn B)
-qwk (qs⟶ $f qf) B = {!--qs⟶
+qwk (qo qn) B = qso (qswk qn B)
+qwk (q⟶ $f qf) B = {!--qs⟶
                     ($wk $f B)
                     --(qwk qf B)!}
 qswk qsvar B = qsvar
