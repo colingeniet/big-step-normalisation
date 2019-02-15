@@ -1,5 +1,3 @@
-{-# OPTIONS --without-K --safe #-}
-
 module Syntax.Types where
 
 infixr 15 _⟶_
