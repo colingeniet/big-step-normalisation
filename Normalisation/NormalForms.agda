@@ -12,7 +12,6 @@ Tm-like = (Γ : Con) (A : Ty) → Set
 Tms-like : Set₁
 Tms-like = (Γ Δ : Con) → Set
 
--- Lift a predicate on terms to substitutions
 infix 60 list
 infixr 10 _,_
 data list (X : Tm-like) : Tms-like where
@@ -28,6 +27,10 @@ data list (X : Tm-like) : Tms-like where
 data Var : Tm-like where
   z : {Γ : Con} {A : Ty} → Var (Γ , A) A
   s : {Γ : Con} {A B : Ty} → Var Γ A → Var (Γ , B) A
+
+_++v_ : {Γ : Con} {A : Ty} → Var Γ A → (Δ : Con) → Var (Γ ++ Δ) A
+x ++v ● = x
+x ++v (Δ , B) = s (x ++v Δ)
 
 -- Neutral forms : a variable applied to terms satisfying P.
 -- This is used both for values and normal forms, so here is a generic definition.
@@ -156,6 +159,19 @@ var≡ = refl
 []++V {Θ = ●} = refl
 []++V {Θ = Θ , C} {u = u} {ρ = ρ} =
   ap (λ u → u +V C) ([]++V {Θ = Θ} {u = u} {ρ = ρ})
+
+,++E : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Γ Δ} {v : Val Γ A} →
+       (ρ , v) ++E Θ ≡ (ρ ++E Θ , v ++V Θ)
+,++E {Θ = ●} = refl
+,++E {Θ = Θ , B} {ρ = ρ} {v = v} = ap (λ u → u +E B) (,++E {Θ = Θ} {ρ = ρ} {v = v})
+
+++var : {Γ Δ : Con} {A : Ty} {x : Var Γ A} → (var x) ++NV Δ ≡ var (x ++v Δ)
+++var {Δ = ●} = refl
+++var {Δ = Δ , B} {x = x} = ap (λ u → u +NV B) (++var {Δ = Δ} {x = x})
+
+++VNV : {Γ Δ : Con} {A : Ty} {v : Ne Val Γ A} → (vneu v) ++V Δ ≡ vneu (v ++NV Δ)
+++VNV {Δ = ●} = refl
+++VNV {Δ = Δ , B} {v = v} = ap (λ u → u +V B) (++VNV {Δ = Δ} {v = v})
 
 -- The identity is an environment.
 idenv : {Γ : Con} → Env Γ Γ

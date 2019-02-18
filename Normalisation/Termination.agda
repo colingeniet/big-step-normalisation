@@ -145,6 +145,10 @@ normalise {Γ = Γ} u =
   let n ,, qv = scv-q scvu in
   n ,, qeval evalu qv
 
--- Normalisation !
+-- Normalisation, at last.
 nf : {Γ : Con} {A : Ty} → Tm Γ A → Nf Γ A
 nf u = fst (normalise u)
+
+-- Normalisation normalises (in the sense of the normalisation relation).
+nf-is-norm : {Γ : Con} {A : Ty} (u : Tm Γ A) → norm u ⇒ (nf u)
+nf-is-norm u = snd (normalise u)
