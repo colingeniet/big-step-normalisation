@@ -4,6 +4,8 @@ open import Equality
 open import Syntax
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
+open import Normalisation.Determinism
+open import Normalisation.Stability
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
@@ -72,11 +74,11 @@ SCE (ρ , u) = Σ (SCE ρ) λ _ → SCV u
 
 π₁SCE : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
         SCE ρ → SCE (π₁list ρ)
-π₁SCE {ρ = ρ , _} (sceρ ,, _) = sceρ
+π₁SCE {ρ = _ , _} = fst
 
 π₂SCE : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
         SCE ρ → SCV (π₂list ρ)
-π₂SCE {ρ = _ , u} (_ ,, valu) = valu
+π₂SCE {ρ = _ , _} = snd
 
 
 _+SCE_ : {Γ Δ : Con} {ρ : Env Γ Δ} → SCE ρ → (A : Ty) → SCE (ρ +E A)
@@ -88,7 +90,7 @@ _++SCE_ : {Γ Θ : Con} {σ : Env Γ Θ} → SCE σ → (Δ : Con) → SCE (σ +
 σ ++SCE (Δ , A) = (σ ++SCE Δ) +SCE A
 
 sceid : {Γ : Con} → SCE (idenv {Γ})
-sceid {●} = tt --trd SCE (trfill Env (εη ⁻¹) ε) tt
+sceid {●} = tt
 sceid {Γ , A} = sceid +SCE A ,, scvvar
 
 
@@ -113,7 +115,7 @@ evalsce (π₂ σ) sceρ =
   π₂list σρ ,, evalπ₂ evalsσ ,, π₂SCE sceσρ
 evalsce {Γ = Γ} {Δ = Δ} {A = A ⟶ B} (lam u) {ρ = ρ} sceρ =
   vlam u ρ ,, evallam u ρ ,,
-  λ {Δ = Θ} {v : Val (Γ ++ Θ) A} scvv →
+  λ {Δ = Θ} {v = v} scvv →
   let uρv ,, evalu ,, scvuρv = evalsce u (sceρ ++SCE Θ ,, scvv) in
   let evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
   uρv ,, evallamu ,, scvuρv
@@ -128,7 +130,7 @@ evalssce (σ ∘ ν) sceρ =
   let νρ ,, evalsν ,, sceνρ = evalssce ν sceρ in
   let σνρ ,, evalsσ ,, sceσνρ = evalssce σ sceνρ in
   σνρ ,, evals∘ evalsν evalsσ ,, sceσνρ
-evalssce ε sceρ =
+evalssce ε _ =
   ε ,, evalsε ,, tt
 evalssce (σ , u) sceρ =
   let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
@@ -139,16 +141,64 @@ evalssce (π₁ σ) sceρ =
   π₁list σρ ,, evalsπ₁ evalsσ ,, π₁SCE sceσρ
 
 
-normalise : {Γ : Con} {A : Ty} (u : Tm Γ A) → Σ (Nf Γ A) λ n → norm u ⇒ n
-normalise {Γ = Γ} u =
-  let v ,, evalu ,, scvu = evalsce u (sceid {Γ}) in
-  let n ,, qv = scv-q scvu in
-  n ,, qeval evalu qv
+-- Using that values evaluates to themselves, and determinism,
+-- every value is strongly computable.
+val-scv : {Γ : Con} {A : Ty} (v : Val Γ A) → SCV v
+val-scv {Γ = Γ} v =
+  let _ ,, evalv ,, scvv = evalsce ⌜ v ⌝V (sceid {Γ}) in
+  tr SCV (eval-deterministic evalv (stable-val v)) scvv
 
--- Normalisation, at last.
+env-sce : {Γ Δ : Con} (ρ : Env Γ Δ) → SCE ρ
+env-sce {Γ = Γ} ρ =
+  let _ ,, evalsρ ,, sceρ = evalssce ⌜ ρ ⌝E (sceid {Γ}) in
+  tr SCE (evals-deterministic evalsρ (stable-env ρ)) sceρ
+
+
+-- This allows to define eval, quote and nf as functions.
+eval : {Γ Δ : Con} {A : Ty} → Tm Δ A → Env Γ Δ → Val Γ A
+eval u ρ = fst (evalsce u (env-sce ρ))
+
+eval-is-eval : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} →
+               eval u > ρ ⇒ (eval u ρ)
+eval-is-eval {u = u} {ρ = ρ} = fst (snd (evalsce u (env-sce ρ)))
+
+
+evals : {Γ Δ Θ : Con} → Tms Δ Θ → Env Γ Δ → Env Γ Θ
+evals σ ρ = fst (evalssce σ (env-sce ρ))
+
+evals-is-evals : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} →
+               evals σ > ρ ⇒ (evals σ ρ)
+evals-is-evals {σ = σ} {ρ = ρ} = fst (snd (evalssce σ (env-sce ρ)))
+
+
+_$$_ : {Γ : Con} {A B : Ty} → Val Γ (A ⟶ B) → Val Γ A → Val Γ B
+(vlam u ρ) $$ v = eval u (ρ , v)
+(vneu n) $$ v = vneu (app n v)
+
+$$-is-$ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {v : Val Γ A} →
+          f $ v ⇒ (f $$ v)
+$$-is-$ {f = vlam u ρ} {v = v} = $lam eval-is-eval
+$$-is-$ {f = vneu n} {v = v} = $app n v
+
+
+q : {Γ : Con} {A : Ty} → Val Γ A → Nf Γ A
+q v = fst (scv-q (val-scv v))
+
+q-is-q : {Γ : Con} {A : Ty} {v : Val Γ A} → q v ⇒ (q v)
+q-is-q {v = v} = snd (scv-q (val-scv v))
+
+
+qs : {Γ : Con} {A : Ty} → Ne Val Γ A → Ne Nf Γ A
+qs (var x) = var x
+qs (app n v) = app (qs n) (q v)
+
+qs-is-qs : {Γ : Con} {A : Ty} {n : Ne Val Γ A} → qs n ⇒ (qs n)
+qs-is-qs {n = var x} = qsvar
+qs-is-qs {n = app n v} = qsapp qs-is-qs q-is-q
+
+
 nf : {Γ : Con} {A : Ty} → Tm Γ A → Nf Γ A
-nf u = fst (normalise u)
+nf u = q (eval u idenv)
 
--- Normalisation normalises (in the sense of the normalisation relation).
 nf-is-norm : {Γ : Con} {A : Ty} (u : Tm Γ A) → norm u ⇒ (nf u)
-nf-is-norm u = snd (normalise u)
+nf-is-norm u = qeval eval-is-eval q-is-q
