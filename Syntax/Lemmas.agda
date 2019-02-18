@@ -5,6 +5,12 @@ open import Syntax.Types
 open import Syntax.Terms
 open import Syntax.Equivalence
 
+-- Additional congruences.
+infixl 10 _$≈_
+_$≈_ : {Γ : Con} {A B : Ty} {f g : Tm Γ (A ⟶ B)} {u v : Tm Γ A} →
+       f ≈ g → u ≈ v → f $ u ≈ g $ v
+p $≈ q = (app≈ p) [ refl≋ ,≋ q ]≈
+
 -- Equality lemmas on terms and substitutions.
 
 π₁∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ν : Tms Γ Δ} →
@@ -86,7 +92,7 @@ $[] : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {u : Tm Δ A} {σ : Tms Γ 
 $[] = [][] ≈⁻¹
     ∙≈ refl≈ [ ,∘ ]≈
     ∙≈ app[]
-    ∙≈ (app≈ (refl≈ [ π₁β ∙≋ id∘ ]≈)) [ refl≋ ,≋ π₂β ]≈
+    ∙≈ refl≈ [ π₁β ∙≋ id∘ ]≈ $≈ π₂β
 
 clos[] : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {v : Tm Γ A} →
          (lam u) [ ρ ] $ v ≈ u [ ρ , v ]

@@ -1,9 +1,8 @@
-{-# OPTIONS --cubical #-}
-
 module Normalisation.NormalForms where
 
 open import Syntax
-open import Syntax.Equality
+open import Syntax.Equivalence
+open import Syntax.Lemmas
 open import Equality
 
 
@@ -129,42 +128,41 @@ u ++NN (Δ , A) = (u ++NN Δ) +NN A
 var≡ : {Γ : Con} {A B : Ty} {x : Var Γ A} → ⌜ s {B = B} x ⌝v ≡ vs ⌜ x ⌝v
 var≡ = refl
 
-+V≡ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≡ ⌜ u ⌝V + A
-+NV≡ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≡ ⌜ u ⌝NV + A
-+E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≡ ⌜ σ ⌝E +s A
++V≈ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≈ ⌜ u ⌝V + A
++NV≈ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≈ ⌜ u ⌝NV + A
++E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≋ ⌜ σ ⌝E +s A
 
-+V≡ {u = vlam u ρ} = ap (λ ρ → lam u [ ρ ]) +E≡ ∙ [][]
-+V≡ {u = vneu n} = +NV≡ {u = n}
-+NV≡ {u = var x} = var≡
-+NV≡ {A = A} {u = app n u} = ap (λ n → n $ ⌜ u +V A ⌝V) (+NV≡ {u = n})
-                           ∙ ap (λ u → ⌜ n ⌝NV + A $ u) (+V≡ {u = u})
-                           ∙ $[] ⁻¹
-+E≡ {σ = ε} = εη ⁻¹
-+E≡ {A = A} {σ = σ , u} = ap (λ σ → σ , ⌜ u +V A ⌝V) (+E≡ {σ = σ})
-                        ∙ ap (λ u → ⌜ σ ⌝E +s A , u) (+V≡ {u = u})
-                        ∙ ,∘ ⁻¹
++V≈ {u = vlam u ρ} = refl≈ [ +E≋ ]≈ ∙≈ [][]
++V≈ {u = vneu n} = +NV≈ {u = n}
++NV≈ {A = A} {u = var x} rewrite var≡ {B = A} {x = x} = refl≈
++NV≈ {u = app n u} = +NV≈ {u = n} $≈ +V≈ {u = u}
+                   ∙≈ $[] ≈⁻¹
++E≋ {σ = ε} = εη ≋⁻¹
++E≋ {σ = σ , u} = +E≋ {σ = σ} ,≋ +V≈ {u = u}
+                ∙≋ ,∘ ≋⁻¹
 
-
-π₁E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≡ π₁ ⌜ σ ⌝E
-π₁E≡ {σ = _ , _} = π₁β ⁻¹
-π₂E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≡ π₂ ⌜ σ ⌝E
-π₂E≡ {σ = _ , _} = π₂β ⁻¹
+π₁E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≋ π₁ ⌜ σ ⌝E
+π₁E≋ {σ = _ , _} = π₁β ≋⁻¹
+π₂E≈ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≈ π₂ ⌜ σ ⌝E
+π₂E≈ {σ = _ , _} = π₂β ≈⁻¹
 
 π₁+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₁list (σ +E B) ≡ (π₁list σ) +E B
 π₁+ {σ = _ , _} = refl
 π₂+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₂list (σ +E B) ≡ (π₂list σ) +V B
 π₂+ {σ = _ , _} = refl
 
-
 []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →
         vlam u (ρ ++E Θ) ≡ (vlam u ρ) ++V Θ
-
 []++V {Θ = ●} = refl
 []++V {Θ = Θ , C} {u = u} {ρ = ρ} =
   ap (λ u → u +V C) ([]++V {Θ = Θ} {u = u} {ρ = ρ})
-
 
 -- The identity is an environment.
 idenv : {Γ : Con} → Env Γ Γ
 idenv {●} = ε
 idenv {Γ , A} = idenv +E A , vneu (var z)
+
+idenv≋ : {Γ : Con} → ⌜ idenv {Γ} ⌝E ≋ id
+idenv≋ {●} = εη ≋⁻¹
+idenv≋ {Γ , A} = (+E≋ ∙≋ (idenv≋ ∘≋ refl≋)) ,≋ refl≈
+               ∙≋ ↑id

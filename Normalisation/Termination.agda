@@ -1,11 +1,9 @@
-{-# OPTIONS --cubical #-}
-
 module Normalisation.Termination where
 
 open import Equality
 open import Syntax
-open import Syntax.Equality
-open import Syntax.Eliminator
+open import Syntax.Equivalence
+open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 
@@ -98,52 +96,59 @@ sceid {Γ , A} = sceid +SCE A ,, scvvar
 
 -- Main theorem : Evaluation in a strongly computable environment gives a
 -- strongly computable result.
-evalsceMo : Motives
-Motives.Tmᴹ evalsceMo {Γ = Δ} {A = A} u =
-  {Γ : Con} {ρ : Env Γ Δ} (sceρ : SCE ρ) →
-  Σ (Val Γ A) λ uρ →
-  Σ (eval u > ρ ⇒ uρ) λ _ →
-    SCV uρ
-Motives.Tmsᴹ evalsceMo {Γ = Δ} {Δ = Θ} σ =
-  {Γ : Con} {ρ : Env Γ Δ} (sceρ : SCE ρ) →
-  Σ (Env Γ Θ) λ σρ →
-  Σ (evals σ > ρ ⇒ σρ) λ _ →
-    SCE σρ
+evalsce : {Γ Δ : Con} {A : Ty} (u : Tm Δ A) {ρ : Env Γ Δ} → SCE ρ →
+          Σ (Val Γ A) λ uρ →
+          Σ (eval u > ρ ⇒ uρ) λ _ →
+            SCV uρ
+evalssce : {Γ Δ Θ : Con} (σ : Tms Δ Θ) {ρ : Env Γ Δ} → SCE ρ →
+           Σ (Env Γ Θ) λ σρ →
+           Σ (evals σ > ρ ⇒ σρ) λ _ →
+            SCE σρ
 
-open Motives evalsceMo
-
-evalsceMe : Methods evalsceMo
-
-Methods._[_]ᴹ evalsceMe IHu IHσ sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
-  let uσρ ,, evalu ,, scvuσρ = IHu sceσρ in 
+evalsce (u [ σ ]) sceρ =
+  let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
+  let uσρ ,, evalu ,, scvuσρ = evalsce u sceσρ in 
   uσρ ,, eval[] evalsσ evalu ,, scvuσρ
-Methods.π₂ᴹ evalsceMe IHσ sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+evalsce (π₂ σ) sceρ =
+  let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
   π₂list σρ ,, evalπ₂ evalsσ ,, π₂SCE sceσρ
-Methods.lamᴹ evalsceMe {A = A} {u = u} IHu {Γ = Γ} {ρ = ρ} sceρ =
+evalsce {Γ = Γ} {Δ = Δ} {A = A ⟶ B} (lam u) {ρ = ρ} sceρ =
   vlam u ρ ,, evallam u ρ ,,
-  λ {Δ : Con} {v : Val (Γ ++ Δ) A} scvv →
-  let uρv ,, evalu ,, scvuρv = IHu (sceρ ++SCE Δ ,, scvv) in
-  let evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Δ}) ($lam evalu) in
+  λ {Δ = Θ} {v : Val (Γ ++ Θ) A} scvv →
+  let uρv ,, evalu ,, scvuρv = evalsce u (sceρ ++SCE Θ ,, scvv) in
+  let evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
   uρv ,, evallamu ,, scvuρv
-Methods.appᴹ evalsceMe IHf sceρ =
-  let f ,, evalf ,, scvf = IHf (π₁SCE sceρ) in
+evalsce (app u) sceρ =
+  let f ,, evalf ,, scvf = evalsce u (π₁SCE sceρ) in
   let fρ ,, $fρ ,, scvfρ = scvf (π₂SCE sceρ) in
   fρ ,, evalapp evalf $fρ ,, scvfρ
 
-Methods.idᴹ evalsceMe {ρ = ρ} sceρ =
+evalssce id {ρ = ρ} sceρ =
   ρ ,, evalsid ,, sceρ
-Methods._∘ᴹ_ evalsceMe IHσ IHν sceρ =
-  let νρ ,, evalsν ,, sceνρ = IHν sceρ in
-  let σνρ ,, evalsσ ,, sceσνρ = IHσ sceνρ in
+evalssce (σ ∘ ν) sceρ =
+  let νρ ,, evalsν ,, sceνρ = evalssce ν sceρ in
+  let σνρ ,, evalsσ ,, sceσνρ = evalssce σ sceνρ in
   σνρ ,, evals∘ evalsν evalsσ ,, sceσνρ
-Methods.εᴹ evalsceMe sceρ =
+evalssce ε sceρ =
   ε ,, evalsε ,, tt
-Methods._,ᴹ_ evalsceMe IHσ IHu sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
-  let uρ ,, evalu ,, scvuρ = IHu sceρ in
+evalssce (σ , u) sceρ =
+  let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
+  let uρ ,, evalu ,, scvuρ = evalsce u sceρ in
   σρ , uρ ,, evals, evalsσ evalu ,, (sceσρ ,, scvuρ)
-Methods.π₁ᴹ evalsceMe IHσ sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+evalssce (π₁ σ) sceρ =
+  let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
   π₁list σρ ,, evalsπ₁ evalsσ ,, π₁SCE sceσρ
+
+
+normalise : {Γ : Con} {A : Ty} (u : Tm Γ A) → Σ (Nf Γ A) λ n → norm u ⇒ n
+normalise {Γ = Γ} u =
+  let v ,, evalu ,, scvu = evalsce u (sceid {Γ}) in
+  let n ,, qv = scv-q scvu in
+  n ,, qeval evalu qv
+
+-- Normalisation !
+nf : {Γ : Con} {A : Ty} → Tm Γ A → Nf Γ A
+nf u = fst (normalise u)
+
+nf≈ : {Γ : Con} {A : Ty} {u : Tm Γ A} → u ≈ ⌜ nf u ⌝N
+nf≈ {u = u} = norm≈ (snd (normalise u))
