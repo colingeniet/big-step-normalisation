@@ -2,13 +2,12 @@ module Normalisation.Termination where
 
 open import Equality
 open import Syntax
-open import Syntax.Equivalence
-open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 
 open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
+
 
 -- Strongly computable values.
 SCV : {Γ : Con} {A : Ty} → Val Γ A → Set
@@ -149,6 +148,3 @@ normalise {Γ = Γ} u =
 -- Normalisation !
 nf : {Γ : Con} {A : Ty} → Tm Γ A → Nf Γ A
 nf u = fst (normalise u)
-
-nf≈ : {Γ : Con} {A : Ty} {u : Tm Γ A} → u ≈ ⌜ nf u ⌝N
-nf≈ {u = u} = norm≈ (snd (normalise u))
