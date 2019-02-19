@@ -23,6 +23,10 @@ data list (X : Tm-like) : Tms-like where
 π₂list : {X : Tm-like} {Γ Δ : Con} {A : Ty} → list X Γ (Δ , A) → X Γ A
 π₂list (_ , u) = u
 
+πηlist : {X : Tm-like} {Γ Δ : Con} {A : Ty} {ρ : list X Γ (Δ , A)} →
+         (π₁list ρ , π₂list ρ) ≡ ρ
+πηlist {ρ = ρ , u} = refl
+
 -- Variables.
 data Var : Tm-like where
   z : {Γ : Con} {A : Ty} → Var (Γ , A) A

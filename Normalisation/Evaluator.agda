@@ -146,6 +146,16 @@ qswk qsvar B = qsvar
 qswk (qsapp qf qu) B = qsapp (qswk qf B) (qwk qu B)
 -}
 
+evalwks : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {v : Val Γ A} →
+          eval u > ρ ⇒ v → (Θ : Con) → eval u > (ρ ++E Θ) ⇒ (v ++V Θ)
+evalwks c ● = c
+evalwks c (Θ , A) = evalwk (evalwks c Θ) A
+
+evalswks : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} {ν : Env Γ Θ} →
+          evals σ > ρ ⇒ ν → (Θ : Con) → evals σ > (ρ ++E Θ) ⇒ (ν ++E Θ)
+evalswks c ● = c
+evalswks c (Θ , A) = evalswk (evalswks c Θ) A
+
 qswks : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
         qs u ⇒ n → (Δ : Con) → qs (u ++NV Δ) ⇒ (n ++NN Δ)
 qswks qu ● = qu

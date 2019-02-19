@@ -82,6 +82,18 @@ _~E_ : {Γ Δ : Con} → Env Γ Δ → Env Γ Δ → Set
 _~E_ {Δ = ●} _ _ = ⊤
 _~E_ {Δ = Δ , A} (σ , u) (ν , v) = Σ (σ ~E ν) λ _ → u ~ v
 
+infix 8 _~E⁻¹
+_~E⁻¹ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν → ν ~E σ
+_~E⁻¹ {Δ = ●} tt = tt
+_~E⁻¹ {Δ = Δ , A} {_ , _} {_ , _} (p ,, q) = p ~E⁻¹ ,, q ~⁻¹
+
+infixr 6 _∙~E_
+_∙~E_ : {Γ Δ : Con} {σ ν ρ : Env Γ Δ} → σ ~E ν → ν ~E ρ → σ ~E ρ
+_∙~E_ {Δ = ●} tt tt = tt
+_∙~E_ {Δ = Δ , A} {_ , _} {_ , _} {_ , _} (p1 ,, q1) (p2 ,, q2) =
+  p1 ∙~E p2 ,, q1 ∙~ q2
+
+
 π₁~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} → σ ~E ν → (π₁list σ) ~E (π₁list ν)
 π₁~E {σ = _ , _} {ν = _ , _} = fst
 
@@ -131,3 +143,101 @@ evals≡~ (σ ∘ ν) ρ~δ =
 evals≡~ ε _ = tt
 evals≡~ (σ , u) ρ~δ = evals≡~ σ ρ~δ ,, eval≡~ u ρ~δ
 evals≡~ (π₁ σ) ρ~δ = π₁~E (evals≡~ σ ρ~δ)
+
+
+
+-- Main theorem : βησ-equivalent terms in equivalent environments evaluate to
+-- equivalent values.
+eval≈~ : {Γ Δ : Con} {A : Ty} {u v : Tm Δ A} {ρ δ : Env Γ Δ} →
+         u ≈ v → ρ ~E δ → eval u ρ ~ eval v δ
+
+evals≋~ : {Γ Δ Θ : Con} {σ ν : Tms Δ Θ} {ρ δ : Env Γ Δ} →
+          σ ≋ ν → ρ ~E δ → evals σ ρ ~E evals ν δ
+
+eval≈~ (refl≈ {u = u}) ρ~δ = eval≡~ u ρ~δ
+eval≈~ (p ≈⁻¹) ρ~δ = eval≈~ p (ρ~δ ~E⁻¹) ~⁻¹
+eval≈~ (p ∙≈ q) ρ~δ = eval≈~ p ρ~δ ∙~ eval≈~ q (ρ~δ ~E⁻¹ ∙~E ρ~δ)
+
+eval≈~ (_[_]≈ {u = u} {v} {σ} {ν} p q) ρ~δ =
+  (ap (λ x → x ~ _) (eval[]≡ {u = u} {σ = σ}) ⁻¹
+  ∙ ap (λ x → _ ~ x) (eval[]≡ {u = v} {σ = ν}) ⁻¹)
+  * eval≈~ p (evals≋~ q ρ~δ)
+eval≈~ (π₂≈ p) ρ~δ = π₂~E (evals≋~ p ρ~δ)
+eval≈~ (lam≈ p) ρ~δ {Δ} {u} {v} u~v = 
+  (ap (λ f → f $$ u ~ _) ([]++V {Θ = Δ})
+  ∙ ap (λ f → _ ~ f $$ v) ([]++V {Θ = Δ}))
+  * eval≈~ p (ρ~δ ++~E Δ ,, u~v)
+eval≈~ {ρ = ρ} {δ} (app≈ {u = u} {v} p) ρ~δ =
+  (ap (λ x → x ~ _) (evalapp≡ {f = u} {ρ = ρ}) ⁻¹
+  ∙ ap (λ x → _ ~ x) (evalapp≡ {f = v} {ρ = δ}) ⁻¹)
+  * eval≈~ p (π₁~E ρ~δ) (π₂~E ρ~δ)
+
+eval≈~ (π₂β {u = u}) ρ~δ = eval≡~ u ρ~δ
+eval≈~ {ρ = ρ} (β {u = u}) ρ~δ =
+  tr (λ u → u ~ _)
+     (ap (λ ρ → eval u ρ) πηlist ⁻¹
+     ∙ evalapp≡ {f = lam u} {ρ = ρ} ⁻¹)
+     (eval≡~ u ρ~δ)
+eval≈~ {ρ = ρ} {δ} (η {f = f}) ρ~δ {Δ} {u} {v} u~v =
+  tr (λ x → x ~ _)
+     (ap (λ x → x $$ u) (evalwks' f ρ Δ) ⁻¹
+     ∙ evalapp≡ {f = f} {ρ = ρ ++E Δ , u} ⁻¹
+     ∙ ap (λ x → x $$ u) ([]++V {Θ = Δ}))
+     (eval≡~ f ρ~δ u~v)
+  where evalwks' : {Γ Δ : Con} {A : Ty} (u : Tm Δ A) (ρ : Env Γ Δ) (Θ : Con) →
+                   eval u (ρ ++E Θ) ≡ (eval u ρ) ++V Θ
+        evalwks' u ρ Θ = eval-deterministic (eval-is-eval {u = u} {ρ = ρ ++E Θ})
+                                            (evalwks eval-is-eval Θ)
+
+eval≈~ {ρ = ρ} {δ} (lam[] {A = A} {u = u} {σ = σ}) ρ~δ {Δ} {v} {w} v~w =
+  (ap (λ x → eval u (x , v) ~ _) (evalswks' σ ρ Δ)
+  ∙ ap (λ x → x $$ v ~ _) ([]++V {Θ = Δ})
+  ∙ ap (λ x → (x ++V Δ) $$ v ~ eval u (evals σ (δ ++E Δ) , w)) (eval[]≡ {u = lam u} {σ = σ}) ⁻¹
+  ∙ ap (λ x → _ ~ eval u (x , _)) (evals∘≡ {σ = σ} {ν = wk}) ⁻¹
+  ∙ ap (λ x → _ ~ x) (eval[]≡ {u = u} {σ = σ ↑ A}) ⁻¹
+  ∙ ap (λ x → _ ~ x $$ w) ([]++V {Θ = Δ}))
+  * eval≡~ u (evals≡~ σ (ρ~δ ++~E Δ) ,, v~w)
+  where evalswks' : {Γ Δ Θ : Con} (σ : Tms Δ Θ) (ρ : Env Γ Δ) (Θ : Con) →
+                   evals σ (ρ ++E Θ) ≡ (evals σ ρ) ++E Θ
+        evalswks' σ ρ Θ = evals-deterministic (evals-is-evals {σ = σ} {ρ = ρ ++E Θ})
+                                              (evalswks evals-is-evals Θ)
+
+
+evals≋~ (refl≋ {σ = σ}) ρ~δ = evals≡~ σ ρ~δ
+evals≋~ (p ≋⁻¹) ρ~δ = evals≋~ p (ρ~δ ~E⁻¹) ~E⁻¹
+evals≋~ (p ∙≋ q) ρ~δ = evals≋~ p ρ~δ ∙~E evals≋~ q (ρ~δ ~E⁻¹ ∙~E ρ~δ)
+
+evals≋~ (_∘≋_ {σ₁ = σ₁} {σ₂} {ν₁} {ν₂} p q) ρ~δ =
+  (ap (λ x → x ~E _) (evals∘≡ {σ = σ₁} {ν = ν₁}) ⁻¹
+  ∙ ap (λ x → _ ~E x) (evals∘≡ {σ = σ₂} {ν = ν₂}) ⁻¹)
+  * evals≋~ p (evals≋~ q ρ~δ)
+evals≋~ (p ,≋ q) ρ~δ = evals≋~ p ρ~δ ,, eval≈~ q ρ~δ
+evals≋~ (π₁≋ p) ρ~δ = π₁~E (evals≋~ p ρ~δ)
+
+evals≋~ (id∘ {σ = σ}) ρ~δ = evals≡~ σ ρ~δ
+evals≋~ (∘id {σ = σ}) ρ~δ = evals≡~ σ ρ~δ
+evals≋~ (∘∘ {σ = σ} {ν} {α}) ρ~δ =
+  (ap (λ x → x ~E _) (evals∘≡ {σ = σ ∘ ν} {ν = α}
+                     ∙ evals∘≡ {σ = σ} {ν = ν}) ⁻¹
+  ∙ ap (λ x → _ ~E x) (evals∘≡ {σ = σ} {ν = ν ∘ α}
+                     ∙ ap (λ x → evals σ x) (evals∘≡ {σ = ν} {ν = α})) ⁻¹)
+  * evals≡~ σ (evals≡~ ν (evals≡~ α ρ~δ))
+evals≋~ εη ρ~δ = tt
+evals≋~ (π₁β {σ = σ}) ρ~δ = evals≡~ σ ρ~δ
+evals≋~ {ρ = ρ} (πη {σ = σ}) ρ~δ =
+  tr (λ x → x ~E _)
+     (πηlist {ρ = evals σ ρ} ⁻¹)
+     (evals≡~ σ ρ~δ)
+evals≋~ (,∘ {σ = σ} {ν = ν} {u = u}) ρ~δ =
+  (ap (λ x → x ~E _) (evals∘≡ {σ = σ} {ν = ν} ⁻¹)
+  ∙ ap (λ x → _ ~E x) (evals∘≡ {σ = σ} {ν = ν} ⁻¹))
+  * evals≡~ σ (evals≡~ ν ρ~δ) ,,
+  (ap (λ x → x ~ _) (eval[]≡ {u = u} {σ = ν} ⁻¹)
+  ∙ ap (λ x → _ ~ x) (eval[]≡ {u = u} {σ = ν} ⁻¹))
+  * eval≡~ u (evals≡~ ν ρ~δ)
+
+
+
+-- Soundness of normalisation follows.
+soundness : {Γ : Con} {A : Ty} {u v : Tm Γ A} → u ≈ v → nf u ≡ nf v
+soundness {u = u} {v} p = ~q (eval≈~ p refl~id)
