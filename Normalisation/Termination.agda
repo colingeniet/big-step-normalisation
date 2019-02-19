@@ -202,3 +202,72 @@ nf u = q (eval u idenv)
 
 nf-is-norm : {Γ : Con} {A : Ty} (u : Tm Γ A) → norm u ⇒ (nf u)
 nf-is-norm u = qeval eval-is-eval q-is-q
+
+
+
+-- It is now possible to prove the recurrence relation for eval/...
+eval[]≡ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {σ : Tms Δ Θ} {ρ : Env Γ Δ} →
+          eval (u [ σ ]) ρ ≡ eval u (evals σ ρ)
+eval[]≡ {u = u} {σ = σ} =
+  eval-deterministic (eval-is-eval {u = u [ σ ]})
+                     (eval[] evals-is-evals eval-is-eval)
+
+evalπ₂≡ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ρ : Env Γ Δ} →
+          eval (π₂ σ) ρ ≡ π₂list (evals σ ρ)
+evalπ₂≡ = refl
+
+evallam≡ : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →
+           eval (lam u) ρ ≡ vlam u ρ
+evallam≡ = refl
+
+evalapp≡ : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {ρ : Env Γ (Δ , A)} →
+           eval (app f) ρ ≡ (eval f (π₁list ρ)) $$ (π₂list ρ)
+evalapp≡ {f = f} {ρ = ρ} =
+  eval-deterministic (eval-is-eval {u = app f} {ρ = ρ})
+                     (evalapp eval-is-eval $$-is-$)
+
+evalsid≡ : {Γ Δ : Con} {ρ : Env Γ Δ} → evals id ρ ≡ ρ
+evalsid≡ = refl
+
+evals∘≡ : {Γ Δ Θ Ψ : Con} {σ : Tms Θ Ψ} {ν : Tms Δ Θ} {ρ : Env Γ Δ} →
+          evals (σ ∘ ν) ρ ≡ evals σ (evals ν ρ)
+evals∘≡ {σ = σ} {ν = ν} {ρ = ρ} =
+  evals-deterministic (evals-is-evals {σ = σ ∘ ν})
+                      (evals∘ evals-is-evals evals-is-evals)
+
+evalsε≡ : {Γ Δ : Con} {ρ : Env Γ Δ} → evals ε ρ ≡ ε
+evalsε≡ = refl 
+
+evals,≡ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ Θ} {u : Tm Δ A} {ρ : Env Γ Δ} →
+          evals (σ , u) ρ ≡ (evals σ ρ , eval u ρ)
+evals,≡ = refl
+
+evalsπ₁≡ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ρ : Env Γ Δ} →
+           evals (π₁ σ) ρ ≡ π₁list (evals σ ρ)
+evalsπ₁≡ = refl
+
+
+$lam≡ : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} {v : Val Γ A} →
+        (vlam u ρ) $$ v ≡ eval u (ρ , v)
+$lam≡ = refl
+
+$app≡ : {Γ : Con} {A B : Ty} {n : Ne Val Γ (A ⟶ B)} {v : Val Γ A} →
+        (vneu n) $$ v ≡ vneu (app n v)
+$app≡ = refl
+
+
+qo≡ : {Γ : Con} {n : Ne Val Γ o} →
+      q (vneu n) ≡ nneu (qs n)
+qo≡ = q-deterministic q-is-q (qo qs-is-qs)
+
+q⟶≡ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} →
+      q f ≡ nlam (q ((f +V A) $$ (vneu (var z))))
+q⟶≡ {f = f} = q-deterministic (q-is-q {v = f}) (q⟶ $$-is-$ q-is-q)
+
+
+qsvar≡ : {Γ : Con} {A : Ty} {x : Var Γ A} → qs (var x) ≡ (var x)
+qsvar≡ = refl
+
+qsapp≡ : {Γ : Con} {A B : Ty} {f : Ne Val Γ (A ⟶ B)} {u : Val Γ A} →
+         qs (app f u) ≡ app (qs f) (q u)
+qsapp≡ = refl
