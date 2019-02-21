@@ -1,3 +1,5 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Syntax.Equivalence where
 
 open import Syntax.Types

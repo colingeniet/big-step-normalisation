@@ -1,3 +1,5 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Syntax.Terms where
 
 open import Syntax.Types

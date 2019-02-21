@@ -1,3 +1,5 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Syntax.Lemmas where
 
 open import Equality

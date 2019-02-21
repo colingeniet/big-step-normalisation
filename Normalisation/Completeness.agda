@@ -69,4 +69,4 @@ norm≈ (qeval c q) = [id] ≈⁻¹
 
 
 nf≈ : {Γ : Con} {A : Ty} {u : Tm Γ A} → u ≈ ⌜ nf u ⌝N
-nf≈ {u = u} = norm≈ (snd (normalise u))
+nf≈ {u = u} = norm≈ (nf-is-norm u)

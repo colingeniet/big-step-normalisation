@@ -1,3 +1,5 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Normalisation.NormalForms where
 
 open import Syntax
@@ -80,24 +82,35 @@ data Nf : Tm-like where
 ⌜ app n u ⌝NN = ⌜ n ⌝NN $ ⌜ u ⌝N
 
 
--- Weakening for values / environments.
-_+V_ : {Γ : Con} {B : Ty} → Val Γ B → (A : Ty) → Val (Γ , A) B
-_+NV_ : {Γ : Con} {B : Ty} → Ne Val Γ B → (A : Ty) → Ne Val (Γ , A) B
-_+E_ : {Γ Δ : Con} → Env Γ Δ → (A : Ty) → Env (Γ , A) Δ
-(vlam u ρ) +V A = vlam u (ρ +E A)
-(vneu u) +V A = vneu (u +NV A)
-(var x) +NV A   = var (s x)
-(app f u) +NV A = app (f +NV A) (u +V A)
-ε +E A       = ε
-(σ , u) +E A = σ +E A , u +V A
-
-
--- Weakening of variables below a context.
+-- Weakening of variables.
 varwk : {Γ : Con} (Δ : Con) {B : Ty} → Var (Γ ++ Δ) B → (A : Ty) →
           Var ((Γ , A) ++ Δ) B
 varwk ● x A = s x
 varwk (Δ , C) z A = z
 varwk (Δ , C) (s x) A = s (varwk Δ x A)
+
+-- Weakening of values / environments.
+valgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Val (Γ ++ Δ) B →
+           (A : Ty) → Val ((Γ , A) ++ Δ) B
+nvgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Ne Val (Γ ++ Δ) B →
+          (A : Ty) → Ne Val ((Γ , A) ++ Δ) B
+envgenwk : {Γ Θ : Con} (Δ : Con) → Env (Γ ++ Δ) Θ →
+           (A : Ty) → Env ((Γ , A) ++ Δ) Θ
+valgenwk Δ (vlam u ρ) A = vlam u (envgenwk Δ ρ A)
+valgenwk Δ (vneu u) A   = vneu (nvgenwk Δ u A)
+nvgenwk Δ (var x) A   = var (varwk Δ x A)
+nvgenwk Δ (app f u) A = app (nvgenwk Δ f A) (valgenwk Δ u A)
+envgenwk Δ ε A       = ε
+envgenwk Δ (σ , u) A = envgenwk Δ σ A , valgenwk Δ u A
+
+
+_+V_ : {Γ : Con} {B : Ty} → Val Γ B → (A : Ty) → Val (Γ , A) B
+u +V A = valgenwk ● u A
+_+NV_ : {Γ : Con} {B : Ty} → Ne Val Γ B → (A : Ty) → Ne Val (Γ , A) B
+u +NV A = nvgenwk ● u A
+_+E_ : {Γ Δ : Con} → Env Γ Δ → (A : Ty) → Env (Γ , A) Δ
+σ +E A = envgenwk ● σ A
+
 
 -- Weakening for normal forms must be done at an arbitrary position in the context
 -- for the induction.
@@ -141,7 +154,7 @@ var≡ = refl
 
 +V≈ {u = vlam u ρ} = refl≈ [ +E≋ ]≈ ∙≈ [][]
 +V≈ {u = vneu n} = +NV≈ {u = n}
-+NV≈ {A = A} {u = var x} rewrite var≡ {B = A} {x = x} = refl≈
++NV≈ {A = A} {u = var x} = refl≈
 +NV≈ {u = app n u} = +NV≈ {u = n} $≈ +V≈ {u = u}
                    ∙≈ $[] ≈⁻¹
 +E≋ {σ = ε} = εη ≋⁻¹
@@ -153,9 +166,11 @@ var≡ = refl
 π₂E≈ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≈ π₂ ⌜ σ ⌝E
 π₂E≈ {σ = _ , _} = π₂β ≈⁻¹
 
-π₁+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₁list (σ +E B) ≡ (π₁list σ) +E B
+π₁+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
+      π₁list (envgenwk Δ σ A) ≡ envgenwk Δ (π₁list σ) A
 π₁+ {σ = _ , _} = refl
-π₂+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} → π₂list (σ +E B) ≡ (π₂list σ) +V B
+π₂+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
+      π₂list (envgenwk Δ σ A) ≡ valgenwk Δ (π₂list σ) A
 π₂+ {σ = _ , _} = refl
 
 []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →

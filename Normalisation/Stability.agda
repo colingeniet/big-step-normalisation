@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K #-}
+
 module Normalisation.Stability where
 
 open import Equality
@@ -14,11 +16,24 @@ open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 -- Stability : normalisation of a normal form does nothing.
 
 -- Technical lemma : a variable evaluates to itself in the identity environment.
--- This requires an anoying weakenings and generalisations...
+-- This requires some generalisation for the induction.
 postulate
   stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
                eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ vneu (var (x ++v Δ))
-
+{-
+stable-var {Γ} {Δ} {A} z =
+  (ap (λ ρ → eval vz > ρ ⇒ (vneu (var z) ++V Δ))
+      (,++E {ρ = idenv +E A} {v = vneu (var z)} ⁻¹)
+  ∙ ap (λ x → eval vz > (idenv ++E Δ) ⇒ x)
+       (++VNV {Δ = Δ} {v = var z}
+      ∙ ap vneu (++var {Δ = Δ} {x = z})))
+  * evalπ₂ evalsid
+stable-var {Γ} {Δ} {A} (s {B = B} x) =
+  eval[] (tr (λ ρ → evals wk > ρ ⇒ ((idenv +E B) ++E Δ))
+             (,++E {ρ = idenv +E B} {v = vneu (var z)} ⁻¹)
+             (evalsπ₁ evalsid))
+         {!!}
+-}
 
 -- A value evaluates to itself.
 stable-val : {Γ : Con} {A : Ty} (v : Val Γ A) →

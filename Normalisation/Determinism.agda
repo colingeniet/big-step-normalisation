@@ -1,3 +1,5 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Normalisation.Determinism where
 
 open import Equality

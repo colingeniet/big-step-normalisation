@@ -1,7 +1,10 @@
+{-# OPTIONS --without-K #-}
+
 module Normalisation.Termination where
 
 open import Equality
 open import Syntax
+open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 open import Normalisation.Determinism
@@ -28,6 +31,18 @@ SCV {Γ = Γ} {A = A ⟶ B} f =
 -- Lemma : SCV is stable by context extension.
 postulate
   _+SCV_ : {Γ : Con} {B : Ty} {u : Val Γ B} → SCV u → (A : Ty) → SCV (u +V A)
+{-
+_+SCV_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
+_+SCV_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
+  let u' = tr (λ Γ → Val Γ B) ,++ u in
+  let u≡u' = trfill (λ Γ → Val Γ B) ,++ u in
+  let scvu' = trd SCV u≡u' scvu in
+  let fu' ,, $fu' ,, scvfu' = scvf scvu' in
+  let fu = tr (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
+  let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
+  let scvfu = trd SCV fu'≡fu scvfu' in
+  fu ,, {!!} ,, scvfu
+-}
 
 _++SCV_ : {Γ : Con} {B : Ty} {u : Val Γ B} → SCV u → (Δ : Con) → SCV (u ++V Δ)
 u ++SCV ● = u

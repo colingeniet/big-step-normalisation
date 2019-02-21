@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K #-}
+
 module Normalisation.Soundness where
 
 open import Equality
