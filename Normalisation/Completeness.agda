@@ -1,14 +1,12 @@
+{-# OPTIONS --safe --without-K #-}
+
 module Normalisation.Completeness where
 
-open import Syntax.Types
 open import Syntax.Terms
 open import Syntax.Equivalence
 open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
-open import Normalisation.Termination
-
-open import Agda.Builtin.Sigma
 
 
 -- The result of evaluation/normalisation is equivalent to the input.
@@ -66,7 +64,3 @@ norm≈ (qeval c q) = [id] ≈⁻¹
                   ∙≈ (refl≈ [ idenv≋ ≋⁻¹ ]≈)
                   ∙≈ eval≈ c
                   ∙≈ q≈ q
-
-
-nf≈ : {Γ : Con} {A : Ty} {u : Tm Γ A} → u ≈ ⌜ nf u ⌝N
-nf≈ {u = u} = norm≈ (nf-is-norm u)

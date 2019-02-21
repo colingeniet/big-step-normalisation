@@ -3,7 +3,7 @@
 module Normalisation.Termination where
 
 open import Equality
-open import Syntax
+open import Syntax.Terms
 open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator

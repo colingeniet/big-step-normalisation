@@ -3,7 +3,7 @@
 module Normalisation.Evaluator where
 
 open import Equality
-open import Syntax
+open import Syntax.Terms
 open import Normalisation.NormalForms
 
 {- It is by no mean clear that this evaluator terminates, hence it can not be

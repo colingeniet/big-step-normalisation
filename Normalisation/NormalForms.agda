@@ -2,7 +2,7 @@
 
 module Normalisation.NormalForms where
 
-open import Syntax
+open import Syntax.Terms
 open import Syntax.Equivalence
 open import Syntax.Lemmas
 open import Equality

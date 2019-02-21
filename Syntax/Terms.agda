@@ -1,10 +1,15 @@
 {-# OPTIONS --safe --without-K #-}
 
+{-
+  Term and substitution definitions for the simply typed λ-calculus with
+  explicit substitutions.
+-}
+
 module Syntax.Terms where
 
-open import Syntax.Types
+open import Syntax.Types public
 
----- Terms Definition.
+--Definitions.
 data Tm : Con → Ty → Set
 data Tms : Con → Con → Set
 
@@ -25,7 +30,7 @@ data Tms where
   π₁ : {Γ Δ : Con} {A : Ty} → Tms Γ (Δ , A) → Tms Γ Δ
 
 
----- Additional Constructions.
+-- Additional Constructions.
 
 -- Weakening substitution.
 wk : {Γ : Con} {A : Ty} → Tms (Γ , A) Γ
@@ -66,7 +71,7 @@ _↑↑_ : {Γ Δ : Con} → Tms Γ Δ → (Θ : Con) → Tms (Γ ++ Θ) (Δ ++ 
 σ ↑↑ ● = σ
 σ ↑↑ (Θ , A) = (σ ↑↑ Θ) ↑ A
 
--- Regular application.
+-- Classical application.
 <_> : {Γ : Con} {A : Ty} → Tm Γ A → Tms Γ (Γ , A)
 < u > = id , u
 

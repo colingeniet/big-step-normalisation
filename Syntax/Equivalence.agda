@@ -1,5 +1,9 @@
 {-# OPTIONS --safe --without-K #-}
 
+{-
+  Definition of βησ-equivalence.
+-}
+
 module Syntax.Equivalence where
 
 open import Syntax.Types
