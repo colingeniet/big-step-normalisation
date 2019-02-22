@@ -1,11 +1,14 @@
 {-# OPTIONS --safe --without-K #-}
 
+module Library.Equality where
+
 {-
   Equality reasoning, definitions and basic lemmas.
 -}
 
 open import Agda.Primitive
 open import Agda.Builtin.Equality public
+
 
 -- Symmetry
 infix 8 _⁻¹

@@ -11,16 +11,14 @@
 
 module Normalisation.Termination where
 
-open import Equality
+open import Library.Equality
+open import Library.Pairs
 open import Syntax.Terms
 open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 open import Normalisation.Determinism
 open import Normalisation.Stability
-
-open import Agda.Builtin.Unit
-open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 
 
 {-
@@ -39,9 +37,7 @@ scv {Γ = Γ} {A = o} u = Σ (Nf Γ o) λ n → q u ⇒ n
 -- case the function is to be weakened.
 scv {Γ = Γ} {A = A ⟶ B} f =
   {Δ : Con} {u : Val (Γ ++ Δ) A} → scv u →
-  Σ (Val (Γ ++ Δ) B) λ fu →
-  Σ ((f ++V Δ) $ u ⇒ fu) λ _ →
-    scv fu
+  Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ∧  scv fu)
 
 
 -- Strong computablility is stable by weakening.
@@ -117,7 +113,7 @@ q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
 -- Extension of strong computability to environments.
 sce : {Γ Δ : Con} → Env Γ Δ → Set
 sce ε = ⊤
-sce (ρ , u) = Σ (sce ρ) λ _ → scv u
+sce (ρ , u) = sce ρ  ∧  scv u
 
 -- Associated projections.
 π₁sce : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
@@ -153,13 +149,9 @@ sceid {Γ , A} = sceid +sce A ,, scvvar
 -}
 
 evalsce : {Γ Δ : Con} {A : Ty} (u : Tm Δ A) {ρ : Env Γ Δ} → sce ρ →
-          Σ (Val Γ A) λ uρ →
-          Σ (eval u > ρ ⇒ uρ) λ _ →
-            scv uρ
+          Σ[ uρ ∈ Val Γ A ] (eval u > ρ ⇒ uρ  ∧  scv uρ)
 evalssce : {Γ Δ Θ : Con} (σ : Tms Δ Θ) {ρ : Env Γ Δ} → sce ρ →
-           Σ (Env Γ Θ) λ σρ →
-           Σ (evals σ > ρ ⇒ σρ) λ _ →
-            sce σρ
+           Σ[ σρ ∈ Env Γ Θ ] (evals σ > ρ ⇒ σρ  ∧  sce σρ)
 
 evalsce (u [ σ ]) sceρ =
   let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in

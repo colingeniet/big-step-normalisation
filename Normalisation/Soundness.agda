@@ -10,16 +10,14 @@
 
 module Normalisation.Soundness where
 
-open import Equality
+open import Library.Equality
+open import Library.Pairs
 open import Syntax.Terms
 open import Syntax.Equivalence
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 open import Normalisation.Termination
 open import Normalisation.Determinism
-
-open import Agda.Builtin.Unit
-open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 
 
 {-
@@ -34,7 +32,8 @@ _~_ : {Γ : Con} {A : Ty} → Val Γ A → Val Γ A → Set
 _~_ {A = o} u v = (q u) ≡ (q v)
 -- For function types, equivalence must be preserved by application.
 _~_ {Γ = Γ} {A = A ⟶ B} f g =
-  {Δ : Con} {u v : Val (Γ ++ Δ) A} → u ~ v → ((f ++V Δ) $$ u) ~ ((g ++V Δ) $$ v)
+  {Δ : Con} {u v : Val (Γ ++ Δ) A} → u ~ v →
+  ((f ++V Δ) $$ u) ~ ((g ++V Δ) $$ v)
 
 
 -- Equivalence is stable by weakening.
@@ -111,7 +110,7 @@ q~ {A = A ⟶ B} {u = f} {v = g} qf≡qg {Δ = Δ} {u = u} {v = v} u~v =
 -- Extension of equivalence to environments.
 _~E_ : {Γ Δ : Con} → Env Γ Δ → Env Γ Δ → Set
 _~E_ {Δ = ●} _ _ = ⊤
-_~E_ {Δ = Δ , A} (σ , u) (ν , v) = Σ (σ ~E ν) λ _ → u ~ v
+_~E_ {Δ = Δ , A} (σ , u) (ν , v) = σ ~E ν  ∧  u ~ v
 
 -- Symmetry.
 infix 8 _~E⁻¹
@@ -128,18 +127,22 @@ _∙~E_ {Δ = Δ , A} {_ , _} {_ , _} {_ , _} (p1 ,, q1) (p2 ,, q2) =
 
 
 -- Projections.
-π₁~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} → σ ~E ν → (π₁list σ) ~E (π₁list ν)
+π₁~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} →
+       σ ~E ν → (π₁list σ) ~E (π₁list ν)
 π₁~E {σ = _ , _} {ν = _ , _} = fst
 
-π₂~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} → σ ~E ν → (π₂list σ) ~ (π₂list ν)
+π₂~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} →
+       σ ~E ν → (π₂list σ) ~ (π₂list ν)
 π₂~E {σ = _ , _} {ν = _ , _} = snd
 
 -- Weakenings.
-_+~E_ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν → (A : Ty) → (σ +E A) ~E (ν +E A)
+_+~E_ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν →
+        (A : Ty) → (σ +E A) ~E (ν +E A)
 _+~E_ {Δ = ●} tt A = tt
-_+~E_ {Δ = Δ , B} {σ = σ , u} {ν = ν , v} (σ~ν ,, u~v) A = σ~ν +~E A ,, u~v +~ A
+_+~E_ {Δ = _ , _} {_ , _} {_ , _} (σ~ν ,, u~v) A = σ~ν +~E A ,, u~v +~ A
 
-_++~E_ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν → (Δ : Con) → (σ ++E Δ) ~E (ν ++E Δ)
+_++~E_ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν →
+         (Δ : Con) → (σ ++E Δ) ~E (ν ++E Δ)
 p ++~E ● = p
 p ++~E (Δ , A) = (p ++~E Δ) +~E A
 
@@ -162,6 +165,7 @@ evals≡~ : {Γ Δ Θ : Con} (σ : Tms Δ Θ) {ρ δ : Env Γ Δ} → ρ ~E δ �
 eval≡~ (u [ σ ]) ρ~δ =
   (ap (λ x → x ~ _) (eval[]≡ {u = u} {σ = σ}) ⁻¹
   ∙ ap (λ x → _ ~ x) (eval[]≡ {u = u} {σ = σ}) ⁻¹)
+
   * eval≡~ u (evals≡~ σ ρ~δ)
 eval≡~ (π₂ σ) ρ~δ = π₂~E (evals≡~ σ ρ~δ)
 eval≡~ {A = A ⟶ B} (lam u) ρ~δ {Δ = Θ} {v} {w} v~w =
@@ -229,17 +233,24 @@ eval≈~ {ρ = ρ} {δ} (η {f = f}) ρ~δ {Δ} {u} {v} u~v =
                                             (evalwks eval-is-eval Θ)
 
 eval≈~ {ρ = ρ} {δ} (lam[] {A = A} {u = u} {σ = σ}) ρ~δ {Δ} {v} {w} v~w =
-  (ap (λ x → eval u (x , v) ~ _) (evalswks' σ ρ Δ)
-  ∙ ap (λ x → x $$ v ~ _) ([]++V {Θ = Δ})
-  ∙ ap (λ x → (x ++V Δ) $$ v ~ eval u (evals σ (δ ++E Δ) , w)) (eval[]≡ {u = lam u} {σ = σ}) ⁻¹
-  ∙ ap (λ x → _ ~ eval u (x , _)) (evals∘≡ {σ = σ} {ν = wk}) ⁻¹
-  ∙ ap (λ x → _ ~ x) (eval[]≡ {u = u} {σ = σ ↑ A}) ⁻¹
-  ∙ ap (λ x → _ ~ x $$ w) ([]++V {Θ = Δ}))
+  (ap (λ x → eval u (x , v) ~ _)
+      (evalswks' σ ρ Δ)
+  ∙ ap (λ x → x $$ v ~ _)
+       ([]++V {Θ = Δ})
+  ∙ ap (λ x → (x ++V Δ) $$ v ~ eval u (evals σ (δ ++E Δ) , w))
+       (eval[]≡ {u = lam u} {σ = σ}) ⁻¹
+  ∙ ap (λ x → _ ~ eval u (x , _))
+       (evals∘≡ {σ = σ} {ν = wk}) ⁻¹
+  ∙ ap (λ x → _ ~ x)
+       (eval[]≡ {u = u} {σ = σ ↑ A}) ⁻¹
+  ∙ ap (λ x → _ ~ x $$ w)
+       ([]++V {Θ = Δ}))
   * eval≡~ u (evals≡~ σ (ρ~δ ++~E Δ) ,, v~w)
   where evalswks' : {Γ Δ Θ : Con} (σ : Tms Δ Θ) (ρ : Env Γ Δ) (Θ : Con) →
                    evals σ (ρ ++E Θ) ≡ (evals σ ρ) ++E Θ
-        evalswks' σ ρ Θ = evals-deterministic (evals-is-evals {σ = σ} {ρ = ρ ++E Θ})
-                                              (evalswks evals-is-evals Θ)
+        evalswks' σ ρ Θ =
+          evals-deterministic (evals-is-evals {σ = σ} {ρ = ρ ++E Θ})
+                              (evalswks evals-is-evals Θ)
 
 
 evals≋~ (refl≋ {σ = σ}) ρ~δ = evals≡~ σ ρ~δ

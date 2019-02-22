@@ -8,7 +8,7 @@
 
 module Normalisation.Determinism where
 
-open import Equality
+open import Library.Equality
 open import Syntax.Terms
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator

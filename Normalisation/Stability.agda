@@ -11,15 +11,14 @@
 
 module Normalisation.Stability where
 
-open import Equality
+open import Library.Equality
+open import Library.Pairs
 open import Syntax.Terms
 open import Syntax.Equivalence
 open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 open import Normalisation.Determinism
-
-open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 
 
 
@@ -63,19 +62,13 @@ stable-env (ρ , v) = evals, (stable-env ρ) (stable-val v)
 
 -- Stability by normalisation for normal forms and neutral normal forms.
 stable-nf : {Γ : Con} {A : Ty} (n : Nf Γ A) →
-            Σ (Val Γ A) λ v →
-            Σ (eval ⌜ n ⌝N > idenv ⇒ v) λ _ →
-              q v ⇒ n
+            Σ[ v ∈ Val Γ A ] (eval ⌜ n ⌝N > idenv ⇒ v  ∧  q v ⇒ n)
 stable-nenf : {Γ : Con} {A : Ty} (n : Ne Nf Γ A) →
-              Σ (Ne Val Γ A) λ v →
-              Σ (eval ⌜ n ⌝NN > idenv ⇒ vneu v) λ _ →
-                qs v ⇒ n
+              Σ[ v ∈ Ne Val Γ A ] (eval ⌜ n ⌝NN > idenv ⇒ vneu v  ∧  qs v ⇒ n)
 
 stable-nf (nlam n) =
   let v ,, evaln ,, qv = stable-nf n in
-  vlam ⌜ n ⌝N idenv ,,
-  evallam ⌜ n ⌝N idenv ,,
-  q⟶ ($lam evaln) qv
+  vlam ⌜ n ⌝N idenv ,, evallam ⌜ n ⌝N idenv ,, q⟶ ($lam evaln) qv
 stable-nf (nneu n) =
   let v ,, evaln ,, qv = stable-nenf n in
   vneu v ,, evaln ,, qo qv

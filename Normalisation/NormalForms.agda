@@ -13,7 +13,7 @@ module Normalisation.NormalForms where
 open import Syntax.Terms
 open import Syntax.Equivalence
 open import Syntax.Lemmas
-open import Equality
+open import Library.Equality
 
 
 -- Variables, values, normal forms, ... all have this type.

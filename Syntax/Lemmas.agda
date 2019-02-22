@@ -7,7 +7,7 @@
 
 module Syntax.Lemmas where
 
-open import Equality
+open import Library.Equality
 open import Syntax.Types
 open import Syntax.Terms
 open import Syntax.Equivalence
