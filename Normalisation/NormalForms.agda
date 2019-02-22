@@ -129,55 +129,59 @@ _++NV_ : {Γ : Con} {A : Ty} → Ne Val Γ A → (Δ : Con) → Ne Val (Γ ++ Δ
 u ++NV ● = u
 u ++NV (Δ , A) = (u ++NV Δ) +NV A
 
--- Weakening and embedding commute (up to equivalence, of course).
-+V≈ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≈ ⌜ u ⌝V + A
-+NV≈ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≈ ⌜ u ⌝NV + A
-+E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≋ ⌜ σ ⌝E +s A
+-- Lemmas on values.
+abstract
+  -- Weakening and embedding commute (up to equivalence, of course).
+  +V≈ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≈ ⌜ u ⌝V + A
+  +NV≈ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≈ ⌜ u ⌝NV + A
+  +E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≋ ⌜ σ ⌝E +s A
 
-+V≈ {u = vlam u ρ} = refl≈ [ +E≋ ]≈ ∙≈ [][]
-+V≈ {u = vneu n} = +NV≈ {u = n}
-+NV≈ {A = A} {u = var x} = refl≈
-+NV≈ {u = app n u} = +NV≈ {u = n} $≈ +V≈ {u = u}
-                   ∙≈ $[] ≈⁻¹
-+E≋ {σ = ε} = εη ≋⁻¹
-+E≋ {σ = σ , u} = +E≋ {σ = σ} ,≋ +V≈ {u = u}
-                ∙≋ ,∘ ≋⁻¹
+  +V≈ {u = vlam u ρ} = refl≈ [ +E≋ ]≈ ∙≈ [][]
+  +V≈ {u = vneu n} = +NV≈ {u = n}
+  +NV≈ {A = A} {u = var x} = refl≈
+  +NV≈ {u = app n u} = +NV≈ {u = n} $≈ +V≈ {u = u}
+                     ∙≈ $[] ≈⁻¹
+  +E≋ {σ = ε} = εη ≋⁻¹
+  +E≋ {σ = σ , u} = +E≋ {σ = σ} ,≋ +V≈ {u = u}
+                  ∙≋ ,∘ ≋⁻¹
 
--- Weakening can be pushed inside a λ-closure.
-[]++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →
-        vlam u (ρ ++E Θ) ≡ (vlam u ρ) ++V Θ
-[]++V {Θ = ●} = refl
-[]++V {Θ = Θ , C} {u = u} {ρ = ρ} =
-  ap (λ u → u +V C) ([]++V {Θ = Θ} {u = u} {ρ = ρ})
+  -- Weakening can be pushed inside a λ-closure.
+  []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →
+          vlam u (ρ ++E Θ) ≡ (vlam u ρ) ++V Θ
+  []++V {Θ = ●} = refl
+  []++V {Θ = Θ , C} {u = u} {ρ = ρ} =
+    ap (λ u → u +V C) ([]++V {Θ = Θ} {u = u} {ρ = ρ})
 
--- Embedding and projections commute.
-π₁E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≋ π₁ ⌜ σ ⌝E
-π₁E≋ {σ = _ , _} = π₁β ≋⁻¹
-π₂E≈ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≈ π₂ ⌜ σ ⌝E
-π₂E≈ {σ = _ , _} = π₂β ≈⁻¹
+  -- Embedding and projections commute.
+  π₁E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≋ π₁ ⌜ σ ⌝E
+  π₁E≋ {σ = _ , _} = π₁β ≋⁻¹
+  π₂E≈ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≈ π₂ ⌜ σ ⌝E
+  π₂E≈ {σ = _ , _} = π₂β ≈⁻¹
 
--- Weakening and projections commute.
-π₁+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
-      π₁list (envgenwk Δ σ A) ≡ envgenwk Δ (π₁list σ) A
-π₁+ {σ = _ , _} = refl
-π₂+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
-      π₂list (envgenwk Δ σ A) ≡ valgenwk Δ (π₂list σ) A
-π₂+ {σ = _ , _} = refl
+  -- Weakening and projections commute.
+  π₁+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
+        π₁list (envgenwk Δ σ A) ≡ envgenwk Δ (π₁list σ) A
+  π₁+ {σ = _ , _} = refl
+  π₂+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
+        π₂list (envgenwk Δ σ A) ≡ valgenwk Δ (π₂list σ) A
+  π₂+ {σ = _ , _} = refl
 
--- Weakening and environment extension commute.
-,++E : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Γ Δ} {v : Val Γ A} →
-       (ρ , v) ++E Θ ≡ (ρ ++E Θ , v ++V Θ)
-,++E {Θ = ●} = refl
-,++E {Θ = Θ , B} = ap (λ u → u +E B) (,++E {Θ = Θ})
+  -- Weakening and environment extension commute.
+  ,++E : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Γ Δ} {v : Val Γ A} →
+         (ρ , v) ++E Θ ≡ (ρ ++E Θ , v ++V Θ)
+  ,++E {Θ = ●} = refl
+  ,++E {Θ = Θ , B} = ap (λ u → u +E B) (,++E {Θ = Θ})
 
--- Weakening and constructors commute.
-++var : {Γ Δ : Con} {A : Ty} {x : Var Γ A} → (var x) ++NV Δ ≡ var (x ++v Δ)
-++var {Δ = ●} = refl
-++var {Δ = Δ , B} {x = x} = ap (λ u → u +NV B) (++var {Δ = Δ} {x = x})
+  -- Weakening and constructors commute.
+  ++var : {Γ Δ : Con} {A : Ty} {x : Var Γ A} →
+          (var x) ++NV Δ ≡ var (x ++v Δ)
+  ++var {Δ = ●} = refl
+  ++var {Δ = Δ , B} {x = x} = ap (λ u → u +NV B) (++var {Δ = Δ} {x = x})
 
-++VNV : {Γ Δ : Con} {A : Ty} {v : Ne Val Γ A} → (vneu v) ++V Δ ≡ vneu (v ++NV Δ)
-++VNV {Δ = ●} = refl
-++VNV {Δ = Δ , B} {v = v} = ap (λ u → u +V B) (++VNV {Δ = Δ} {v = v})
+  ++VNV : {Γ Δ : Con} {A : Ty} {v : Ne Val Γ A} →
+          (vneu v) ++V Δ ≡ vneu (v ++NV Δ)
+  ++VNV {Δ = ●} = refl
+  ++VNV {Δ = Δ , B} {v = v} = ap (λ u → u +V B) (++VNV {Δ = Δ} {v = v})
 
 
 -- The identity environment.
@@ -185,10 +189,11 @@ idenv : {Γ : Con} → Env Γ Γ
 idenv {●} = ε
 idenv {Γ , A} = idenv +E A , vneu (var z)
 
-idenv≋ : {Γ : Con} → ⌜ idenv {Γ} ⌝E ≋ id
-idenv≋ {●} = εη ≋⁻¹
-idenv≋ {Γ , A} = (+E≋ ∙≋ (idenv≋ ∘≋ refl≋)) ,≋ refl≈
-               ∙≋ ↑id
+abstract
+  idenv≋ : {Γ : Con} → ⌜ idenv {Γ} ⌝E ≋ id
+  idenv≋ {●} = εη ≋⁻¹
+  idenv≋ {Γ , A} = (+E≋ ∙≋ (idenv≋ ∘≋ refl≋)) ,≋ refl≈
+                 ∙≋ ↑id
 
 
 

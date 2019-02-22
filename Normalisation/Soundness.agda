@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --without-K --allow-unsolved-meta #-}
 
 {-
   Soundness theorem: equivalent terms normalise to the same normal form.
@@ -14,6 +14,7 @@ open import Library.Equality
 open import Library.Pairs
 open import Syntax.Terms
 open import Syntax.Equivalence
+open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 open import Normalisation.Termination
@@ -37,9 +38,23 @@ _~_ {Γ = Γ} {A = A ⟶ B} f g =
 
 
 -- Equivalence is stable by weakening.
-postulate
-  _+~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (B : Ty) →
-         (u +V B) ~ (v +V B)
+_+~_ : {Γ : Con} {B : Ty} {u v : Val Γ B} → u ~ v → (A : Ty) →
+       (u +V A) ~ (v +V A)
+
+_+~_ {B = o} {u} {v} qu≡qv A =
+  qwk' {v = u}
+  ∙ ap (λ x → x +N A) qu≡qv
+  ∙ qwk' {v = v} ⁻¹
+  where qwk' : {Γ : Con} {A B : Ty} {v : Val Γ B} → q (v +V A) ≡ (q v) +N A
+        qwk' {A = A} {v} = q-deterministic q-is-q (qwk q-is-q A)
+
+_+~_ {B = B ⟶ C} {f} {g} f~g A {Δ} {u} {v} u~v =
+  let u' = tr (λ Γ → Val Γ B) ,++ u in
+  let u≡u' = trfill (λ Γ → Val Γ B) ,++ u in
+  let v' = tr (λ Γ → Val Γ B) ,++ v in
+  let v≡v' = trfill (λ Γ → Val Γ B) ,++ v in
+  {!!}
+
 
 _++~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (Δ : Con) →
         (u ++V Δ) ~ (v ++V Δ)
@@ -64,31 +79,30 @@ _∙~_ {A = A ⟶ B} p1 p2 pu =
 
 {-
   Main lemma:
-  Equivalence implies equality of quotes, and the reciprocal holds for 
+  Equivalence implies equality of quotes, and the converse holds for 
   neutral values.
 -}
 ~q : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (q u) ≡ (q v)
 q~ : {Γ : Con} {A : Ty} {u v : Ne Val Γ A} → (qs u) ≡ (qs v) → vneu u ~ vneu v
 
--- The reciprocal allows to prove reflexivity on variables.
+-- The converse allows to prove reflexivity on variables.
 refl~var : {Γ : Con} {A : Ty} {x : Var Γ A} → vneu (var x) ~ vneu (var x)
 refl~var {x = x} = q~ refl
 
--- Proof of the lemma.
+
 ~q {A = o} p = p
 -- The main direction is simple by applying the functions to vz, using the
 -- previous lemma.
 ~q {Γ = Γ} {A = A ⟶ B} {u = f} {v = g} p =
   q⟶≡ {f = f} ∙ ap nlam (~q (p refl~var)) ∙ q⟶≡ {f = g} ⁻¹
 
--- Proof of the reciprocal.
 q~ {A = o} p = qo≡ ∙ ap nneu p ∙ qo≡ ⁻¹
 -- For functions, since we consider neutral values, application and quote
 -- are simple. The only problem is to deal with the various weakenings and
 -- transports.
 q~ {A = A ⟶ B} {u = f} {v = g} qf≡qg {Δ = Δ} {u = u} {v = v} u~v =
-  let fu≡ = ap (λ f → f $$ u) (vneu++V {Δ = Δ} {u = f}) in
-  let gv≡ = ap (λ g → g $$ v) (vneu++V {Δ = Δ} {u = g}) in
+  let fu≡ = ap (λ f → f $$ u) (++VNV {Δ = Δ} {v = f}) in
+  let gv≡ = ap (λ g → g $$ v) (++VNV {Δ = Δ} {v = g}) in
   let qu≡qv = ~q u~v in
   ((ap (λ u → u ~ _) fu≡ ⁻¹)
   ∙ (ap (λ u → _ ~ u) gv≡ ⁻¹))
@@ -97,11 +111,7 @@ q~ {A = A ⟶ B} {u = f} {v = g} qf≡qg {Δ = Δ} {u = u} {v = v} u~v =
            ∙ ap (λ n → n ++NN Δ) qf≡qg
            ∙ qswks' g Δ ⁻¹)
        ∙ ap (λ n → app _ n) qu≡qv)
-  where vneu++V : {Γ Δ : Con} {A : Ty} {u : Ne Val Γ A} →
-                  (vneu u) ++V Δ ≡ vneu (u ++NV Δ)
-        vneu++V {Δ = ●} = refl
-        vneu++V {Δ = Δ , B} = ap (λ x → x +V B) (vneu++V {Δ = Δ})
-        qswks' : {Γ : Con} {A : Ty} (u : Ne Val Γ A) (Δ : Con) →
+  where qswks' : {Γ : Con} {A : Ty} (u : Ne Val Γ A) (Δ : Con) →
                  qs (u ++NV Δ) ≡ (qs u) ++NN Δ
         qswks' u Δ = qs-deterministic qs-is-qs (qswks qs-is-qs Δ)
 

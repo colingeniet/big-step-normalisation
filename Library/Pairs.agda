@@ -7,7 +7,7 @@ module Library.Pairs where
 -}
 
 open import Agda.Primitive
--- I often need this one together with pairs, and it does not cost much.
+-- Unit is often used together with pairs, and it does not cost much.
 open import Agda.Builtin.Unit public
 open import Agda.Builtin.Sigma public
   -- _,_ is used for contexts and substitutions throughout this project with

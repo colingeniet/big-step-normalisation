@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --without-K --allow-unsolved-meta #-}
 
 {-
   Proof of termination of eval and quote.
@@ -41,9 +41,7 @@ scv {Γ = Γ} {A = A ⟶ B} f =
 
 
 -- Strong computablility is stable by weakening.
-postulate
-  _+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
-{-
+_+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
 _+scv_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
 _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let u' = tr (λ Γ → Val Γ B) ,++ u in
@@ -54,7 +52,7 @@ _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let scvfu = trd scv fu'≡fu scvfu' in
   fu ,, {!!} ,, scvfu
--}
+
 
 _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
 u ++scv ● = u
@@ -65,21 +63,20 @@ u ++scv (Δ , A) = (u ++scv Δ) +scv A
 {-
   Main lemma:
   The fact that strong computability implies termination of quote is actually
-  not obvious. The proof requires to simultaneously prove the reciprocal for
+  not obvious. The proof requires to simultaneously prove the converse for
   neutral values.
 -}
 -- Main direction: strong computability implies termination of quote.
 scv-q : {Γ : Con} {A : Ty} {u : Val Γ A} →
         scv u → Σ (Nf Γ A) (λ n → q u ⇒ n)
--- Reciprocal for neutral values.
+-- Converse for neutral values.
 q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
         qs u ⇒ n → scv (vneu u)
 
--- The reciprocal allows in particular to show that variables are sc.
+-- The converse allows in particular to show that variables are sc.
 scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (vneu (var x))
 scvvar = q-scv qsvar
 
--- Proof of the lemma.
 
 scv-q {A = o} scu = scu
 -- For functions, we follow the definition of quote and apply
@@ -89,25 +86,20 @@ scv-q {A = A ⟶ B} scu =
   let nfuz ,, quz = scv-q scuz in
   nlam nfuz ,, q⟶ $uz quz
 
--- Proof of the reciprocal.
 
 q-scv {A = o} {n = n} qu = nneu n ,, qo qu
 -- For functions, since we are considering neutral values, application
 -- to a value is trivial. Quote simply quotes the function and the value
 -- separately, hence the proof would be simple if it was not for a few
 -- weakenings and transports.
-q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
+q-scv {A = A ⟶ pB} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
   let fu = app (f ++NV Δ) u in
   let $fu = tr (λ x → (x $ u ⇒ vneu fu))
-               (vneu++V {u = f} ⁻¹)
+               (++VNV {v = f} ⁻¹)
                ($app (f ++NV Δ) u)
   in
   let nfu ,, qu = scv-q scu in
   vneu fu ,, $fu ,, q-scv (qsapp (qswks qf Δ) qu)
-  where vneu++V : ∀ {Γ Δ : Con} {A : Ty} {u : Ne Val Γ A} →
-                    (vneu u) ++V Δ ≡ vneu (u ++NV Δ)
-        vneu++V {Δ = ●} = refl
-        vneu++V {Δ = Δ , B} = ap (λ x → x +V B) (vneu++V {Δ = Δ})
 
 
 -- Extension of strong computability to environments.
@@ -255,8 +247,8 @@ qs-is-qs {n = app n v} = qsapp qs-is-qs q-is-q
 nf : {Γ : Con} {A : Ty} → Tm Γ A → Nf Γ A
 nf u = q (eval u idenv)
 
-nf-is-norm : {Γ : Con} {A : Ty} (u : Tm Γ A) → norm u ⇒ (nf u)
-nf-is-norm u = qeval eval-is-eval q-is-q
+nf-is-norm : {Γ : Con} {A : Ty} {u : Tm Γ A} → norm u ⇒ (nf u)
+nf-is-norm = qeval eval-is-eval q-is-q
 
 
 

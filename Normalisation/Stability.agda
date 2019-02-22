@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --without-K --allow-unsolved-meta #-}
 
 {-
   Values are invariant by evaluation (in the identity environment),
@@ -23,23 +23,23 @@ open import Normalisation.Determinism
 
 
 -- Stability by evaluation for variables.
-postulate
-  stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
-               eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ vneu (var (x ++v Δ))
-{-
-stable-var {Γ} {Δ} {A} z =
+stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
+             eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ vneu (var (x ++v Δ))
+
+stable-var {Δ = Δ} {A} z =
   (ap (λ ρ → eval vz > ρ ⇒ (vneu (var z) ++V Δ))
       (,++E {ρ = idenv +E A} {v = vneu (var z)} ⁻¹)
   ∙ ap (λ x → eval vz > (idenv ++E Δ) ⇒ x)
        (++VNV {Δ = Δ} {v = var z}
       ∙ ap vneu (++var {Δ = Δ} {x = z})))
   * evalπ₂ evalsid
-stable-var {Γ} {Δ} {A} (s {B = B} x) =
+
+stable-var {Γ} {Δ} {A} (s {B = B} x) rewrite ,++ {Γ} {Δ} {A} =
   eval[] (tr (λ ρ → evals wk > ρ ⇒ ((idenv +E B) ++E Δ))
              (,++E {ρ = idenv +E B} {v = vneu (var z)} ⁻¹)
              (evalsπ₁ evalsid))
-         {!!}
--}
+         {!stable-var {Δ = ((● , B) ++ Δ)} x!}
+
 
 -- Stability by evaluation for values, neutral values and environments.
 stable-val : {Γ : Con} {A : Ty} (v : Val Γ A) →
