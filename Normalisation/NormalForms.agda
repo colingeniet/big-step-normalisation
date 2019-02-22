@@ -204,8 +204,7 @@ data Nf : Tm-like where
 ⌜_⌝N : {Γ : Con} {A : Ty} → Nf Γ A → Tm Γ A
 ⌜_⌝NN : {Γ : Con} {A : Ty} → Ne Nf Γ A → Tm Γ A
 ⌜ nlam u ⌝N = lam ⌜ u ⌝N
-⌜ nneu n ⌝N = ⌜ n ⌝NN(idenv≋ ∘≋ refl≋)) ,≋ refl≈
-               ∙≋ ↑id
+⌜ nneu n ⌝N = ⌜ n ⌝NN
 ⌜ var x ⌝NN = ⌜ x ⌝v
 ⌜ app n u ⌝NN = ⌜ n ⌝NN $ ⌜ u ⌝N
 
@@ -222,8 +221,8 @@ nefgenwk Δ (app f u) A = app (nefgenwk Δ f A) (nfgenwk Δ u A)
 
 -- - simple.
 _+N_ : {Γ : Con} {B : Ty} → Nf Γ B → (A : Ty) → Nf (Γ , A) B
-_+NN_ : {Γ : Con} {B : Ty} → Ne Nf Γ B → (A : Ty) → Ne Nf (Γ , A) B
 u +N A = nfgenwk ● u A
+_+NN_ : {Γ : Con} {B : Ty} → Ne Nf Γ B → (A : Ty) → Ne Nf (Γ , A) B
 u +NN A = nefgenwk ● u A
 
 -- - by a context.
