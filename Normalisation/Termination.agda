@@ -1,5 +1,14 @@
 {-# OPTIONS --without-K #-}
 
+{-
+  Proof of termination of eval and quote.
+  
+  Since eval and quote are defined as relation, termination means that
+  every input is in relation with at least one output (in fact exactly one
+  by determinism). The proof then allows to redifine eval/quote/nf as actual
+  functions.
+-}
+
 module Normalisation.Termination where
 
 open import Equality
@@ -14,60 +23,83 @@ open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 
 
--- Strongly computable values.
-SCV : {Γ : Con} {A : Ty} → Val Γ A → Set
--- At the base type, a value is strongly computable if it can be normalized by q.
-SCV {Γ = Γ} {A = o} u = Σ (Nf Γ o) λ n → q u ⇒ n
--- For function types, a value is strongly computable if for any SC argument value
--- in an extended context, the application of that function to that argument
--- gives a SCV.
-SCV {Γ = Γ} {A = A ⟶ B} f =
-  {Δ : Con} {u : Val (Γ ++ Δ) A} → SCV u →
+{-
+  The proof of termination is based on the notion of strongly computable values.
+  This notion can be seen as a (a priori) stronger requirement than the
+  termination of quote, which will allow the induction to go through.
+-}
+
+-- Definition of strongly computable values.
+scv : {Γ : Con} {A : Ty} → Val Γ A → Set
+-- At the base type, a value is strongly computable if quote is defined on it.
+scv {Γ = Γ} {A = o} u = Σ (Nf Γ o) λ n → q u ⇒ n
+-- For function types, a function is strongly computable if for any sc argument,
+-- the application of that function to that argument gives a scv.
+-- Furthermore, the argument may come from an extended environment, in which
+-- case the function is to be weakened.
+scv {Γ = Γ} {A = A ⟶ B} f =
+  {Δ : Con} {u : Val (Γ ++ Δ) A} → scv u →
   Σ (Val (Γ ++ Δ) B) λ fu →
   Σ ((f ++V Δ) $ u ⇒ fu) λ _ →
-    SCV fu
+    scv fu
 
 
--- Lemma : SCV is stable by context extension.
+-- Strong computablility is stable by weakening.
 postulate
-  _+SCV_ : {Γ : Con} {B : Ty} {u : Val Γ B} → SCV u → (A : Ty) → SCV (u +V A)
+  _+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
 {-
-_+SCV_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
-_+SCV_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
+_+scv_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
+_+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let u' = tr (λ Γ → Val Γ B) ,++ u in
   let u≡u' = trfill (λ Γ → Val Γ B) ,++ u in
-  let scvu' = trd SCV u≡u' scvu in
+  let scvu' = trd scv u≡u' scvu in
   let fu' ,, $fu' ,, scvfu' = scvf scvu' in
   let fu = tr (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
-  let scvfu = trd SCV fu'≡fu scvfu' in
+  let scvfu = trd scv fu'≡fu scvfu' in
   fu ,, {!!} ,, scvfu
 -}
 
-_++SCV_ : {Γ : Con} {B : Ty} {u : Val Γ B} → SCV u → (Δ : Con) → SCV (u ++V Δ)
-u ++SCV ● = u
-u ++SCV (Δ , A) = (u ++SCV Δ) +SCV A
+_++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
+u ++scv ● = u
+u ++scv (Δ , A) = (u ++scv Δ) +scv A
 
 
--- Main lemma : SCV is ~ equivalent to the termination of q.
--- Main direction (actual goal).
+
+{-
+  Main lemma:
+  The fact that strong computability implies termination of quote is actually
+  not obvious. The proof requires to simultaneously prove the reciprocal for
+  neutral values.
+-}
+-- Main direction: strong computability implies termination of quote.
 scv-q : {Γ : Con} {A : Ty} {u : Val Γ A} →
-        SCV u → Σ (Nf Γ A) (λ n → q u ⇒ n)
--- The reciprocal on neutral terms is required for the induction
+        scv u → Σ (Nf Γ A) (λ n → q u ⇒ n)
+-- Reciprocal for neutral values.
 q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
-        qs u ⇒ n → SCV (vneu u)
+        qs u ⇒ n → scv (vneu u)
 
--- The second part of the lemma allows to prove that variables are strongly computable.
-scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → SCV (vneu (var x))
+-- The reciprocal allows in particular to show that variables are sc.
+scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (vneu (var x))
 scvvar = q-scv qsvar
 
+-- Proof of the lemma.
+
 scv-q {A = o} scu = scu
+-- For functions, we follow the definition of quote and apply
+-- the function to vz. This is why sc of variables is required.
 scv-q {A = A ⟶ B} scu =
   let uz ,, $uz ,, scuz = scu {Δ = ● , A} (scvvar {x = z}) in
   let nfuz ,, quz = scv-q scuz in
   nlam nfuz ,, q⟶ $uz quz
 
+-- Proof of the reciprocal.
+
 q-scv {A = o} {n = n} qu = nneu n ,, qo qu
+-- For functions, since we are considering neutral values, application
+-- to a value is trivial. Quote simply quotes the function and the value
+-- separately, hence the proof would be simple if it was not for a few
+-- weakenings and transports.
 q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
   let fu = app (f ++NV Δ) u in
   let $fu = tr (λ x → (x $ u ⇒ vneu fu))
@@ -83,43 +115,51 @@ q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
 
 
 -- Extension of strong computability to environments.
-SCE : {Γ Δ : Con} → Env Γ Δ → Set
-SCE ε = ⊤
-SCE (ρ , u) = Σ (SCE ρ) λ _ → SCV u
+sce : {Γ Δ : Con} → Env Γ Δ → Set
+sce ε = ⊤
+sce (ρ , u) = Σ (sce ρ) λ _ → scv u
 
-π₁SCE : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
-        SCE ρ → SCE (π₁list ρ)
-π₁SCE {ρ = _ , _} = fst
+-- Associated projections.
+π₁sce : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
+        sce ρ → sce (π₁list ρ)
+π₁sce {ρ = _ , _} = fst
 
-π₂SCE : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
-        SCE ρ → SCV (π₂list ρ)
-π₂SCE {ρ = _ , _} = snd
+π₂sce : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
+        sce ρ → scv (π₂list ρ)
+π₂sce {ρ = _ , _} = snd
 
+-- Weakenings.
+_+sce_ : {Γ Δ : Con} {ρ : Env Γ Δ} → sce ρ → (A : Ty) → sce (ρ +E A)
+_+sce_ {ρ = ε} tt A = tt
+_+sce_ {ρ = ρ , u} (sceρ ,, scvu) A = sceρ +sce A ,, scvu +scv A
 
-_+SCE_ : {Γ Δ : Con} {ρ : Env Γ Δ} → SCE ρ → (A : Ty) → SCE (ρ +E A)
-_+SCE_ {ρ = ε} tt A = tt
-_+SCE_ {ρ = ρ , u} (sceρ ,, scvu) A = sceρ +SCE A ,, scvu +SCV A
+_++sce_ : {Γ Θ : Con} {σ : Env Γ Θ} → sce σ → (Δ : Con) → sce (σ ++E Δ)
+σ ++sce ● = σ
+σ ++sce (Δ , A) = (σ ++sce Δ) +sce A
 
-_++SCE_ : {Γ Θ : Con} {σ : Env Γ Θ} → SCE σ → (Δ : Con) → SCE (σ ++E Δ)
-σ ++SCE ● = σ
-σ ++SCE (Δ , A) = (σ ++SCE Δ) +SCE A
-
-sceid : {Γ : Con} → SCE (idenv {Γ})
+-- The identity environment is strongly computable.
+sceid : {Γ : Con} → sce (idenv {Γ})
 sceid {●} = tt
-sceid {Γ , A} = sceid +SCE A ,, scvvar
+sceid {Γ , A} = sceid +sce A ,, scvvar
 
 
 
--- Main theorem : Evaluation in a strongly computable environment gives a
--- strongly computable result.
-evalsce : {Γ Δ : Con} {A : Ty} (u : Tm Δ A) {ρ : Env Γ Δ} → SCE ρ →
+{-
+  Main theorem: any term in a strongly computable environment evaluates
+  to a strongly computable value.
+  The proof is by induction on terms. Except for the case of λ-abstractions,
+  it is only a matter of applying the hypothesis to each other,
+  and reorganising them to get the result.
+-}
+
+evalsce : {Γ Δ : Con} {A : Ty} (u : Tm Δ A) {ρ : Env Γ Δ} → sce ρ →
           Σ (Val Γ A) λ uρ →
           Σ (eval u > ρ ⇒ uρ) λ _ →
-            SCV uρ
-evalssce : {Γ Δ Θ : Con} (σ : Tms Δ Θ) {ρ : Env Γ Δ} → SCE ρ →
+            scv uρ
+evalssce : {Γ Δ Θ : Con} (σ : Tms Δ Θ) {ρ : Env Γ Δ} → sce ρ →
            Σ (Env Γ Θ) λ σρ →
            Σ (evals σ > ρ ⇒ σρ) λ _ →
-            SCE σρ
+            sce σρ
 
 evalsce (u [ σ ]) sceρ =
   let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
@@ -127,16 +167,21 @@ evalsce (u [ σ ]) sceρ =
   uσρ ,, eval[] evalsσ evalu ,, scvuσρ
 evalsce (π₂ σ) sceρ =
   let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
-  π₂list σρ ,, evalπ₂ evalsσ ,, π₂SCE sceσρ
+  π₂list σρ ,, evalπ₂ evalsσ ,, π₂sce sceσρ
 evalsce {Γ = Γ} {Δ = Δ} {A = A ⟶ B} (lam u) {ρ = ρ} sceρ =
+  -- Evaluation is trivial for functions.
   vlam u ρ ,, evallam u ρ ,,
+  -- Strong computability is not an immediate hypothesis.
   λ {Δ = Θ} {v = v} scvv →
-  let uρv ,, evalu ,, scvuρv = evalsce u (sceρ ++SCE Θ ,, scvv) in
+  -- However, once given an argument to the function, it suffice to evaluate
+  -- the function in the appropriate environment to get the result by induction
+  -- hypothesis (with a few weakenings and transports, of course).
+  let uρv ,, evalu ,, scvuρv = evalsce u (sceρ ++sce Θ ,, scvv) in
   let evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
   uρv ,, evallamu ,, scvuρv
 evalsce (app u) sceρ =
-  let f ,, evalf ,, scvf = evalsce u (π₁SCE sceρ) in
-  let fρ ,, $fρ ,, scvfρ = scvf (π₂SCE sceρ) in
+  let f ,, evalf ,, scvf = evalsce u (π₁sce sceρ) in
+  let fρ ,, $fρ ,, scvfρ = scvf (π₂sce sceρ) in
   fρ ,, evalapp evalf $fρ ,, scvfρ
 
 evalssce id {ρ = ρ} sceρ =
@@ -153,23 +198,26 @@ evalssce (σ , u) sceρ =
   σρ , uρ ,, evals, evalsσ evalu ,, (sceσρ ,, scvuρ)
 evalssce (π₁ σ) sceρ =
   let σρ ,, evalsσ ,, sceσρ = evalssce σ sceρ in
-  π₁list σρ ,, evalsπ₁ evalsσ ,, π₁SCE sceσρ
+  π₁list σρ ,, evalsπ₁ evalsσ ,, π₁sce sceσρ
 
 
--- Using that values evaluates to themselves, and determinism,
--- every value is strongly computable.
-val-scv : {Γ : Con} {A : Ty} (v : Val Γ A) → SCV v
+-- By stability and determinism, a value can only evaluate to itself.
+-- Thus the previous theorem applied to values implies that every value
+-- is strongly computable.
+val-scv : {Γ : Con} {A : Ty} (v : Val Γ A) → scv v
 val-scv {Γ = Γ} v =
   let _ ,, evalv ,, scvv = evalsce ⌜ v ⌝V (sceid {Γ}) in
-  tr SCV (eval-deterministic evalv (stable-val v)) scvv
+  tr scv (eval-deterministic evalv (stable-val v)) scvv
 
-env-sce : {Γ Δ : Con} (ρ : Env Γ Δ) → SCE ρ
+env-sce : {Γ Δ : Con} (ρ : Env Γ Δ) → sce ρ
 env-sce {Γ = Γ} ρ =
   let _ ,, evalsρ ,, sceρ = evalssce ⌜ ρ ⌝E (sceid {Γ}) in
-  tr SCE (evals-deterministic evalsρ (stable-env ρ)) sceρ
+  tr sce (evals-deterministic evalsρ (stable-env ρ)) sceρ
 
 
--- This allows to define eval, quote and nf as functions.
+-- With those two results, it is easy to define eval, quote, norm...
+-- as functions. Of course, those functions coincide with the relation.
+
 eval : {Γ Δ : Con} {A : Ty} → Tm Δ A → Env Γ Δ → Val Γ A
 eval u ρ = fst (evalsce u (env-sce ρ))
 
@@ -220,7 +268,10 @@ nf-is-norm u = qeval eval-is-eval q-is-q
 
 
 
--- It is now possible to prove the recurrence relation for eval/...
+-- It is convenient to reprove the inductive definition of eval, quote,...
+-- to simplify manipulation of their function versions.
+-- Some of the cases do not hold definitionally and require the use of
+-- determinism, the others are included for the sake of completeness.
 eval[]≡ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {σ : Tms Δ Θ} {ρ : Env Γ Δ} →
           eval (u [ σ ]) ρ ≡ eval u (evals σ ρ)
 eval[]≡ {u = u} {σ = σ} =

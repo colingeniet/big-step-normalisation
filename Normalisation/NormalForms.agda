@@ -168,7 +168,7 @@ u ++NV (Δ , A) = (u ++NV Δ) +NV A
 ,++E : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Γ Δ} {v : Val Γ A} →
        (ρ , v) ++E Θ ≡ (ρ ++E Θ , v ++V Θ)
 ,++E {Θ = ●} = refl
-,++E {Θ = Θ , B} {ρ = ρ} {v = v} = ap (λ u → u +E B) (,++E {Θ = Θ} {ρ = ρ} {v = v})
+,++E {Θ = Θ , B} = ap (λ u → u +E B) (,++E {Θ = Θ})
 
 -- Weakening and constructors commute.
 ++var : {Γ Δ : Con} {A : Ty} {x : Var Γ A} → (var x) ++NV Δ ≡ var (x ++v Δ)

@@ -1,5 +1,10 @@
 {-# OPTIONS --safe --without-K #-}
 
+{-
+  The result of evaluation/normalisation is equivalent to the input.
+  This is a straight forward induction over the evaluation/quote relations.
+-}
+
 module Normalisation.Completeness where
 
 open import Syntax.Terms
@@ -9,8 +14,6 @@ open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 
 
--- The result of evaluation/normalisation is equivalent to the input.
--- This is a straight forward induction over the evaluation/quote relations.
 
 eval≈ : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {uρ : Val Γ A} →
         eval u > ρ ⇒ uρ → u [ ⌜ ρ ⌝E ] ≈ ⌜ uρ ⌝V

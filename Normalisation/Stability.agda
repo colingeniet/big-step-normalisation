@@ -1,5 +1,14 @@
 {-# OPTIONS --without-K #-}
 
+{-
+  Values are invariant by evaluation (in the identity environment),
+  normal forms are invariant by normalisation.
+
+  The lemmas in this module prove that a value _can_ be evaluated to itself,
+  it follows by determinism that it also _can only_ be evaluated to itself
+  (and idem for normal forms).
+-}
+
 module Normalisation.Stability where
 
 open import Equality
@@ -13,10 +22,8 @@ open import Normalisation.Determinism
 open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 
 
--- Stability : normalisation of a normal form does nothing.
 
--- Technical lemma : a variable evaluates to itself in the identity environment.
--- This requires some generalisation for the induction.
+-- Stability by evaluation for variables.
 postulate
   stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
                eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ vneu (var (x ++v Δ))
@@ -35,7 +42,7 @@ stable-var {Γ} {Δ} {A} (s {B = B} x) =
          {!!}
 -}
 
--- A value evaluates to itself.
+-- Stability by evaluation for values, neutral values and environments.
 stable-val : {Γ : Con} {A : Ty} (v : Val Γ A) →
              eval ⌜ v ⌝V > idenv ⇒ v
 stable-neval : {Γ : Con} {A : Ty} (n : Ne Val Γ A) →
@@ -54,7 +61,7 @@ stable-env ε = evalsε
 stable-env (ρ , v) = evals, (stable-env ρ) (stable-val v)
 
 
--- A normal form normalises to itself.
+-- Stability by normalisation for normal forms and neutral normal forms.
 stable-nf : {Γ : Con} {A : Ty} (n : Nf Γ A) →
             Σ (Val Γ A) λ v →
             Σ (eval ⌜ n ⌝N > idenv ⇒ v) λ _ →
@@ -81,3 +88,7 @@ stable-nenf (app ne nf) =
   app nv v ,,
   eval[] (evals, evalsid evalnf) (evalapp evalne ($app nv v)) ,,
   qsapp qsnv qv
+
+
+stable-norm : {Γ : Con} {A : Ty} (n : Nf Γ A) → norm ⌜ n ⌝N ⇒ n
+stable-norm n = qeval (fst (snd (stable-nf n))) (snd (snd (stable-nf n)))

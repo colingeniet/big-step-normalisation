@@ -1,5 +1,13 @@
 {-# OPTIONS --without-K #-}
 
+{-
+  Soundness theorem: equivalent terms normalise to the same normal form.
+
+  The proof follows the same general scheme as the proof of termination,
+  only the strong computability unary predicate is replaced by a binary
+  relation on values.
+-}
+
 module Normalisation.Soundness where
 
 open import Equality
@@ -14,10 +22,15 @@ open import Agda.Builtin.Unit
 open import Agda.Builtin.Sigma renaming (_,_ to _,,_)
 
 
--- Equivalence of values is defined similarely to strong computability.
+{-
+  Equivalence of values is defined similarly to strong computability:
+  it is in some sense a stronger requirement than equality of images by quote,
+  which will allow the induction to go through.
+-}
+
 infix 15 _~_
 _~_ : {Γ : Con} {A : Ty} → Val Γ A → Val Γ A → Set
--- A the base type, it is equality of quote.
+-- A the base type, equivalence is equality of quote.
 _~_ {A = o} u v = (q u) ≡ (q v)
 -- For function types, equivalence must be preserved by application.
 _~_ {Γ = Γ} {A = A ⟶ B} f g =
@@ -26,14 +39,16 @@ _~_ {Γ = Γ} {A = A ⟶ B} f g =
 
 -- Equivalence is stable by weakening.
 postulate
-  _+~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (B : Ty) → (u +V B) ~ (v +V B)
+  _+~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (B : Ty) →
+         (u +V B) ~ (v +V B)
 
-_++~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (Δ : Con) → (u ++V Δ) ~ (v ++V Δ)
+_++~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (Δ : Con) →
+        (u ++V Δ) ~ (v ++V Δ)
 p ++~ ● = p
 p ++~ (Δ , A) = (p ++~ Δ) +~ A
 
 
--- Equivalence is symmetric and transitive (it is not obvious that it is reflexive).
+-- Equivalence is symmetric and transitive (reflexivity is not obvious).
 infix 8 _~⁻¹
 _~⁻¹ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → v ~ u
 _~⁻¹ {A = o} = _⁻¹
@@ -43,12 +58,16 @@ infixr 6 _∙~_
 _∙~_ : {Γ : Con} {A : Ty} {u v w : Val Γ A} → u ~ v → v ~ w → u ~ w
 _∙~_ {A = o} = _∙_
 _∙~_ {A = A ⟶ B} p1 p2 pu =
-  -- Reflexivity can be proved for a value in relation with anything using symmetry
-  -- and transitivity (induction hypothesis). This is exactly what is needed here.
+  -- Reflexivity holds for a value in relation with anything using symmetry
+  -- and transitivity (induction hypothesis). This is just what we need here.
   p1 pu ∙~ p2 (pu ~⁻¹ ∙~ pu)
 
 
--- Equivalence implies equality of quotes, and the reciprocal holds for neutral values.
+{-
+  Main lemma:
+  Equivalence implies equality of quotes, and the reciprocal holds for 
+  neutral values.
+-}
 ~q : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (q u) ≡ (q v)
 q~ : {Γ : Con} {A : Ty} {u v : Ne Val Γ A} → (qs u) ≡ (qs v) → vneu u ~ vneu v
 
@@ -56,18 +75,28 @@ q~ : {Γ : Con} {A : Ty} {u v : Ne Val Γ A} → (qs u) ≡ (qs v) → vneu u ~ 
 refl~var : {Γ : Con} {A : Ty} {x : Var Γ A} → vneu (var x) ~ vneu (var x)
 refl~var {x = x} = q~ refl
 
+-- Proof of the lemma.
 ~q {A = o} p = p
+-- The main direction is simple by applying the functions to vz, using the
+-- previous lemma.
 ~q {Γ = Γ} {A = A ⟶ B} {u = f} {v = g} p =
   q⟶≡ {f = f} ∙ ap nlam (~q (p refl~var)) ∙ q⟶≡ {f = g} ⁻¹
 
+-- Proof of the reciprocal.
 q~ {A = o} p = qo≡ ∙ ap nneu p ∙ qo≡ ⁻¹
+-- For functions, since we consider neutral values, application and quote
+-- are simple. The only problem is to deal with the various weakenings and
+-- transports.
 q~ {A = A ⟶ B} {u = f} {v = g} qf≡qg {Δ = Δ} {u = u} {v = v} u~v =
   let fu≡ = ap (λ f → f $$ u) (vneu++V {Δ = Δ} {u = f}) in
   let gv≡ = ap (λ g → g $$ v) (vneu++V {Δ = Δ} {u = g}) in
   let qu≡qv = ~q u~v in
   ((ap (λ u → u ~ _) fu≡ ⁻¹)
   ∙ (ap (λ u → _ ~ u) gv≡ ⁻¹))
-  * q~ (ap (λ n → app n _) (qswks' f Δ ∙ ap (λ n → n ++NN Δ) qf≡qg ∙ qswks' g Δ ⁻¹)
+  * q~ (ap (λ n → app n _)
+           (qswks' f Δ
+           ∙ ap (λ n → n ++NN Δ) qf≡qg
+           ∙ qswks' g Δ ⁻¹)
        ∙ ap (λ n → app _ n) qu≡qv)
   where vneu++V : {Γ Δ : Con} {A : Ty} {u : Ne Val Γ A} →
                   (vneu u) ++V Δ ≡ vneu (u ++NV Δ)
@@ -84,11 +113,13 @@ _~E_ : {Γ Δ : Con} → Env Γ Δ → Env Γ Δ → Set
 _~E_ {Δ = ●} _ _ = ⊤
 _~E_ {Δ = Δ , A} (σ , u) (ν , v) = Σ (σ ~E ν) λ _ → u ~ v
 
+-- Symmetry.
 infix 8 _~E⁻¹
 _~E⁻¹ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν → ν ~E σ
 _~E⁻¹ {Δ = ●} tt = tt
 _~E⁻¹ {Δ = Δ , A} {_ , _} {_ , _} (p ,, q) = p ~E⁻¹ ,, q ~⁻¹
 
+-- Transitivity.
 infixr 6 _∙~E_
 _∙~E_ : {Γ Δ : Con} {σ ν ρ : Env Γ Δ} → σ ~E ν → ν ~E ρ → σ ~E ρ
 _∙~E_ {Δ = ●} tt tt = tt
@@ -96,12 +127,14 @@ _∙~E_ {Δ = Δ , A} {_ , _} {_ , _} {_ , _} (p1 ,, q1) (p2 ,, q2) =
   p1 ∙~E p2 ,, q1 ∙~ q2
 
 
+-- Projections.
 π₁~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} → σ ~E ν → (π₁list σ) ~E (π₁list ν)
 π₁~E {σ = _ , _} {ν = _ , _} = fst
 
 π₂~E : {Γ Δ : Con} {A : Ty} {σ ν : Env Γ (Δ , A)} → σ ~E ν → (π₂list σ) ~ (π₂list ν)
 π₂~E {σ = _ , _} {ν = _ , _} = snd
 
+-- Weakenings.
 _+~E_ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν → (A : Ty) → (σ +E A) ~E (ν +E A)
 _+~E_ {Δ = ●} tt A = tt
 _+~E_ {Δ = Δ , B} {σ = σ , u} {ν = ν , v} (σ~ν ,, u~v) A = σ~ν +~E A ,, u~v +~ A
@@ -110,13 +143,16 @@ _++~E_ : {Γ Δ : Con} {σ ν : Env Γ Δ} → σ ~E ν → (Δ : Con) → (σ +
 p ++~E ● = p
 p ++~E (Δ , A) = (p ++~E Δ) +~E A
 
+-- Reflexivity holds for the identity environment.
 refl~id : {Γ : Con} → (idenv {Γ}) ~E idenv
 refl~id {●} = tt
 refl~id {Γ , A} = refl~id +~E A ,, refl~var
 
 
--- Evaluation of a term in equivalent environments gives equivalent results.
--- This is the reflexivity case of the next theorem.
+{-
+  Lemma:
+  Evaluation of a term in equivalent environments gives equivalent results.
+-}
 eval≡~ : {Γ Δ : Con} {A : Ty} (u : Tm Δ A) {ρ δ : Env Γ Δ} → ρ ~E δ →
          eval u ρ ~ eval u δ
 
@@ -147,9 +183,10 @@ evals≡~ (σ , u) ρ~δ = evals≡~ σ ρ~δ ,, eval≡~ u ρ~δ
 evals≡~ (π₁ σ) ρ~δ = π₁~E (evals≡~ σ ρ~δ)
 
 
-
--- Main theorem : βησ-equivalent terms in equivalent environments evaluate to
--- equivalent values.
+{-
+  Main theorem :
+  βησ-equivalent terms in equivalent environments evaluate to equivalent values.
+-}
 eval≈~ : {Γ Δ : Con} {A : Ty} {u v : Tm Δ A} {ρ δ : Env Γ Δ} →
          u ≈ v → ρ ~E δ → eval u ρ ~ eval v δ
 
@@ -240,6 +277,6 @@ evals≋~ (,∘ {σ = σ} {ν = ν} {u = u}) ρ~δ =
 
 
 
--- Soundness of normalisation follows.
+-- Soundness of normalisation follows easily.
 soundness : {Γ : Con} {A : Ty} {u v : Tm Γ A} → u ≈ v → nf u ≡ nf v
 soundness {u = u} {v} p = ~q (eval≈~ p refl~id)
