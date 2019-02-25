@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --without-K #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   The eval/quote relations are deterministic.

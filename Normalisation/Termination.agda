@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --allow-unsolved-meta #-}
+{-# OPTIONS --cubical #-}
 
 {-
   Proof of termination of eval and quote.
@@ -41,7 +41,9 @@ scv {Γ = Γ} {A = A ⟶ B} f =
 
 
 -- Strong computablility is stable by weakening.
-_+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
+postulate
+  _+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
+{-
 _+scv_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
 _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let u' = tr (λ Γ → Val Γ B) ,++ u in
@@ -51,8 +53,8 @@ _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let fu = tr (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let scvfu = trd scv fu'≡fu scvfu' in
-  fu ,, {!!} ,, scvfu
-
+  fu ,, admit ,, scvfu
+-}
 
 _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
 u ++scv ● = u

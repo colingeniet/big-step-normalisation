@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --without-K #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   Definitions of variables, values, environments and normal forms,

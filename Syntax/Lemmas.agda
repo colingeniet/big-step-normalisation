@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --without-K #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   Basic lemmas on the syntax of the λ-calculus.

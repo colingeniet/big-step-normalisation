@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --allow-unsolved-meta #-}
+{-# OPTIONS --cubical #-}
 
 {-
   Soundness theorem: equivalent terms normalise to the same normal form.
@@ -38,9 +38,10 @@ _~_ {Γ = Γ} {A = A ⟶ B} f g =
 
 
 -- Equivalence is stable by weakening.
-_+~_ : {Γ : Con} {B : Ty} {u v : Val Γ B} → u ~ v → (A : Ty) →
-       (u +V A) ~ (v +V A)
-
+postulate
+  _+~_ : {Γ : Con} {B : Ty} {u v : Val Γ B} → u ~ v → (A : Ty) →
+         (u +V A) ~ (v +V A)
+{-
 _+~_ {B = o} {u} {v} qu≡qv A =
   qwk' {v = u}
   ∙ ap (λ x → x +N A) qu≡qv
@@ -54,7 +55,7 @@ _+~_ {B = B ⟶ C} {f} {g} f~g A {Δ} {u} {v} u~v =
   let v' = tr (λ Γ → Val Γ B) ,++ v in
   let v≡v' = trfill (λ Γ → Val Γ B) ,++ v in
   {!!}
-
+-}
 
 _++~_ : {Γ : Con} {A : Ty} {u v : Val Γ A} → u ~ v → (Δ : Con) →
         (u ++V Δ) ~ (v ++V Δ)
