@@ -11,7 +11,6 @@
 module Normalisation.NormalForms where
 
 open import Syntax.Terms
-open import Syntax.Equivalence
 open import Syntax.Lemmas
 open import Library.Equality
 
@@ -132,18 +131,16 @@ u ++NV (Δ , A) = (u ++NV Δ) +NV A
 -- Lemmas on values.
 abstract
   -- Weakening and embedding commute (up to equivalence, of course).
-  +V≈ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≈ ⌜ u ⌝V + A
-  +NV≈ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≈ ⌜ u ⌝NV + A
-  +E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≋ ⌜ σ ⌝E +s A
+  +V≡ : {Γ : Con} {A B : Ty} {u : Val Γ B} → ⌜ u +V A ⌝V ≡ ⌜ u ⌝V + A
+  +NV≡ : {Γ : Con} {A B : Ty} {u : Ne Val Γ B} → ⌜ u +NV A ⌝NV ≡ ⌜ u ⌝NV + A
+  +E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ Δ} → ⌜ σ +E A ⌝E ≡ ⌜ σ ⌝E +s A
 
-  +V≈ {u = vlam u ρ} = refl≈ [ +E≋ ]≈ ∙≈ [][]
-  +V≈ {u = vneu n} = +NV≈ {u = n}
-  +NV≈ {A = A} {u = var x} = refl≈
-  +NV≈ {u = app n u} = +NV≈ {u = n} $≈ +V≈ {u = u}
-                     ∙≈ $[] ≈⁻¹
-  +E≋ {σ = ε} = εη ≋⁻¹
-  +E≋ {σ = σ , u} = +E≋ {σ = σ} ,≋ +V≈ {u = u}
-                  ∙≋ ,∘ ≋⁻¹
+  +V≡ {u = vlam u ρ} = ap (λ σ → _ [ σ ]) +E≡ ∙ [][]
+  +V≡ {u = vneu n} = +NV≡ {u = n}
+  +NV≡ {A = A} {u = var x} = refl
+  +NV≡ {u = app n u} = ap2 _$_ (+NV≡ {u = n}) (+V≡ {u = u}) ∙ $[] ⁻¹
+  +E≡ {σ = ε} = εη ⁻¹
+  +E≡ {σ = σ , u} = ap2 _,_ (+E≡ {σ = σ}) (+V≡ {u = u}) ∙ ,∘ ⁻¹
 
   -- Weakening can be pushed inside a λ-closure.
   []++V : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} →
@@ -153,10 +150,10 @@ abstract
     ap (λ u → u +V C) ([]++V {Θ = Θ} {u = u} {ρ = ρ})
 
   -- Embedding and projections commute.
-  π₁E≋ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≋ π₁ ⌜ σ ⌝E
-  π₁E≋ {σ = _ , _} = π₁β ≋⁻¹
-  π₂E≈ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≈ π₂ ⌜ σ ⌝E
-  π₂E≈ {σ = _ , _} = π₂β ≈⁻¹
+  π₁E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₁list σ ⌝E ≡ π₁ ⌜ σ ⌝E
+  π₁E≡ {σ = _ , _} = π₁β ⁻¹
+  π₂E≡ : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} → ⌜ π₂list σ ⌝V ≡ π₂ ⌜ σ ⌝E
+  π₂E≡ {σ = _ , _} = π₂β ⁻¹
 
   -- Weakening and projections commute.
   π₁+ : {Γ Δ Θ : Con} {A B : Ty} {σ : Env (Γ ++ Δ) (Θ , B)} →
@@ -190,11 +187,11 @@ idenv {●} = ε
 idenv {Γ , A} = idenv +E A , vneu (var z)
 
 abstract
-  idenv≋ : {Γ : Con} → ⌜ idenv {Γ} ⌝E ≋ id
-  idenv≋ {●} = εη ≋⁻¹
-  idenv≋ {Γ , A} = (+E≋ ∙≋ (idenv≋ ∘≋ refl≋)) ,≋ refl≈
-                 ∙≋ ↑id
-
+  idenv≡ : {Γ : Con} → ⌜ idenv {Γ} ⌝E ≡ id
+  idenv≡ {●} = εη ⁻¹
+  idenv≡ {Γ , A} = ap (λ σ → σ , vz)
+                      (+E≡ ∙ ap (λ σ → σ ∘ wk) idenv≡)
+                   ∙ ↑id
 
 
 -- β-normal η-long forms.

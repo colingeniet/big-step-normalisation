@@ -7,7 +7,7 @@ module Library.Equality where
 -}
 
 open import Agda.Primitive
-open import Agda.Primitive.Cubical public
+open import Agda.Primitive.Cubical
   renaming (primIMin to _∧_;
             primIMax to _∨_;
             primINeg to 1-_;

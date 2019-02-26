@@ -14,11 +14,9 @@ module Normalisation.Stability where
 open import Library.Equality
 open import Library.Pairs
 open import Syntax.Terms
-open import Syntax.Equivalence
 open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
-open import Normalisation.Determinism
 
 
 

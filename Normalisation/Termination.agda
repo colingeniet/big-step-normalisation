@@ -17,7 +17,6 @@ open import Syntax.Terms
 open import Syntax.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
-open import Normalisation.Determinism
 open import Normalisation.Stability
 
 

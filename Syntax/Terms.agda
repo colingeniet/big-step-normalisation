@@ -8,7 +8,7 @@
 module Syntax.Terms where
 
 open import Library.Equality
-open import Syntax.Types
+open import Syntax.Types public
 
 ---- Terms Definition.
 
