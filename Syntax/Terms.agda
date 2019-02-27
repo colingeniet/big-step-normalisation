@@ -8,6 +8,7 @@
 module Syntax.Terms where
 
 open import Library.Equality
+open import Library.Sets
 open import Syntax.Types public
 
 ---- Terms Definition.

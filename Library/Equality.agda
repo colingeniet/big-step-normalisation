@@ -3,7 +3,7 @@
 module Library.Equality where
 
 {-
-  Equality reasoning, definitions and basic lemmas.
+  Equality definitions.
 -}
 
 open import Agda.Primitive
@@ -32,6 +32,134 @@ infix 8 _⁻¹
 _⁻¹ : ∀ {l} {A : I → Set l} {x : A i0} {y : A i1} →
         PathP A x y → PathP (λ i → A (1- i)) y x
 (p ⁻¹) i = p (1- i)
+
+⁻¹⁻¹ : ∀ {l} {A : I → Set l} {x : A i0} {y : A i1} {p : PathP A x y} →
+         p ⁻¹ ⁻¹ ≡ p
+⁻¹⁻¹ = refl
+
+refl⁻¹ : ∀ {l} {A : Set l} {x : A} → refl {x = x} ⁻¹ ≡ refl
+refl⁻¹ = refl
+
+-- Transitivity
+infixr 6 _∙_ _d∙_ _∙d_ _d∙d_
+_∙_ : ∀ {l} {A : Set l} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+_∙_ {x = x} p q i = hcomp (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p i)
+
+
+-- Transitivity laws.
+
+{-
+  The filling of the squared used to prove transitivity of paths.
+  It looks like:
+  
+  j^
+   |->i
+  
+      p∙q
+     _____
+    |     |
+  x |     | q
+    |_____|
+       p
+-}
+private
+  transitivity-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
+                          I → I → A
+  transitivity-square {x = x} p q i j =
+    hcomp (λ k → λ {(i = i0) → x;
+                    (i = i1) → q (j ∧ k);
+                    (j = i0) → p i})
+          (p i)
+
+{-
+  Yet another usefull square.
+  It looks like:
+
+  j^
+   |->i
+  
+       q
+     _____
+    |     |
+  p |     | q
+    |_____|
+       p
+-}
+private
+  diagonal-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
+                      I → I → A
+  diagonal-square {x = x} {y} p q i j =
+    hcomp (λ k → λ {(i = i0) → p j;
+                    (j = i0) → p i;
+                    (i = i1) → q (j ∧ k);
+                    (j = i1) → q (i ∧ k)})
+          (p (i ∨ j))
+
+-- Refl is neutral for transitivity.
+∙refl : ∀ {l} {A : Set l} {x y : A} {p : x ≡ y} →
+          p ∙ refl ≡ p
+∙refl {p = p} i j = transitivity-square p refl j (1- i)
+
+refl∙ : ∀ {l} {A : Set l} {x y : A} {p : x ≡ y} →
+          refl ∙ p ≡ p
+refl∙ {x = x} {p = p} j i =
+  hcomp (λ k → λ {(i = i0) → x;
+                  (i = i1) → p k;
+                  (j = i1) → p (i ∧ k)})
+        x
+
+-- Symmetry is an inverse for transitivity.
+-∙-⁻¹ : ∀ {l} {A : Set l} {x y : A} {p : x ≡ y} → p ∙ p ⁻¹ ≡ refl
+-∙-⁻¹ {x = x} {p = p} j i =
+  hcomp (λ k → λ {(j = i1) → x;
+                  (i = i0) → x;
+                  (i = i1) → p (1- j ∧ 1- k)})
+        (p (1- j ∧ i))
+
+-⁻¹∙- : ∀ {l} {A : Set l} {x y : A} {p : x ≡ y} → p ⁻¹ ∙ p ≡ refl
+-⁻¹∙- = -∙-⁻¹
+
+
+{-
+  This squares is a face of the cube used to prove associativity.
+  It is somewhat similar to the transitivity-square above, but the link is not
+  obvious to me.
+  It looks like this:
+  j^
+   |->i
+  
+       z
+     _____
+    |     |
+  q |     | p∙q
+    |_____|
+      p⁻¹
+-}
+private
+  assoc-cube-back : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
+                      I → I → A
+  assoc-cube-back p q i j =
+    hcomp (λ k → λ {(i = i0) → q (j ∧ k);
+                    (j = i0) → p (1- i);
+                    (j = i1) → q k})
+          (p (1- i ∨ j))
+
+-- Associativity.
+∙∙ : ∀ {l} {A : Set l} {x y z w : A} {p : x ≡ y} {q : y ≡ z} {r : z ≡ w} →
+       (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
+∙∙ {x = x} {p = p} {q} {r} j i =
+  hcomp (λ k → λ {(i = i0) → x;
+                  (i = i1) → assoc-cube-back q r j k})
+        (transitivity-square p q i (1- j))
+
+-- Inverse of composition.
+∙⁻¹ : ∀ {l} {A : Set l} {x y z : A} {p : x ≡ y} {q : y ≡ z} →
+        (p ∙ q) ⁻¹ ≡ q ⁻¹ ∙ p ⁻¹
+∙⁻¹ {p = p} {q} j i =
+  hcomp (λ k → λ {(i = i0) → q (j ∨ k);
+                  (i = i1) → p (j ∧ 1- k)})
+        (diagonal-square p q (1- i) j)
+
 
 -- Congruence
 apd : ∀ {l m} {A : I → Set l} {B : {i : I} → A i → Set m}
@@ -74,67 +202,45 @@ trfill : ∀ {l m} {A : Set l} (P : A → Set m) {x y : A}
 trfill P = trdfill P
 
 
--- Transitivity
-infixr 6 _∙_ _d∙_
-_∙_ : ∀ {l} {A : Set l} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
-_∙_ {x = x} p q = tr (λ w → x ≡ w) q p
-
-_d∙_ : ∀ {a} {A : I → Set a} {x : A i0} {y z : A i1} →
-         PathP A x y → y ≡ z → PathP A x z
-_d∙_ {A = A} {x = x} p q = tr (λ w → PathP A x w) q p
-
-_∙d_ : ∀ {a} {A : I → Set a} {x y : A i0} {z : A i1} →
-         x ≡ y → PathP A y z → PathP A x z
-_∙d_ {A = A} {z = z} p q = ((q ⁻¹) d∙ (p ⁻¹)) ⁻¹
-
+-- Transitivity for dependent paths.
 _d∙d_ : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
           {x : A} {y : B} {z : C} → x ≡[ P ]≡ y → y ≡[ Q ]≡ z →
           x ≡[ P ∙ Q ]≡ z
-_d∙d_ {A = A} {P = P} {Q} {x} p q =
-  trd (λ {i} w → x ≡[ trfill (λ D → A ≡ D) Q P i ]≡ w) q p
+_d∙d_ {A = A} {P = P} {Q} {x} p q i =
+   comp (λ j → transitivity-square P Q i j) _
+        (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p i)
 
+_d∙_ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y z : B} →
+         x ≡[ P ]≡ y → y ≡ z → x ≡[ P ]≡ z
+_d∙_ {P = P} p q = tr (λ P → _ ≡[ P ]≡ _) (∙refl {p = P}) (p d∙d q)
 
+_∙d_ : ∀ {l} {A B : Set l} {P : A ≡ B} {x y : A} {z : B} →
+         x ≡ y → y ≡[ P ]≡ z → x ≡[ P ]≡ z
+_∙d_ {P = P} p q = tr (λ P → _ ≡[ P ]≡ _) (refl∙ {p = P}) (p d∙d q)
 
-
-isProp : ∀ {l} → Set l → Set l
-isProp A = (x y : A) → x ≡ y
-
-isSet : ∀ {l} → Set l → Set l
-isSet A = {x y : A} → isProp (x ≡ y)
-
-PropisSet : ∀ {l} {A : Set l} → isProp A → isSet A
-PropisSet isprop {x} {y} p q j i =
-  hcomp (λ k → λ {(i = i0) → isprop x x k;
-                  (i = i1) → isprop x y k;
-                  (j = i0) → isprop x (p i) k;
-                  (j = i1) → isprop x (q i) k})
-        x
-
-isPropisProp : ∀ {l} {A : Set l} → isProp (isProp A)
-isPropisProp P Q i x y = PropisSet P (P x y) (Q x y) i
-
-isPropisSet : ∀ {l} {A : Set l} → isProp (isSet A)
-isPropisSet P Q i {x} {y} = isPropisProp (P {x} {y}) (Q {x} {y}) i
 
 
 {-
-test0 : ∀ {l m} {A : Set l} {B : A → Set m} →
-          ({x : A} → isProp (B x)) →
-          {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
-          x ≡[ ap B p ]≡ y
-test0 {B = B} H p x y = trfill B p x d∙ H (tr B p x) y
+-- An alternative definition of dependent paths.
+_≡*_*≡_ : ∀ {l} {A B : Set l} → A → A ≡ B → B → Set l
+x ≡* P *≡ y = (P * x) ≡ y
 
-test1 : ∀ {l m} {A : Set l} {B : A → Set m} →
-          ({x : A} → isSet (B x)) →
-          {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
-          isProp (x ≡[ ap B p ]≡ y)
-test1 H p x y r s = {!!}
+-- Isomorphism between the two notions of dependent paths.
+≡[]≡to≡**≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
+                x ≡[ P ]≡ y → x ≡* P *≡ y
+≡[]≡to≡**≡ {P = P} {x} {y} p = tr (λ Q → P * x ≡[ Q ]≡ y)
+                                  (-⁻¹∙- {p = P})
+                                  ((P *fill x ⁻¹) d∙d p)
 
-test2 : ∀ {l m} {A : Set l} {B : A → Set m} →
-          ({x : A} → isSet (B x)) →
-          {a b : A} {p q : a ≡ b} (α : p ≡ q)
-          {x : B a} {y : B b} (r : x ≡[ ap B p ]≡ y) (s : x ≡[ ap B q ]≡ y) →
-          r ≡[ ap (λ p → x ≡[ ap B p ]≡ y) α ]≡ s
-test2 {B = B} H {a} {b} {p} {q} α {x} {y} r s =
-  {!test {A = a ≡ b} {B = λ p → x ≡[ ap B p ]≡ y} !}
+≡**≡to≡[]≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
+                x ≡* P *≡ y → x ≡[ P ]≡ y
+≡**≡to≡[]≡ {P = P} {x} p = (P *fill x) d∙ p
+
+≡[]≡to≡**≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
+                   {p : x ≡[ P ]≡ y} → ≡**≡to≡[]≡ (≡[]≡to≡**≡ p) ≡ p
+≡[]≡to≡**≡-iso = {!!}
+
+≡**≡to≡[]≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
+                   {p : x ≡* P *≡ y} → ≡[]≡to≡**≡ (≡**≡to≡[]≡ {P = P} p) ≡ p
+≡**≡to≡[]≡-iso {P = P} {x} {y} {p} = {!(P *fill x ⁻¹) d∙d (P *fill x) d∙ p!}
 -}

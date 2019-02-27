@@ -1,8 +1,9 @@
-{-# OPTIONS --cubical --allow-unsolved-meta #-}
+{-# OPTIONS --cubical --safe #-}
 
 module Syntax.Eliminator where
 
 open import Library.Equality
+open import Library.Sets
 open import Syntax.Types
 open import Syntax.Terms
 open import Agda.Primitive
@@ -12,8 +13,7 @@ record Motives {l} : Set (lsuc l) where
   field
     Tmᴹ : {Γ : Con} {A : Ty} → Tm Γ A → Set l
     Tmsᴹ : {Γ Δ : Con} → Tms Γ Δ → Set l
-    isSetTmᴹ : {Γ : Con} {A : Ty} {u : Tm Γ A} → isSet (Tmᴹ u)
-    isSetTmsᴹ : {Γ Δ : Con} {σ : Tms Γ Δ} → isSet (Tmsᴹ σ)
+
 
 record Methods {l} (M : Motives {l}) : Set (lsuc l) where
   open Motives M
@@ -62,6 +62,29 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
           (σᴹ : Tmsᴹ σ) (νᴹ : Tmsᴹ ν) (uᴹ : Tmᴹ u) →
           (σᴹ ,ᴹ uᴹ) ∘ᴹ νᴹ ≡[ ap Tmsᴹ ,∘ ]≡ σᴹ ∘ᴹ νᴹ ,ᴹ uᴹ [ νᴹ ]ᴹ
 
+    isSetTmᴹ : {Γ : Con} {A : Ty} {u v : Tm Γ A} {p : u ≡ v}
+               {x : Tmᴹ u} {y : Tmᴹ v} (q r : x ≡[ ap Tmᴹ p ]≡ y) → q ≡ r
+    isSetTmsᴹ : {Γ Δ : Con} {σ ν : Tms Γ Δ} {p : σ ≡ ν}
+                {x : Tmsᴹ σ} {y : Tmsᴹ ν} (q r : x ≡[ ap Tmsᴹ p ]≡ y) → q ≡ r
+
+  -- The set hypotheses can be generalized to the case where the two
+  -- dependent paths lie other two equal paths.
+  genisSetTmᴹ : {Γ : Con} {A : Ty} {u v : Tm Γ A} {p q : u ≡ v} (α : p ≡ q)
+                {x : Tmᴹ u} {y : Tmᴹ v} (r : x ≡[ ap Tmᴹ p ]≡ y)
+                (s : x ≡[ ap Tmᴹ q ]≡ y) →
+                r ≡[ ap (λ p → x ≡[ ap Tmᴹ p ]≡ y) α ]≡ s
+  genisSetTmᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmᴹ p ]≡ y) α r
+                              d∙ isSetTmᴹ _ s
+
+  genisSetTmsᴹ : {Γ Δ : Con} {σ ν : Tms Γ Δ} {p q : σ ≡ ν} (α : p ≡ q)
+                 {x : Tmsᴹ σ} {y : Tmsᴹ ν} (r : x ≡[ ap Tmsᴹ p ]≡ y)
+                (s : x ≡[ ap Tmsᴹ q ]≡ y) →
+                r ≡[ ap (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α ]≡ s
+  genisSetTmsᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α r
+                               d∙ isSetTmsᴹ _ s
+
+
+
 
 {- Just like the definition of terms, the eliminator function is made 
    non mutually inductive to avoid some mutual dependency problems.
@@ -71,6 +94,7 @@ termMotives Mo {i = Tm-i Γ A} u = Tmᴹ u
   where open Motives Mo
 termMotives Mo {i = Tms-i Γ Δ} σ = Tmsᴹ σ
   where open Motives Mo
+
 
 elimterm : ∀ {l} {Mo : Motives {l}} (M : Methods Mo) {i : term-index}
              (u : term i) → termMotives Mo u
@@ -120,14 +144,17 @@ elimterm M (,∘ {σ = σ} {ν = ν} {u = u} i) =
   ,∘ᴹ (elimterm M σ) (elimterm M ν) (elimterm M u) i
   where open Methods M
 
-elimterm {Mo = Mo} M (isSetTm {Γ} {A} {u} {v} p q j i) =
-  {!!}
-  where open Motives Mo
-        open Methods M
-elimterm {Mo = Mo} M (isSetTms {Γ} {Δ} {σ} {ν} p q j i) =
-  {!!}
-  where open Motives Mo
-        open Methods M
+elimterm {Mo = Mo} M (isSetTm p q i j) =
+  genisSetTmᴹ (isSetTm p q)
+              (λ k → elimterm M (p k))
+              (λ k → elimterm M (q k))
+              i j
+  where open Methods M
+elimterm {Mo = Mo} M (isSetTms p q i j) =
+  genisSetTmsᴹ (isSetTms p q)
+               (λ k → elimterm M (p k))
+               (λ k → elimterm M (q k)) i j
+  where open Methods M
 
 
 -- And the nicer looking version of the previous function.
@@ -136,5 +163,5 @@ elimTm : ∀ {l} {Mo : Motives {l}} (M : Methods Mo) {Γ : Con} {A : Ty}
 elimTm M u = elimterm M u
 
 elimTms : ∀ {l} {Mo : Motives {l}} (M : Methods Mo) {Γ Δ : Con}
-           (σ : Tms Γ Δ) → Motives.Tmsᴹ Mo σ
+            (σ : Tms Γ Δ) → Motives.Tmsᴹ Mo σ
 elimTms M σ = elimterm M σ
