@@ -16,6 +16,24 @@ open import Agda.Primitive.Cubical
             primTransp to transp;
             itIsOne to 1=1)
 open import Agda.Builtin.Cubical.Path public
+open import Agda.Builtin.Cubical.Sub
+  renaming (Sub to _[_↦_];
+            primSubOut to ouc)
+
+
+hfill : ∀ {l} {A : Set l} {φ : I} (u : ∀ i → Partial φ A)
+          (u0 : A [ φ ↦ u i0 ]) → I → A
+hfill {φ = φ} u u0 i = hcomp (λ j → λ {(φ = i1) → u (i ∧ j) 1=1;
+                                       (i = i0) → ouc u0})
+                             (ouc u0)
+
+fill : ∀ {l} (A : I → Set l) (φ : I) (u : ∀ i → Partial φ (A i))
+             (u0 : A i0 [ φ ↦ u i0 ]) (i : I) → A i
+fill A φ u u0 i = comp (λ j → A (i ∧ j)) _
+                       (λ j → λ {(φ = i1) → u (i ∧ j) 1=1;
+                                 (i = i0) → ouc u0 })
+                       (ouc u0)
+
 
 
 -- Dependent paths
@@ -65,11 +83,8 @@ _∙_ {x = x} p q i = hcomp (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p 
 private
   transitivity-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
                           I → I → A
-  transitivity-square {x = x} p q i j =
-    hcomp (λ k → λ {(i = i0) → x;
-                    (i = i1) → q (j ∧ k);
-                    (j = i0) → p i})
-          (p i)
+  transitivity-square {x = x} p q i =
+    hfill (λ j → λ {(i = i0) → x; (i = i1) → q j}) (inc (p i))
 
 {-
   Yet another usefull square.
@@ -88,7 +103,7 @@ private
 private
   diagonal-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
                       I → I → A
-  diagonal-square {x = x} {y} p q i j =
+  diagonal-square p q i j =
     hcomp (λ k → λ {(i = i0) → p j;
                     (j = i0) → p i;
                     (i = i1) → q (j ∧ k);
@@ -123,6 +138,22 @@ refl∙ {x = x} {p = p} j i =
 {-
   This squares is a face of the cube used to prove associativity.
   It is somewhat similar to the transitivity-square above, but the link is not
+private
+  assoc-cube-back : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
+                      I → I → A
+  assoc-cube-back p q i j =
+    hcomp (λ k → λ {(i = i0) → q (j ∧ k);
+                    (j = i0) → p (1- i);
+                    (j = i1) → q k})
+          (p (1- i ∨ j))
+
+-- Associativity.
+∙∙ : ∀ {l} {A : Set l} {x y z w : A} {p : x ≡ y} {q : y ≡ z} {r : z ≡ w} →
+       (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
+∙∙ {x = x} {p = p} {q} {r} j i =
+  hcomp (λ k → λ {(i = i0) → x;
+                  (i = i1) → assoc-cube-back q r j k})
+        (transitivity-square p q i (1- j))
   obvious to me.
   It looks like this:
   j^
@@ -202,6 +233,7 @@ trfill : ∀ {l m} {A : Set l} (P : A → Set m) {x y : A}
 trfill P = trdfill P
 
 
+
 -- Transitivity for dependent paths.
 _d∙d_ : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
           {x : A} {y : B} {z : C} → x ≡[ P ]≡ y → y ≡[ Q ]≡ z →
@@ -217,6 +249,98 @@ _d∙_ {P = P} p q = tr (λ P → _ ≡[ P ]≡ _) (∙refl {p = P}) (p d∙d q)
 _∙d_ : ∀ {l} {A B : Set l} {P : A ≡ B} {x y : A} {z : B} →
          x ≡ y → y ≡[ P ]≡ z → x ≡[ P ]≡ z
 _∙d_ {P = P} p q = tr (λ P → _ ≡[ P ]≡ _) (refl∙ {p = P}) (p d∙d q)
+
+
+-- Transitivity laws for dependent paths. All those equalities lie over the
+-- corresponding equalities for non-dependent paths.
+private
+  transitivity-square-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
+                            {x : A} {y : B} {z : C}
+                            (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
+                            (i j : I) → transitivity-square P Q i j
+  transitivity-square-d {P = P} {Q} {x} p q i =
+    fill (λ j → transitivity-square P Q i j) _
+         (λ j → λ {(i = i0) → x; (i = i1) → q j}) (inc (p i))
+
+  diagonal-square-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
+                        {x : A} {y : B} {z : C}
+                        (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
+                        (i j : I) → diagonal-square P Q i j
+  diagonal-square-d {P = P} {Q} p q i j =
+    comp (hfill (λ k → λ {(i = i0) → P j;
+                          (j = i0) → P i;
+                          (i = i1) → Q (j ∧ k);
+                          (j = i1) → Q (i ∧ k)})
+                (inc (P (i ∨ j)))) _
+         (λ k → λ {(i = i0) → p j;
+                   (j = i0) → p i;
+                   (i = i1) → q (j ∧ k);
+                   (j = i1) → q (i ∧ k)})
+         (p (i ∨ j))
+
+
+d∙refl : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} {p : x ≡[ P ]≡ y} →
+           p d∙d refl ≡[ ap (λ P → x ≡[ P ]≡ y) ∙refl ]≡ p
+d∙refl {p = p} i j = transitivity-square-d p refl j (1- i)
+
+
+refl∙d : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} {p : x ≡[ P ]≡ y} →
+           refl d∙d p ≡[ ap (λ P → x ≡[ P ]≡ y) refl∙ ]≡ p
+refl∙d {A = A} {P = P} {x = x} {p = p} j i =
+  comp (hfill (λ k → λ {(i = i0) → A;
+                        (i = i1) → P k;
+                        (j = i1) → P (i ∧ k)})
+              (inc A)) _
+       (λ k → λ {(i = i0) → x;
+                 (i = i1) → p k;
+                 (j = i1) → p (i ∧ k)})
+       x
+
+
+-d∙d-⁻¹ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} {p : x ≡[ P ]≡ y} →
+            p d∙d p ⁻¹ ≡[ ap (λ P → x ≡[ P ]≡ x) -∙-⁻¹ ]≡ refl
+-d∙d-⁻¹ {A = A} {P = P} {x = x} {p = p} j i =
+  comp (hfill (λ k → λ {(j = i1) → A;
+                        (i = i0) → A;
+                        (i = i1) → P (1- j ∧ 1- k)})
+              (inc (P (1- j ∧ i)))) _
+       (λ k → λ {(j = i1) → x;
+                 (i = i0) → x;
+                 (i = i1) → p (1- j ∧ 1- k)})
+       (p (1- j ∧ i))
+
+-⁻¹d∙d- : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} {p : x ≡[ P ]≡ y} →
+            p ⁻¹ d∙d p ≡[ ap (λ P → y ≡[ P ]≡ y) -⁻¹∙- ]≡ refl
+-⁻¹d∙d- = -d∙d-⁻¹
+
+
+private
+  assoc-cube-back-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
+                        {x : A} {y : B} {z : C} (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
+                        (i j : I) → assoc-cube-back P Q i j
+  assoc-cube-back-d {P = P} {Q} p q i j =
+    comp (hfill (λ k → λ {(i = i0) → Q (j ∧ k);
+                          (j = i0) → P (1- i);
+                          (j = i1) → Q k})
+                (inc (P (1- i ∨ j)))) _
+         (λ k → λ {(i = i0) → q (j ∧ k);
+                   (j = i0) → p (1- i);
+                   (j = i1) → q k})
+         (p (1- i ∨ j))
+
+-- Associativity.
+∙∙d : ∀ {l} {A B C D : Set l} {P : A ≡ B} {Q : B ≡ C} {R : C ≡ D}
+        {x : A} {y : B} {z : C} {w : D} {p : x ≡[ P ]≡ y}
+        {q : y ≡[ Q ]≡ z} {r : z ≡[ R ]≡ w} →
+        (p d∙d q) d∙d r ≡[ ap (λ P → x ≡[ P ]≡ w) ∙∙ ]≡ p d∙d (q d∙d r)
+∙∙d {A = A} {P = P} {Q} {R} {x = x} {p = p} {q} {r} j i =
+  comp (hfill (λ k → λ {(i = i0) → A;
+                        (i = i1) → assoc-cube-back Q R j k})
+              (inc (transitivity-square P Q i (1- j)))) _
+       (λ k → λ {(i = i0) → x;
+                 (i = i1) → assoc-cube-back-d q r j k})
+       (transitivity-square-d p q i (1- j))
+
 
 
 
