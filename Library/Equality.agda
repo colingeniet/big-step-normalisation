@@ -7,7 +7,7 @@ module Library.Equality where
 -}
 
 open import Agda.Primitive
-open import Agda.Primitive.Cubical
+open import Agda.Primitive.Cubical public
   renaming (primIMin to _∧_;
             primIMax to _∨_;
             primINeg to 1-_;
@@ -16,7 +16,7 @@ open import Agda.Primitive.Cubical
             primTransp to transp;
             itIsOne to 1=1)
 open import Agda.Builtin.Cubical.Path public
-open import Agda.Builtin.Cubical.Sub
+open import Agda.Builtin.Cubical.Sub public
   renaming (Sub to _[_↦_];
             primSubOut to ouc)
 
@@ -80,11 +80,10 @@ _∙_ {x = x} p q i = hcomp (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p 
     |_____|
        p
 -}
-private
-  transitivity-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
-                          I → I → A
-  transitivity-square {x = x} p q i =
-    hfill (λ j → λ {(i = i0) → x; (i = i1) → q j}) (inc (p i))
+transitivity-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
+                        I → I → A
+transitivity-square {x = x} p q i =
+  hfill (λ j → λ {(i = i0) → x; (i = i1) → q j}) (inc (p i))
 
 {-
   Yet another usefull square.
@@ -100,15 +99,14 @@ private
     |_____|
        p
 -}
-private
-  diagonal-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
-                      I → I → A
-  diagonal-square p q i j =
-    hcomp (λ k → λ {(i = i0) → p j;
-                    (j = i0) → p i;
-                    (i = i1) → q (j ∧ k);
-                    (j = i1) → q (i ∧ k)})
-          (p (i ∨ j))
+diagonal-square : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
+                    I → I → A
+diagonal-square p q i j =
+  hcomp (λ k → λ {(i = i0) → p j;
+                 (j = i0) → p i;
+                 (i = i1) → q (j ∧ k);
+                 (j = i1) → q (i ∧ k)})
+        (p (i ∨ j))
 
 -- Refl is neutral for transitivity.
 ∙refl : ∀ {l} {A : Set l} {x y : A} {p : x ≡ y} →
@@ -138,22 +136,6 @@ refl∙ {x = x} {p = p} j i =
 {-
   This squares is a face of the cube used to prove associativity.
   It is somewhat similar to the transitivity-square above, but the link is not
-private
-  assoc-cube-back : ∀ {l} {A : Set l} {x y z : A} (p : x ≡ y) (q : y ≡ z) →
-                      I → I → A
-  assoc-cube-back p q i j =
-    hcomp (λ k → λ {(i = i0) → q (j ∧ k);
-                    (j = i0) → p (1- i);
-                    (j = i1) → q k})
-          (p (1- i ∨ j))
-
--- Associativity.
-∙∙ : ∀ {l} {A : Set l} {x y z w : A} {p : x ≡ y} {q : y ≡ z} {r : z ≡ w} →
-       (p ∙ q) ∙ r ≡ p ∙ (q ∙ r)
-∙∙ {x = x} {p = p} {q} {r} j i =
-  hcomp (λ k → λ {(i = i0) → x;
-                  (i = i1) → assoc-cube-back q r j k})
-        (transitivity-square p q i (1- j))
   obvious to me.
   It looks like this:
   j^
@@ -192,6 +174,7 @@ private
         (diagonal-square p q (1- i) j)
 
 
+
 -- Congruence
 apd : ∀ {l m} {A : I → Set l} {B : {i : I} → A i → Set m}
        (f : {i : I} (a : A i) → B a) {x : A i0} {y : A i1} →
@@ -205,6 +188,19 @@ ap f = apd f
 ap2 : ∀ {l m n} {A : Set l} {B : Set m} {C : Set n} (f : A → B → C)
         {x y : A} {u v : B} → (p : x ≡ y) (q : u ≡ v) → f x u ≡ f y v
 ap2 f p q i = f (p i) (q i)
+
+
+
+ap∙ : ∀ {l m} {A : Set l} {B : Set m} {f : A → B}
+        {x y z : A} {p : x ≡ y} {q : y ≡ z} →
+        ap f (p ∙ q) ≡ ap f p ∙ ap f q
+ap∙ {f = f} {x} {y} {z} {p} {q} j i =
+  hcomp (λ k → λ {(i = i0) → f x;
+                  (i = i1) → f (q k);
+                  (j = i0) → f (transitivity-square p q i k);
+                  (j = i1) → transitivity-square (ap f p) (ap f q) i k})
+        (f (p i))
+
 
 -- Transport
 infixr 20 _*_
@@ -358,13 +354,21 @@ x ≡* P *≡ y = (P * x) ≡ y
 
 ≡**≡to≡[]≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
                 x ≡* P *≡ y → x ≡[ P ]≡ y
-≡**≡to≡[]≡ {P = P} {x} p = (P *fill x) d∙ p
+≡**≡to≡[]≡ {P = P} {x} {y} p = tr (λ Q → x ≡[ Q ]≡ y)
+                                  ∙refl
+                                  ((P *fill x) d∙d p)
 
 ≡[]≡to≡**≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
                    {p : x ≡[ P ]≡ y} → ≡**≡to≡[]≡ (≡[]≡to≡**≡ p) ≡ p
-≡[]≡to≡**≡-iso = {!!}
+≡[]≡to≡**≡-iso {P = P} {x} {y} {p} =
+  let *x = P * x in
+  let x≡*x = P *fill x in
+  let p* = x≡*x ⁻¹ d∙d p in
+  let p*' = tr (λ Q → *x ≡[ Q ]≡ y) (-⁻¹∙- {p = P}) p* in -- ≡[]≡to≡**≡ p
+  let p*≡p*' = trfill (λ Q → *x ≡[ Q ]≡ y) (-⁻¹∙- {p = P}) p* in
+  {!!}
 
 ≡**≡to≡[]≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
                    {p : x ≡* P *≡ y} → ≡[]≡to≡**≡ (≡**≡to≡[]≡ {P = P} p) ≡ p
-≡**≡to≡[]≡-iso {P = P} {x} {y} {p} = {!(P *fill x ⁻¹) d∙d (P *fill x) d∙ p!}
+≡**≡to≡[]≡-iso {P = P} {x} {y} {p} = {!!}
 -}

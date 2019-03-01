@@ -26,6 +26,4 @@ record _×_ {a b} (A : Set a) (B : Set b) : Set (a ⊔ b) where
 
 open _×_ public
 
-_∧_ = _×_
-
-infixr 4 _,,_ _×_ _∧_
+infixr 4 _,,_ _×_

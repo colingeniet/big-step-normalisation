@@ -43,26 +43,60 @@ isPropisSet P Q i {x} {y} = isPropisProp (P {x} {y}) (Q {x} {y}) i
 
 
 
+-- If B is a proposition indexed by A, then B is also a proposition up to
+-- dependent paths, that is if a ≡ b : A, then any two elements of B a and
+-- B b are equal.
 isprop-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                      ({x : A} → isProp (B x)) →
                      {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
                      x ≡[ ap B p ]≡ y
 isprop-dependent {B = B} H p x y = trfill B p x d∙ H (tr B p x) y
 
+-- A dependent path which lies over some p : x ≡ y in a set can
+-- be transformed into a path over any other q : x ≡ y.
+change-underlying : ∀ {l m} {A : Set l} {B : A → Set m} →
+                      isSet A →
+                      {a b : A} {p q : a ≡ b} {x : B a} {y : B b} →
+                      x ≡[ ap B p ]≡ y → x ≡[ ap B q ]≡ y
+change-underlying {B = B} H {p = p} {q} {x} {y} r =
+  tr (λ P → x ≡[ ap B P ]≡ y) (H p q) r
+
+-- As a special case of the previous lemma, a path which lies over a loop
+-- in a set can be made non-dependent
+make-non-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
+                      isSet A →
+                      {a : A} {p : a ≡ a} {x y : B a} →
+                      x ≡[ ap B p ]≡ y → x ≡ y
+make-non-dependent {B = B} H r = change-underlying {B = B} H r
+
 {-
 test1 : ∀ {l m} {A : Set l} {B : A → Set m} →
+          isSet A →
           ({x : A} → isSet (B x)) →
           {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
           isProp (x ≡[ ap B p ]≡ y)
-test1 {B = B} H p x y r s = {!!}
+test1 {B = B} HA HB {a} {b} p x y r s =
+  let rs = r d∙d s ⁻¹ in
+  let rs' = tr (λ P → x ≡[ P ]≡ x) -∙-⁻¹ rs in
+  let rs≡rs' = trfill (λ P → x ≡[ P ]≡ x) -∙-⁻¹ rs in
+  let rs'≡refl = HB rs' refl in
+  let rs≡refl = rs≡rs' d∙ rs'≡refl in
+  let r≡s = d∙refl ⁻¹
+            d∙d apd (λ s → r d∙d s)  -⁻¹d∙d- ⁻¹
+            d∙d ∙∙d ⁻¹
+            d∙d apd (λ p → p d∙d s) rs≡refl
+            d∙d refl∙d
+  in
+  {!!}
 
 test2 : ∀ {l m} {A : Set l} {B : A → Set m} →
+          (HA : isSet A) →
           ({x : A} → isSet (B x)) →
-          {a b : A} {p q : a ≡ b} (α : p ≡ q)
+          {a b : A} {p q : a ≡ b}
           {x : B a} {y : B b} (r : x ≡[ ap B p ]≡ y) (s : x ≡[ ap B q ]≡ y) →
-          r ≡[ ap (λ p → x ≡[ ap B p ]≡ y) α ]≡ s
-test2 {B = B} H {p = p} {q} α {x} {y} r s =
-  trfill (λ p → x ≡[ ap B p ]≡ y) α r
-  d∙ test1 H q x y (tr (λ p → x ≡[ ap B p ]≡ y) α r) s
+          r ≡[ ap (λ p → x ≡[ ap B p ]≡ y) (HA p q) ]≡ s
+test2 {B = B} HA HB {p = p} {q} {x} {y} r s =
+  trfill (λ p → x ≡[ ap B p ]≡ y) (HA p q) r
+  d∙ test1 HA HB q x y (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
 -}
 
