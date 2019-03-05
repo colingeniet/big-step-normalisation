@@ -7,7 +7,7 @@
 module Normalisation.NormalForms where
 
 open import Syntax.Terms
-open import Normalisation.NeutralForms
+open import Normalisation.NeutralForms public
 
 
 -- β-normal η-long forms.
@@ -15,14 +15,14 @@ open import Normalisation.NeutralForms
 -- type. This forces to η-expand terms 'as much as possible' while keeping a
 -- β-normal form.
 data Nf : Tm-like where
-  nlam : {Γ : Con} {A B : Ty} → Nf (Γ , A) B → Nf Γ (A ⟶ B)
-  nneu : {Γ : Con} → Ne Nf Γ o → Nf Γ o
+  lam : {Γ : Con} {A B : Ty} → Nf (Γ , A) B → Nf Γ (A ⟶ B)
+  neu : {Γ : Con} → Ne Nf Γ o → Nf Γ o
 
 -- Embeddings.
 ⌜_⌝N : {Γ : Con} {A : Ty} → Nf Γ A → Tm Γ A
 ⌜_⌝NN : {Γ : Con} {A : Ty} → Ne Nf Γ A → Tm Γ A
-⌜ nlam u ⌝N = lam ⌜ u ⌝N
-⌜ nneu n ⌝N = ⌜ n ⌝NN
+⌜ lam u ⌝N = lam ⌜ u ⌝N
+⌜ neu n ⌝N = ⌜ n ⌝NN
 ⌜ var x ⌝NN = ⌜ x ⌝v
 ⌜ app n u ⌝NN = ⌜ n ⌝NN $ ⌜ u ⌝N
 
@@ -32,8 +32,8 @@ nfgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Nf (Γ ++ Δ) B → (A : Ty) →
           Nf ((Γ , A) ++ Δ) B
 nefgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Ne Nf (Γ ++ Δ) B → (A : Ty) →
            Ne Nf ((Γ , A) ++ Δ) B
-nfgenwk {B = B ⟶ C} Δ (nlam u) A = nlam (nfgenwk (Δ , B) u A)
-nfgenwk Δ (nneu u) A = nneu (nefgenwk Δ u A)
+nfgenwk {B = B ⟶ C} Δ (lam u) A = lam (nfgenwk (Δ , B) u A)
+nfgenwk Δ (neu u) A = neu (nefgenwk Δ u A)
 nefgenwk Δ (var x) A = var (varwk Δ x A)
 nefgenwk Δ (app f u) A = app (nefgenwk Δ f A) (nfgenwk Δ u A)
 

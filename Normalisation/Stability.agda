@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-meta #-}
 
 {-
   Values are invariant by evaluation (in the identity environment),
@@ -13,8 +13,10 @@ module Normalisation.Stability where
 
 open import Library.Equality
 open import Library.Pairs
+open import Library.Sets
 open import Syntax.Terms
 open import Syntax.Lemmas
+open import Normalisation.Values
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 
@@ -23,7 +25,7 @@ open import Normalisation.Evaluator
 -- Stability by evaluation for variables.
 postulate
   stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
-               eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ vneu (var (x ++v Δ))
+               eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ neu (var (x ++v Δ))
 {-
 stable-var {Δ = Δ} {A} z =
   (ap (λ ρ → eval vz > ρ ⇒ (vneu (var z) ++V Δ))
@@ -44,12 +46,17 @@ stable-var {Γ} {Δ} {A} (s {B = B} x) =
 stable-val : {Γ : Con} {A : Ty} (v : Val Γ A) →
              eval ⌜ v ⌝V > idenv ⇒ v
 stable-neval : {Γ : Con} {A : Ty} (n : Ne Val Γ A) →
-               eval ⌜ n ⌝NV > idenv ⇒ vneu n
+               eval ⌜ n ⌝NV > idenv ⇒ neu n
 stable-env : {Γ Δ : Con} (ρ : Env Γ Δ) →
              evals ⌜ ρ ⌝E > idenv ⇒ ρ
              
-stable-val (vlam u ρ) = eval[] (stable-env ρ) (evallam u ρ)
-stable-val (vneu n) = stable-neval n
+stable-val (lam u ρ) = eval[] (stable-env ρ) (evallam u ρ)
+stable-val (neu n) = stable-neval n
+stable-val (veq {u = u} {v} p i) =
+  isprop-dependent {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
+                   isPropeval
+                   (veq p) (stable-val u) (stable-val v) i
+stable-val (isSetVal p q i j) = {!!}
 
 stable-neval (var x) = stable-var x
 stable-neval (app n v) = eval[] (evals, evalsid (stable-val v))
@@ -61,16 +68,16 @@ stable-env (ρ , v) = evals, (stable-env ρ) (stable-val v)
 
 -- Stability by normalisation for normal forms and neutral normal forms.
 stable-nf : {Γ : Con} {A : Ty} (n : Nf Γ A) →
-            Σ[ v ∈ Val Γ A ] (eval ⌜ n ⌝N > idenv ⇒ v  ∧  q v ⇒ n)
+            Σ[ v ∈ Val Γ A ] (eval ⌜ n ⌝N > idenv ⇒ v  ×  q v ⇒ n)
 stable-nenf : {Γ : Con} {A : Ty} (n : Ne Nf Γ A) →
-              Σ[ v ∈ Ne Val Γ A ] (eval ⌜ n ⌝NN > idenv ⇒ vneu v  ∧  qs v ⇒ n)
+              Σ[ v ∈ Ne Val Γ A ] (eval ⌜ n ⌝NN > idenv ⇒ neu v  ×  qs v ⇒ n)
 
-stable-nf (nlam n) =
+stable-nf (lam n) =
   let v ,, evaln ,, qv = stable-nf n in
-  vlam ⌜ n ⌝N idenv ,, evallam ⌜ n ⌝N idenv ,, q⟶ ($lam evaln) qv
-stable-nf (nneu n) =
+  lam ⌜ n ⌝N idenv ,, evallam ⌜ n ⌝N idenv ,, q⟶ ($lam evaln) qv
+stable-nf (neu n) =
   let v ,, evaln ,, qv = stable-nenf n in
-  vneu v ,, evaln ,, qo qv
+  neu v ,, evaln ,, qo qv
   
 stable-nenf (var x) =
   var x ,, stable-var x ,, qsvar

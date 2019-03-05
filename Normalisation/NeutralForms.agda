@@ -10,6 +10,7 @@ module Normalisation.NeutralForms where
 open import Syntax.Terms
 open import Syntax.Lemmas
 open import Library.Equality
+open import Library.Sets
 
 
 -- Variables, values, normal forms, ... all have this type.
@@ -41,6 +42,13 @@ data list (X : Tm-like) : Tms-like where
 data Var : Tm-like where
   z : {Γ : Con} {A : Ty} → Var (Γ , A) A
   s : {Γ : Con} {A B : Ty} → Var Γ A → Var (Γ , B) A
+
+{-
+isSetVar : {Γ : Con} {A : Ty} → isSet (Var Γ A)
+isSetVar {x = z} {y} p q = {!!}
+isSetVar {x = s x} {y} p q = {!!}
+-}
+
 
 -- Embedding.
 ⌜_⌝v : {Γ : Con} {A : Ty} → Var Γ A → Tm Γ A

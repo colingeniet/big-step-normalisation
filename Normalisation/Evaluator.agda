@@ -1,9 +1,11 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-meta #-}
 
 module Normalisation.Evaluator where
 
 open import Library.Equality
+open import Library.Sets
 open import Syntax.Terms
+open import Normalisation.Values
 open import Normalisation.NormalForms
 
 {- It is by no mean clear that this evaluator terminates, hence it can not be
@@ -41,12 +43,14 @@ data eval_>_⇒_ where
            eval (π₂ σ) > ρ ⇒ π₂list σρ
   -- eval (lam u) ρ = (lam u) [ ρ ]
   evallam : {Γ Δ : Con} {A B : Ty} (u : Tm (Δ , A) B) (ρ : Env Γ Δ) →
-            eval (lam u) > ρ ⇒ vlam u ρ
+            eval (lam u) > ρ ⇒ lam u ρ
   -- eval (app f) (σ , u) = (eval f σ) $ u
   evalapp : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {ρ : Env Γ (Δ , A)} →
             {fρ : Val Γ (A ⟶ B)} {appfρ : Val Γ B} →
             eval f > π₁list ρ ⇒ fρ → fρ $ π₂list ρ ⇒ appfρ →
             eval (app f) > ρ ⇒ appfρ
+  isPropeval : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {v : Val Γ A} →
+               isProp (eval u > ρ ⇒ v)
 data evals_>_⇒_ where
   -- evals id ρ = ρ
   evalsid : {Γ Δ : Con} {ρ : Env Γ Δ} → evals id > ρ ⇒ ρ
@@ -66,14 +70,18 @@ data evals_>_⇒_ where
   evalsπ₁ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ρ : Env Γ Δ}
             {σρ : Env Γ (Θ , A)} → evals σ > ρ ⇒ σρ →
             evals (π₁ σ) > ρ ⇒ π₁list σρ
+  isPropevals : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} {ν : Env Γ Θ} →
+                isProp (evals σ > ρ ⇒ ν)
 data _$_⇒_ where
   -- (lam u) [ ρ ] $ v = eval u (ρ , v)
   $lam : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Env Γ Δ} {v : Val Γ A}
          {uρv : Val Γ B} →  eval u > (ρ , v) ⇒ uρv →
-         (vlam u ρ) $ v ⇒ uρv
+         (lam u ρ) $ v ⇒ uρv
   -- n $ v = n v
   $app : {Γ : Con} {A B : Ty} (n : Ne Val Γ (A ⟶ B)) (v : Val Γ A) →
-         (vneu n) $ v ⇒ vneu (app n v)
+         (neu n) $ v ⇒ neu (app n v)
+  isProp$ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {u : Val Γ A} {v : Val Γ B} →
+            isProp (f $ u ⇒ v)
 
 
 -- q : Val Γ A → Nf Γ A
@@ -85,12 +93,14 @@ data q_⇒_ where
   -- q (n : o) = qs n
   -- A value of type o must be neutral !
   qo : {Γ : Con} {n : Ne Val Γ o} {nf : Ne Nf Γ o} →
-       qs n ⇒ nf → q (vneu n) ⇒ (nneu nf)
+       qs n ⇒ nf → q (neu n) ⇒ (neu nf)
   -- q (f : A ⟶ B) = lam (q (f $ vz))
   q⟶ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)}
        {fz : Val (Γ , A) B} {nffvz : Nf (Γ , A) B} →
-       (f +V A) $ (vneu (var z)) ⇒ fz → q fz ⇒ nffvz →
-       q f ⇒ nlam nffvz
+       (f +V A) $ (neu (var z)) ⇒ fz → q fz ⇒ nffvz →
+       q f ⇒ lam nffvz
+  isPropq : {Γ : Con} {A : Ty} {v : Val Γ A} {n : Nf Γ A} →
+            isProp (q v ⇒ n)
 data qs_⇒_ where
   -- qs x ⇒ x
   qsvar : {Γ : Con} {A : Ty} {x : Var Γ A} → qs (var x) ⇒ (var x)
@@ -99,6 +109,8 @@ data qs_⇒_ where
           {neff : Ne Nf Γ (A ⟶ B)} {nfu : Nf Γ A} →
           qs f ⇒ neff → q u ⇒ nfu →
           qs (app f u) ⇒ (app neff nfu)
+  isPropqs : {Γ : Con} {A : Ty} {v : Ne Val Γ A} {n : Ne Nf Γ A} →
+             isProp (qs v ⇒ n)
 
 
 -- norm : Tm Γ A → Nf Γ A
@@ -129,6 +141,8 @@ abstract
     evalapp
     (tr (λ ρ → eval _ > ρ ⇒ _) (π₁+ {σ = ρ} ⁻¹) (evalgenwk Δ cf A))
     (tr (λ v → _ $ v ⇒ _) (π₂+ {σ = ρ} ⁻¹) ($genwk Δ $fρ A))
+  evalgenwk Δ (isPropeval c c' i) A =
+    isPropeval (evalgenwk Δ c A) (evalgenwk Δ c' A) i
 
   evalsgenwk Δ evalsid A = evalsid
   evalsgenwk Δ (evals∘ cν cσ) A = evals∘ (evalsgenwk Δ cν A) (evalsgenwk Δ cσ A)
@@ -136,9 +150,13 @@ abstract
   evalsgenwk Δ (evals, cσ cu) A = evals, (evalsgenwk Δ cσ A) (evalgenwk Δ cu A)
   evalsgenwk Δ (evalsπ₁ {σρ = σρ} cσ) A =
     tr (λ u → evals _ > _ ⇒ u) (π₁+ {σ = σρ}) (evalsπ₁ (evalsgenwk Δ cσ A))
+  evalsgenwk Δ (isPropevals c c' i) A =
+    isPropevals (evalsgenwk Δ c A) (evalsgenwk Δ c' A) i
 
   $genwk Δ ($lam cu) A = $lam (evalgenwk Δ cu A)
   $genwk Δ ($app n v) A = $app (nvgenwk Δ n A) (valgenwk Δ v A)
+  $genwk Δ (isProp$ c c' i) A =
+    isProp$ ($genwk Δ c A) ($genwk Δ c' A) i
 
 
   qgenwk : {Γ : Con} {B : Ty} (Δ : Con) {u : Val (Γ ++ Δ) B}
@@ -149,8 +167,8 @@ abstract
             qs (nvgenwk Δ u A) ⇒ (nefgenwk Δ n A)
 
   qgenwk Δ (qo qn) A = qo (qsgenwk Δ qn A)
-  qgenwk Δ (q⟶ {A = A} $f qf) C =
-    q⟶ (tr (λ x → x $ _ ⇒ _) (++-+V ⁻¹) ($genwk (Δ , A) $f C))
+  qgenwk Δ (q⟶ {A = A} {f = u} $f qf) C =
+    q⟶ (tr (λ x → x $ _ ⇒ _) (++-+V {u = u} ⁻¹) ($genwk (Δ , A) $f C))
        (qgenwk (Δ , A) qf C)
     where ++-+V : {Γ Δ : Con} {A B C : Ty} {u : Val (Γ ++ Δ) A} →
                   (valgenwk Δ u C) +V B ≡ valgenwk (Δ , B) (u +V B) C
@@ -158,15 +176,21 @@ abstract
                    (nvgenwk Δ u C) +NV B ≡ nvgenwk (Δ , B) (u +NV B) C
           ++-+E : {Γ Δ Θ : Con} {B C : Ty} {σ : Env (Γ ++ Δ) Θ} →
                   (envgenwk Δ σ C) +E B ≡ envgenwk (Δ , B) (σ +E B) C
-          ++-+V {u = vlam u ρ} = ap (vlam u) ++-+E
-          ++-+V {u = vneu u} = ap vneu ++-+NV
+          ++-+V {u = lam u ρ} = ap (lam u) ++-+E
+          ++-+V {u = neu u} = ap neu ++-+NV
+          ++-+V {u = veq p i} j = {!!}
+          ++-+V {u = isSetVal p q i j} k = {!!}
           ++-+NV {u = var x} = refl
-          ++-+NV {u = app f u} = ap (λ x → app x _) ++-+NV
-                               ∙ ap (λ x → app _ x) ++-+V
+          ++-+NV {u = app f u} = ap2 app (++-+NV {u = f}) (++-+V {u = u})
           ++-+E {σ = ε} = refl
-          ++-+E {σ = σ , u} = ap (λ x → x , _) ++-+E ∙ ap (λ x → _ , x) ++-+V
+          ++-+E {σ = σ , u} = ap2 _,_ (++-+E {σ = σ}) (++-+V {u = u})
+  qgenwk Δ (isPropq c c' i) A =
+    isPropq (qgenwk Δ c A) (qgenwk Δ c' A) i
+  
   qsgenwk Δ qsvar A = qsvar
   qsgenwk Δ (qsapp qf qu) A = qsapp (qsgenwk Δ qf A) (qgenwk Δ qu A)
+  qsgenwk Δ (isPropqs c c' i) A =
+    isPropqs (qsgenwk Δ c A) (qsgenwk Δ c' A) i
 
 
 

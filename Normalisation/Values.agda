@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-meta #-}
 
 {-
   Definition of values and environments.
@@ -10,7 +10,7 @@ open import Library.Equality
 open import Library.Sets
 open import Syntax.Terms
 open import Syntax.Lemmas
-open import Normalisation.NeutralForms
+open import Normalisation.NeutralForms public
 
 
 -- Values and environments (list of values) are mutually defined.
@@ -85,7 +85,7 @@ valgenwk≡ {Δ = Δ} {A = A} {u = veq {u = u} {v} p j} i =
                   (j = i0) → IHu i;
                   (j = i1) → transitivity-square p+ (IHv ⁻¹) k (1- i)})
         (IHu (i ∨ j))
-valgenwk≡ {u = isSetVal p q i j} = {!!}
+valgenwk≡ {u = isSetVal p q i j} k = {!isSetTm (λ j → valgenwk≡ {u = p j} k) (λ j → valgenwk≡ {u = q j} k) i j!}
 nvgenwk≡ {u = var x} = varwk≡
 nvgenwk≡ {u = app n u} = ap2 _$_ (nvgenwk≡ {u = n}) (valgenwk≡ {u = u}) ∙ $[] ⁻¹
 envgenwk≡ {σ = ε} = εη ⁻¹
