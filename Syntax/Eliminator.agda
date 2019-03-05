@@ -14,6 +14,11 @@ record Motives {l} : Set (lsuc l) where
     Tmᴹ : {Γ : Con} {A : Ty} → Tm Γ A → Set l
     Tmsᴹ : {Γ Δ : Con} → Tms Γ Δ → Set l
 
+  term-motive : {i : term-index} (u : term i) → Set l
+  term-motive {i = Tm-i Γ A} u = Tmᴹ u
+  term-motive {i = Tms-i Γ Δ} σ = Tmsᴹ σ
+
+
 
 record Methods {l} (M : Motives {l}) : Set (lsuc l) where
   open Motives M
@@ -69,99 +74,67 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
 
   -- The set hypotheses can be generalized to the case where the two
   -- dependent paths lie other two equal paths.
-  genisSetTmᴹ : {Γ : Con} {A : Ty} {u v : Tm Γ A} {p q : u ≡ v} (α : p ≡ q)
-                {x : Tmᴹ u} {y : Tmᴹ v} (r : x ≡[ ap Tmᴹ p ]≡ y)
-                (s : x ≡[ ap Tmᴹ q ]≡ y) →
-                r ≡[ ap (λ p → x ≡[ ap Tmᴹ p ]≡ y) α ]≡ s
-  genisSetTmᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmᴹ p ]≡ y) α r
-                              d∙ isSetTmᴹ _ s
+  private
+    genisSetTmᴹ : {Γ : Con} {A : Ty} {u v : Tm Γ A} {p q : u ≡ v} (α : p ≡ q)
+                  {x : Tmᴹ u} {y : Tmᴹ v} (r : x ≡[ ap Tmᴹ p ]≡ y)
+                  (s : x ≡[ ap Tmᴹ q ]≡ y) →
+                  r ≡[ ap (λ p → x ≡[ ap Tmᴹ p ]≡ y) α ]≡ s
+    genisSetTmᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmᴹ p ]≡ y) α r
+                                d∙ isSetTmᴹ _ s
 
-  genisSetTmsᴹ : {Γ Δ : Con} {σ ν : Tms Γ Δ} {p q : σ ≡ ν} (α : p ≡ q)
-                 {x : Tmsᴹ σ} {y : Tmsᴹ ν} (r : x ≡[ ap Tmsᴹ p ]≡ y)
-                (s : x ≡[ ap Tmsᴹ q ]≡ y) →
-                r ≡[ ap (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α ]≡ s
-  genisSetTmsᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α r
-                               d∙ isSetTmsᴹ _ s
-
-
-
-
-{- Just like the definition of terms, the eliminator function is made 
-   non mutually inductive to avoid some mutual dependency problems.
--}
-termMotives : ∀ {l} (Mo : Motives {l}) {i : term-index} (u : term i) → Set l
-termMotives Mo {i = Tm-i Γ A} u = Tmᴹ u
-  where open Motives Mo
-termMotives Mo {i = Tms-i Γ Δ} σ = Tmsᴹ σ
-  where open Motives Mo
+    genisSetTmsᴹ : {Γ Δ : Con} {σ ν : Tms Γ Δ} {p q : σ ≡ ν} (α : p ≡ q)
+                   {x : Tmsᴹ σ} {y : Tmsᴹ ν} (r : x ≡[ ap Tmsᴹ p ]≡ y)
+                  (s : x ≡[ ap Tmsᴹ q ]≡ y) →
+                  r ≡[ ap (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α ]≡ s
+    genisSetTmsᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α r
+                                 d∙ isSetTmsᴹ _ s
 
 
-elimterm : ∀ {l} {Mo : Motives {l}} (M : Methods Mo) {i : term-index}
-             (u : term i) → termMotives Mo u
 
-elimterm M (u [ σ ]) = (elimterm M u) [ elimterm M σ ]ᴹ
-  where open Methods M
-elimterm M (π₂ σ) = π₂ᴹ (elimterm M σ)
-  where open Methods M
-elimterm M (lam u) = lamᴹ (elimterm M u)
-  where open Methods M
-elimterm M (app f) = appᴹ (elimterm M f)
-  where open Methods M
+  {- Just like the definition of terms, the eliminator function is made 
+     non mutually inductive to avoid some mutual dependency problems.
+  -}
+  termᴹ : {i : term-index} (u : term i) → term-motive u
 
-elimterm M id = idᴹ
-  where open Methods M
-elimterm M (σ ∘ ν) = (elimterm M σ) ∘ᴹ (elimterm M ν)
-  where open Methods M
-elimterm M ε = εᴹ
-  where open Methods M
-elimterm M (σ , u) = (elimterm M σ) ,ᴹ (elimterm M u)
-  where open Methods M
-elimterm M (π₁ σ) = π₁ᴹ (elimterm M σ)
-  where open Methods M
+  termᴹ (u [ σ ]) = (termᴹ u) [ termᴹ σ ]ᴹ
+  termᴹ (π₂ σ) = π₂ᴹ (termᴹ σ)
+  termᴹ (lam u) = lamᴹ (termᴹ u)
+  termᴹ (app f) = appᴹ (termᴹ f)
 
-elimterm {Mo = Mo} M (id∘ {σ = σ} i) = id∘ᴹ (elimterm M σ) i
-  where open Methods M
-elimterm M (∘id {σ = σ} i) = ∘idᴹ (elimterm M σ) i
-  where open Methods M
-elimterm M (∘∘ {σ = σ} {ν = ν} {δ = δ} i) =
-  ∘∘ᴹ (elimterm M σ) (elimterm M ν) (elimterm M δ) i
-  where open Methods M
-elimterm M (εη {σ = σ} i) = εηᴹ (elimterm M σ) i
-  where open Methods M
-elimterm M (π₁β {σ = σ} {u = u} i) = π₁βᴹ (elimterm M σ) (elimterm M u) i
-  where open Methods M
-elimterm M (π₂β {σ = σ} {u = u} i) = π₂βᴹ (elimterm M σ) (elimterm M u) i
-  where open Methods M
-elimterm M (πη {σ = σ} i) = πηᴹ (elimterm M σ) i
-  where open Methods M
-elimterm M (β {u = u} i) = βᴹ (elimterm M u) i
-  where open Methods M
-elimterm M (η {f = f} i) = ηᴹ (elimterm M f) i
-  where open Methods M
-elimterm M (lam[] {u = u} {σ = σ} i) = lam[]ᴹ (elimterm M u) (elimterm M σ) i
-  where open Methods M
-elimterm M (,∘ {σ = σ} {ν = ν} {u = u} i) =
-  ,∘ᴹ (elimterm M σ) (elimterm M ν) (elimterm M u) i
-  where open Methods M
+  termᴹ id = idᴹ
+  termᴹ (σ ∘ ν) = (termᴹ σ) ∘ᴹ (termᴹ ν)
+  termᴹ ε = εᴹ
+  termᴹ (σ , u) = (termᴹ σ) ,ᴹ (termᴹ u)
+  termᴹ (π₁ σ) = π₁ᴹ (termᴹ σ)
 
-elimterm {Mo = Mo} M (isSetTm p q i j) =
-  genisSetTmᴹ (isSetTm p q)
-              (λ k → elimterm M (p k))
-              (λ k → elimterm M (q k))
-              i j
-  where open Methods M
-elimterm {Mo = Mo} M (isSetTms p q i j) =
-  genisSetTmsᴹ (isSetTms p q)
-               (λ k → elimterm M (p k))
-               (λ k → elimterm M (q k)) i j
-  where open Methods M
+  termᴹ (id∘ {σ = σ} i) = id∘ᴹ (termᴹ σ) i
+  termᴹ (∘id {σ = σ} i) = ∘idᴹ (termᴹ σ) i
+  termᴹ (∘∘ {σ = σ} {ν = ν} {δ = δ} i) =
+    ∘∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ δ) i
+  termᴹ (εη {σ = σ} i) = εηᴹ (termᴹ σ) i
+  termᴹ (π₁β {σ = σ} {u = u} i) = π₁βᴹ (termᴹ σ) (termᴹ u) i
+  termᴹ (π₂β {σ = σ} {u = u} i) = π₂βᴹ (termᴹ σ) (termᴹ u) i
+  termᴹ (πη {σ = σ} i) = πηᴹ (termᴹ σ) i
+  termᴹ (β {u = u} i) = βᴹ (termᴹ u) i
+  termᴹ (η {f = f} i) = ηᴹ (termᴹ f) i
+  termᴹ (lam[] {u = u} {σ = σ} i) = lam[]ᴹ (termᴹ u) (termᴹ σ) i
+  termᴹ (,∘ {σ = σ} {ν = ν} {u = u} i) =
+    ,∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ u) i
+
+  termᴹ (isSetTm p q i j) =
+    genisSetTmᴹ (isSetTm p q)
+                (λ k → termᴹ (p k))
+                (λ k → termᴹ (q k))
+                i j
+  termᴹ (isSetTms p q i j) =
+    genisSetTmsᴹ (isSetTms p q)
+                 (λ k → termᴹ (p k))
+                 (λ k → termᴹ (q k)) i j
 
 
--- And the nicer looking version of the previous function.
-elimTm : ∀ {l} {Mo : Motives {l}} (M : Methods Mo) {Γ : Con} {A : Ty}
-           (u : Tm Γ A) → Motives.Tmᴹ Mo u
-elimTm M u = elimterm M u
+  -- And the nicer looking version of the previous function.
+  elimTm : {Γ : Con} {A : Ty} (u : Tm Γ A) → Tmᴹ u
+  elimTm u = termᴹ u
 
-elimTms : ∀ {l} {Mo : Motives {l}} (M : Methods Mo) {Γ Δ : Con}
-            (σ : Tms Γ Δ) → Motives.Tmsᴹ Mo σ
-elimTms M σ = elimterm M σ
+  elimTms : {Γ Δ : Con} (σ : Tms Γ Δ) → Tmsᴹ σ
+  elimTms σ = termᴹ σ
