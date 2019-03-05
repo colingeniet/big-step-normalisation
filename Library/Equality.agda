@@ -21,6 +21,7 @@ open import Agda.Builtin.Cubical.Sub public
             primSubOut to ouc)
 
 
+
 hfill : ∀ {l} {A : Set l} {φ : I} (u : ∀ i → Partial φ A)
           (u0 : A [ φ ↦ u i0 ]) → I → A
 hfill {φ = φ} u u0 i = hcomp (λ j → λ {(φ = i1) → u (i ∧ j) 1=1;
@@ -35,15 +36,25 @@ fill A φ u u0 i = comp (λ j → A (i ∧ j)) _
                        (ouc u0)
 
 
+-- Reflexivity
+refl : ∀ {l} {A : Set l} {x : A} → x ≡ x
+refl {x = x} _ = x
+
+
+J : ∀ {l m} {A : Set l} {x : A} (P : {y : A} → x ≡ y → Set m) →
+      P refl → {y : A} (p : x ≡ y) → P p
+J P c p = transp (λ i → P (λ k → p (i ∧ k))) i0 c
+
+-- Downside of paths : this equality is not definitional.
+J≡ : ∀ {l m} {A : Set l} {x : A} (P : {y : A} → x ≡ y → Set m) →
+       (c : P refl) → J P c refl ≡ c
+J≡ P c i = transp (λ _ → P refl) i c
+
 
 -- Dependent paths
 infix 5 _≡[_]≡_
 _≡[_]≡_ : ∀ {l} {A B : Set l} → A → A ≡ B → B → Set l
 _≡[_]≡_ {l} {A} x P y = PathP (λ i → P i) x y
-
--- Reflexivity
-refl : ∀ {l} {A : Set l} {x : A} → x ≡ x
-refl {x = x} _ = x
 
 -- Symmetry
 infix 8 _⁻¹
@@ -338,6 +349,53 @@ private
        (transitivity-square-d p q i (1- j))
 
 
+
+
+-- Heterogeneous equality.
+-- It is important that the dependent path lies over a path in the indexing
+-- family A, and not just over a path in the universe, because this allows
+-- to forget the underlying path whenever A is a set.
+infix 5 _≅_
+infix 4 _,≅_
+record _≅_ {l m} {A : Set l} {B : A → Set m} {a b : A} (x : B a) (y : B b) : Set (l ⊔ m) where
+  constructor _,≅_
+  field
+    fst : a ≡ b
+    snd : x ≡[ ap B fst ]≡ y
+
+open _≅_ public
+
+
+-- The downside is that most of the time, B needs to be specified.
+≅-syntax = _≅_
+infix 5 ≅-syntax
+syntax ≅-syntax {B = B} x y = x ≅⟨ B ⟩ y
+
+
+refl≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} {x : B a} → x ≅⟨ B ⟩ x
+refl≅ = refl ,≅ refl
+
+_≅⁻¹ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b} →
+       x ≅⟨ B ⟩ y → y ≅⟨ B ⟩ x
+(p ,≅ q) ≅⁻¹ = p ⁻¹ ,≅ q ⁻¹
+
+_∙≅_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
+         {x : B a} {y : B b} {z : B c} →
+         x ≅⟨ B ⟩ y → y ≅⟨ B ⟩ z → x ≅⟨ B ⟩ z
+_∙≅_ {B = B} {x = x} {z = z} (p ,≅ q) (r ,≅ s) =
+  p ∙ r ,≅
+  tr (λ P → x ≡[ P ]≡ z)
+     (ap∙ {f = B} ⁻¹)
+     (q d∙d s)
+
+
+≡-to-≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} {x y : B a} →
+           x ≡ y → x ≅⟨ B ⟩ y
+≡-to-≅ p = refl ,≅ p
+
+≡[]-to-≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b}
+             {P : a ≡ b} → x ≡[ ap B P ]≡ y → x ≅⟨ B ⟩ y
+≡[]-to-≅ {P = P} p = P ,≅ p
 
 
 {-

@@ -69,6 +69,19 @@ make-non-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                       x ≡[ ap B p ]≡ y → x ≡ y
 make-non-dependent {B = B} H r = change-underlying {B = B} H r
 
+-- Those two lemmas are work well together with heterogeneous equality.
+≅-to-≡[] : ∀ {l m} {A : Set l} {B : A → Set m} →
+             isSet A →
+             {a b : A} {x : B a} {y : B b} →
+             x ≅⟨ B ⟩ y → {P : a ≡ b} → x ≡[ ap B P ]≡ y
+≅-to-≡[] {B = B} H p = change-underlying {B = B} H (snd p)
+
+≅-to-≡ : ∀ {l m} {A : Set l} {B : A → Set m} →
+           isSet A →
+           {a : A} {x y : B a} → x ≅⟨ B ⟩ y → x ≡ y
+≅-to-≡ {B = B} H p = make-non-dependent {B = B} H (snd p)
+
+
 {-
 test1 : ∀ {l m} {A : Set l} {B : A → Set m} →
           isSet A →
@@ -99,4 +112,3 @@ test2 {B = B} HA HB {p = p} {q} {x} {y} r s =
   trfill (λ p → x ≡[ ap B p ]≡ y) (HA p q) r
   d∙ test1 HA HB q x y (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
 -}
-
