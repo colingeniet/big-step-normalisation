@@ -8,21 +8,25 @@ open import Library.Equality
 open import Library.Sets
 
 
-Prop× : ∀ {l m} {A : Set l} {B : Set m} →
-          isProp A → isProp B → isProp (A × B)
-Prop× HA HB (x ,, y) (z ,, w) i = HA x z i ,, HB y w i
+isProp⊤ : isProp ⊤
+isProp⊤ ⊤ ⊤ = refl
 
-PropΣ : ∀ {l m} {A : Set l} {B : A → Set m} →
+
+isProp× : ∀ {l m} {A : Set l} {B : Set m} →
+          isProp A → isProp B → isProp (A × B)
+isProp× HA HB (x ,, y) (z ,, w) i = HA x z i ,, HB y w i
+
+isPropΣ : ∀ {l m} {A : Set l} {B : A → Set m} →
           isProp A → ({a : A} → isProp (B a)) →
           isProp (Σ A B)
-PropΣ {B = B} HA HB (x ,, y) (z ,, w) i =
+isPropΣ {B = B} HA HB (x ,, y) (z ,, w) i =
   let x≡z = HA x z in
   x≡z i ,, isprop-dependent {B = B} HB x≡z y w i
 
 
-Set× : ∀ {l m} {A : Set l} {B : Set m} →
+isSet× : ∀ {l m} {A : Set l} {B : Set m} →
          isSet A → isSet B → isSet (A × B)
-Set× HA HB p q i j =
+isSet× HA HB p q i j =
   let p1 = λ k → fst (p k)
       p2 = λ k → snd (p k)
       q1 = λ k → fst (q k)
@@ -30,10 +34,10 @@ Set× HA HB p q i j =
   in
   HA p1 q1 i j ,, HB p2 q2 i j
 
-SetΣ : ∀ {l m} {A : Set l} {B : A → Set m} →
+isSetΣ : ∀ {l m} {A : Set l} {B : A → Set m} →
          isSet A → ({a : A} → isSet (B a)) →
          isSet (Σ A B)
-SetΣ {B = B} HA HB p q i j =
+isSetΣ {B = B} HA HB p q i j =
   let p1 = λ k → fst (p k)
       p2 = λ k → snd (p k)
       q1 = λ k → fst (q k)

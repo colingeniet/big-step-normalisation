@@ -121,3 +121,12 @@ isset-dependent2 :
 isset-dependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
   trfill (λ p → x ≡[ ap B p ]≡ y) (HA p q) r
   d∙ isset-dependent {B = B} HB (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
+
+
+
+isSet⇒ : ∀ {l m} {A : Set l} {B : A → Set m} →
+           ({x : A} → isSet (B x)) → isSet ((x : A) → B x)
+isSet⇒ {A = A} {B} H {f} {g} p q i j x =
+  let px = λ k → p k x
+      qx = λ k → q k x
+  in H px qx i j
