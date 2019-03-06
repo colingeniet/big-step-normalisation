@@ -67,27 +67,8 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
           (σᴹ : Tmsᴹ σ) (νᴹ : Tmsᴹ ν) (uᴹ : Tmᴹ u) →
           (σᴹ ,ᴹ uᴹ) ∘ᴹ νᴹ ≡[ ap Tmsᴹ ,∘ ]≡ σᴹ ∘ᴹ νᴹ ,ᴹ uᴹ [ νᴹ ]ᴹ
 
-    isSetTmᴹ : {Γ : Con} {A : Ty} {u v : Tm Γ A} {p : u ≡ v}
-               {x : Tmᴹ u} {y : Tmᴹ v} (q r : x ≡[ ap Tmᴹ p ]≡ y) → q ≡ r
-    isSetTmsᴹ : {Γ Δ : Con} {σ ν : Tms Γ Δ} {p : σ ≡ ν}
-                {x : Tmsᴹ σ} {y : Tmsᴹ ν} (q r : x ≡[ ap Tmsᴹ p ]≡ y) → q ≡ r
-
-  -- The set hypotheses can be generalized to the case where the two
-  -- dependent paths lie other two equal paths.
-  private
-    genisSetTmᴹ : {Γ : Con} {A : Ty} {u v : Tm Γ A} {p q : u ≡ v} (α : p ≡ q)
-                  {x : Tmᴹ u} {y : Tmᴹ v} (r : x ≡[ ap Tmᴹ p ]≡ y)
-                  (s : x ≡[ ap Tmᴹ q ]≡ y) →
-                  r ≡[ ap (λ p → x ≡[ ap Tmᴹ p ]≡ y) α ]≡ s
-    genisSetTmᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmᴹ p ]≡ y) α r
-                                d∙ isSetTmᴹ _ s
-
-    genisSetTmsᴹ : {Γ Δ : Con} {σ ν : Tms Γ Δ} {p q : σ ≡ ν} (α : p ≡ q)
-                   {x : Tmsᴹ σ} {y : Tmsᴹ ν} (r : x ≡[ ap Tmsᴹ p ]≡ y)
-                  (s : x ≡[ ap Tmsᴹ q ]≡ y) →
-                  r ≡[ ap (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α ]≡ s
-    genisSetTmsᴹ α {x} {y} r s = trfill (λ p → x ≡[ ap Tmsᴹ p ]≡ y) α r
-                                 d∙ isSetTmsᴹ _ s
+    isSetTmᴹ : {Γ : Con} {A : Ty} {u : Tm Γ A} → isSet (Tmᴹ u)
+    isSetTmsᴹ : {Γ Δ : Con} {σ : Tms Γ Δ} → isSet (Tmsᴹ σ)
 
 
 
@@ -122,14 +103,11 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
     ,∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ u) i
 
   termᴹ (isSetTm p q i j) =
-    genisSetTmᴹ (isSetTm p q)
-                (λ k → termᴹ (p k))
-                (λ k → termᴹ (q k))
-                i j
+    isset-dependent2 {B = Tmᴹ} isSetTm isSetTmᴹ
+                     (λ k → termᴹ (p k)) (λ k → termᴹ (q k)) i j
   termᴹ (isSetTms p q i j) =
-    genisSetTmsᴹ (isSetTms p q)
-                 (λ k → termᴹ (p k))
-                 (λ k → termᴹ (q k)) i j
+    isset-dependent2 {B = Tmsᴹ} isSetTms isSetTmsᴹ
+                     (λ k → termᴹ (p k)) (λ k → termᴹ (q k)) i j
 
 
   -- And the nicer looking version of the previous function.

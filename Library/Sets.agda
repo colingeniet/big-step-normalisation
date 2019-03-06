@@ -43,15 +43,6 @@ isPropisSet P Q i {x} {y} = isPropisProp (P {x} {y}) (Q {x} {y}) i
 
 
 
--- If B is a proposition indexed by A, then B is also a proposition up to
--- dependent paths, that is if a ≡ b : A, then any two elements of B a and
--- B b are equal.
-isprop-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
-                     ({x : A} → isProp (B x)) →
-                     {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
-                     x ≡[ ap B p ]≡ y
-isprop-dependent {B = B} H p x y = trfill B p x d∙ H (tr B p x) y
-
 -- A dependent path which lies over some p : x ≡ y in a set can
 -- be transformed into a path over any other q : x ≡ y.
 change-underlying : ∀ {l m} {A : Set l} {B : A → Set m} →
@@ -82,33 +73,51 @@ make-non-dependent {B = B} H r = change-underlying {B = B} H r
 ≅-to-≡ {B = B} H p = make-non-dependent {B = B} H (snd p)
 
 
-{-
-test1 : ∀ {l m} {A : Set l} {B : A → Set m} →
-          isSet A →
-          ({x : A} → isSet (B x)) →
-          {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
-          isProp (x ≡[ ap B p ]≡ y)
-test1 {B = B} HA HB {a} {b} p x y r s =
-  let rs = r d∙d s ⁻¹ in
-  let rs' = tr (λ P → x ≡[ P ]≡ x) -∙-⁻¹ rs in
-  let rs≡rs' = trfill (λ P → x ≡[ P ]≡ x) -∙-⁻¹ rs in
-  let rs'≡refl = HB rs' refl in
-  let rs≡refl = rs≡rs' d∙ rs'≡refl in
-  let r≡s = d∙refl ⁻¹
-            d∙d apd (λ s → r d∙d s)  -⁻¹d∙d- ⁻¹
-            d∙d ∙∙d ⁻¹
-            d∙d apd (λ p → p d∙d s) rs≡refl
-            d∙d refl∙d
-  in
-  {!!}
 
-test2 : ∀ {l m} {A : Set l} {B : A → Set m} →
-          (HA : isSet A) →
-          ({x : A} → isSet (B x)) →
-          {a b : A} {p q : a ≡ b}
-          {x : B a} {y : B b} (r : x ≡[ ap B p ]≡ y) (s : x ≡[ ap B q ]≡ y) →
-          r ≡[ ap (λ p → x ≡[ ap B p ]≡ y) (HA p q) ]≡ s
-test2 {B = B} HA HB {p = p} {q} {x} {y} r s =
+-- If B is a proposition indexed by A, then B is also a proposition up to
+-- dependent paths, that is if a ≡ b : A, then any two elements of B a and
+-- B b are equal.
+isprop-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
+                     ({x : A} → isProp (B x)) →
+                     {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
+                     x ≡[ ap B p ]≡ y
+isprop-dependent {B = B} H p x y = trfill B p x d∙ H (tr B p x) y
+
+-- Similar result for sets.
+-- This version assumes a unique underlying path.
+isset-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
+                    ({x : A} → isSet (B x)) →
+                    {a b : A} {p : a ≡ b} {x : B a} {y : B b} →
+                    isProp (x ≡[ ap B p ]≡ y)
+isset-dependent {B = B} H {a} {b} {p} {x} {y} r s j i =
+  let t = trfill B p x
+      -- This is just composition, but with an ad hoc definition to simplify
+      -- the underlying path.
+      side-edge : x ≡[ ap B p ]≡ y → I → B b
+      side-edge r i = comp (λ j → B (p (1- i ∨ j))) _
+                           (λ j → λ {(i = i0) → y; (i = i1) → t j})
+                           (r (1- i))
+      side-square : x ≡[ ap B p ]≡ y → (i j : I) → B (p (1- i ∨ j))
+      side-square r i = fill (λ j → B (p (1- i ∨ j))) _
+                             (λ j → λ {(i = i0) → y; (i = i1) → t j})
+                             (inc (r (1- i)))
+  in
+  comp (λ k → B (p (1- k ∨ i))) _
+       (λ k → λ {(i = i0) → t (1- k);
+                 (i = i1) → y;
+                 (j = i0) → side-square r (1- i) (1- k);
+                 (j = i1) → side-square s (1- i) (1- k)})
+       (H (λ k → side-edge r (1- k))
+          (λ k → side-edge s (1- k))
+          j i)
+
+-- This version assumes that the indexing type is a set.
+isset-dependent2 :
+  ∀ {l m} {A : Set l} {B : A → Set m} →
+    (HA : isSet A) → ({x : A} → isSet (B x)) →
+    {a b : A} {p q : a ≡ b} {x : B a} {y : B b}
+    (r : x ≡[ ap B p ]≡ y) (s : x ≡[ ap B q ]≡ y) →
+    r ≡[ ap (λ p → x ≡[ ap B p ]≡ y) (HA p q) ]≡ s
+isset-dependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
   trfill (λ p → x ≡[ ap B p ]≡ y) (HA p q) r
-  d∙ test1 HA HB q x y (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
--}
+  d∙ isset-dependent {B = B} HB (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s

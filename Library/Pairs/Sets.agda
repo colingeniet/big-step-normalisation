@@ -29,7 +29,7 @@ Set× HA HB p q i j =
       q2 = λ k → snd (q k)
   in
   HA p1 q1 i j ,, HB p2 q2 i j
-{-
+
 SetΣ : ∀ {l m} {A : Set l} {B : A → Set m} →
          isSet A → ({a : A} → isSet (B a)) →
          isSet (Σ A B)
@@ -39,5 +39,6 @@ SetΣ {B = B} HA HB p q i j =
       q1 = λ k → fst (q k)
       q2 = λ k → snd (q k)
   in
-  HA p1 q1 i j ,, {!!}
--}
+  HA p1 q1 i j ,,
+  isset-dependent2 {B = B} HA HB
+                   p2 q2 i j
