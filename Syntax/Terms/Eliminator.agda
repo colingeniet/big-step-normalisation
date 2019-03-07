@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical --safe #-}
 
-module Syntax.Eliminator where
+module Syntax.Terms.Eliminator where
 
 open import Library.Equality
 open import Library.Sets
