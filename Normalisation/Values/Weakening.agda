@@ -58,35 +58,16 @@ valgenwk≡ {Δ = Δ} {A = A} {u = veq {u = u} {v} p j} i =
       s = λ j → tmgenwk Δ (⌜ veq {u = u} {v} p j ⌝V) A
   in ouc (isSetFillSquare isSetTm r s IHu IHv i j)
 valgenwk≡ {Γ} {Δ} {A} {B} {u = isSetVal {x = u} {v} p q i j} k =
-  let f : Val (Γ ++ Δ) B → Tm ((Γ , A) ++ Δ) B
-      f u = ⌜ valgenwk Δ u A ⌝V
-      g : Val (Γ ++ Δ) B → Tm ((Γ , A) ++ Δ) B
-      g u = tmgenwk Δ (⌜ u ⌝V) A
-      IHu : f u ≡ g u
-      IHu = valgenwk≡ {u = u}
-      IHv : f v ≡ g v
-      IHv = valgenwk≡ {u = v}
-      IHp : IHu ≡[ ap _ p ]≡ IHv
-      IHp j = valgenwk≡ {u = p j}
-      IHq : IHu ≡[ ap _ q ]≡ IHv
-      IHq j = valgenwk≡ {u = q j}
-      fp = ap f p
-      fq = ap f q
-      fface : fp ≡ fq
-      fface i j = f (isSetVal p q i j)
-      gp = ap g p
-      gq = ap g q
-      gface1 : gp ≡ gq
-      gface1 = isSetTm gp gq
-      gface2 : gp ≡ gq
-      gface2 i j = g (isSetVal p q i j)
-      α : (i j : I) → fface i j ≡ gface1 i j
-      α i j k = isSetTm (λ j → IHp j k) (λ j → IHq j k) i j
-      gfill : gface1 ≡ gface2
-      gfill = PropisSet isSetTm gface1 gface2
-      β : (i j : I) → fface i j ≡ gface2 i j
-      β i j = transp (λ k → fface i j ≡ gfill k i j) (i ∨ j ∨ 1- i ∨ 1- j) (α i j)
-  in β i j k
+  ouc (isSetPartial isSetTm
+                    (λ j → valgenwk≡ {u = p j} k)
+                    (λ j → valgenwk≡ {u = q j} k)
+                    (λ {(k = i0) → λ i j →
+                        ⌜ isSetVal (λ j → valgenwk Δ (p j) A)
+                                   (λ j → valgenwk Δ (q j) A)
+                                   i j ⌝V;
+                        (k = i1) → λ i j →
+                        tmgenwk Δ (⌜ isSetVal p q i j ⌝V) A}))
+                    i j
 
 
 nvgenwk≡ {u = var x} = varwk≡

@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   The result of evaluation/normalisation is equivalent to the input.

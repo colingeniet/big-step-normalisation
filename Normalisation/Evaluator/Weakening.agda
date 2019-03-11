@@ -1,4 +1,4 @@
-{-# OPTIONS --allow-unsolved-meta --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 module Normalisation.Evaluator.Weakening where
 
@@ -76,9 +76,19 @@ abstract
                   (envgenwk Δ σ C) +E B ≡ envgenwk (Δ , B) (σ +E B) C
           ++-+V {u = lam u ρ} = ap (lam u) ++-+E
           ++-+V {u = neu u} = ap neu ++-+NV
-          ++-+V {Δ = Δ} {B = B} {C} {u = veq p i} j =
-            {!!}
-          ++-+V {u = isSetVal p q i j} k = {!!}
+          ++-+V {Δ = Δ} {B = B} {C} {u = veq {u = u} {v} p j} i =
+            let IHu = ++-+V {Δ = Δ} {B = B} {C} {u = u}
+                IHv = ++-+V {Δ = Δ} {B = B} {C} {u = v}
+                r = λ j → (valgenwk Δ (veq {u = u} {v} p j) C) +V B
+                s = λ j → valgenwk (Δ , B) (veq {u = u} {v} p j +V B) C
+            in  ouc (isSetFillSquare isSetVal r s IHu IHv i j)
+          ++-+V {Δ = Δ} {B = B} {C} {u = isSetVal p q i j} k =
+            ouc (isSetPartial isSetVal
+                 (λ j → ++-+V {Δ = Δ} {B = B} {C} {u = p j} k)
+                 (λ j → ++-+V {Δ = Δ} {B = B} {C} {u = q j} k)
+                 (λ {(k = i0) → λ i j → (valgenwk Δ (isSetVal p q i j) C) +V B;
+                     (k = i1) → λ i j → valgenwk (Δ , B) (isSetVal p q i j +V B) C}))
+                i j
           ++-+NV {u = var x} = refl
           ++-+NV {u = app f u} = ap2 app (++-+NV {u = f}) (++-+V {u = u})
           ++-+E {σ = ε} = refl
