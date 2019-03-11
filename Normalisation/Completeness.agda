@@ -9,8 +9,10 @@ module Normalisation.Completeness where
 
 open import Library.Equality
 open import Syntax.Terms
-open import Syntax.Lemmas
+open import Syntax.Terms.Lemmas
 open import Normalisation.Values
+open import Normalisation.Values.Lemmas
+open import Normalisation.Values.Weakening
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 

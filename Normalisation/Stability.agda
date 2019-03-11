@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical --allow-unsolved-meta #-}
+{-# OPTIONS --cubical #-}
 
 {-
   Values are invariant by evaluation (in the identity environment),
@@ -15,32 +15,46 @@ open import Library.Equality
 open import Library.Pairs
 open import Library.Sets
 open import Syntax.Terms
-open import Syntax.Lemmas
+open import Syntax.Terms.Lemmas
+open import Normalisation.TermLike
+open import Normalisation.Variables
+open import Normalisation.Variables.Weakening
 open import Normalisation.Values
+open import Normalisation.Values.Weakening
+open import Normalisation.Values.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
 
 
 
 -- Stability by evaluation for variables.
-postulate
-  stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
-               eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ neu (var (x ++v Δ))
-{-
+stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
+             eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ neu (var (x ++v Δ))
+
 stable-var {Δ = Δ} {A} z =
-  (ap (λ ρ → eval vz > ρ ⇒ (vneu (var z) ++V Δ))
-      (,++E {ρ = idenv +E A} {v = vneu (var z)} ⁻¹)
+  (ap (λ ρ → eval vz > ρ ⇒ (neu (var z) ++V Δ))
+      (,++E {ρ = idenv +E A} {v = neu (var z)} ⁻¹)
   ∙ ap (λ x → eval vz > (idenv ++E Δ) ⇒ x)
        (++VNV {Δ = Δ} {v = var z}
-      ∙ ap vneu (++var {Δ = Δ} {x = z})))
+      ∙ ap neu (++var {Δ = Δ} {x = z})))
   * evalπ₂ evalsid
 
 stable-var {Γ} {Δ} {A} (s {B = B} x) =
   eval[] (tr (λ ρ → evals wk > ρ ⇒ ((idenv +E B) ++E Δ))
-             (,++E {ρ = idenv +E B} {v = vneu (var z)} ⁻¹)
+             (,++E {ρ = idenv +E B} {v = neu (var z)} ⁻¹)
              (evalsπ₁ evalsid))
-         {!stable-var {Δ = ((● , B) ++ Δ)} x!}
--}
+         ((λ k → eval ⌜ x ⌝v > (E+-++≡ {Δ = Δ} {B = B} {σ = idenv} (1- k)) ⇒
+                      neu (var (v+-++≡ {Δ = Δ} {B = B} {x = x} (1- k))))
+          * (stable-var {Δ = ((● , B) ++ Δ)} x))
+  where v+-++≡ : {Γ Δ : Con} {A B : Ty} {x : Var Γ A} →
+                 (s x) ++v Δ ≡[ ap (λ Γ → Var Γ A) ,++ ]≡ x ++v ((● , B) ++ Δ)
+        v+-++≡ {Δ = ●} = refl
+        v+-++≡ {Δ = Δ , C} = apd s v+-++≡
+        E+-++≡ : {Γ Δ Θ : Con} {B : Ty} {σ : Env Γ Θ} →
+                 (σ +E B) ++E Δ ≡[ ap (λ Γ → Env Γ Θ) ,++ ]≡ σ ++E ((● , B) ++ Δ)
+        E+-++≡ {Δ = ●} = refl
+        E+-++≡ {Δ = Δ , C} = apd (λ σ → σ +E C) E+-++≡
+
 
 -- Stability by evaluation for values, neutral values and environments.
 stable-val : {Γ : Con} {A : Ty} (v : Val Γ A) →
@@ -56,7 +70,11 @@ stable-val (veq {u = u} {v} p i) =
   isprop-dependent {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
                    isPropeval
                    (veq p) (stable-val u) (stable-val v) i
-stable-val (isSetVal p q i j) = {!!}
+stable-val (isSetVal p q i j) =
+  isset-dependent2 {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
+                   isSetVal (PropisSet isPropeval)
+                   (λ k → stable-val (p k))
+                   (λ k → stable-val (q k)) i j
 
 stable-neval (var x) = stable-var x
 stable-neval (app n v) = eval[] (evals, evalsid (stable-val v))

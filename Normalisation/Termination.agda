@@ -12,13 +12,25 @@
 module Normalisation.Termination where
 
 open import Library.Equality
+open import Library.Sets
 open import Library.Pairs
+open import Library.Pairs.Sets
 open import Syntax.Terms
-open import Syntax.Lemmas
-open import Syntax.Eliminator
+open import Syntax.Terms.Weakening
+open import Syntax.Terms.Lemmas
+open import Syntax.Terms.Eliminator
+open import Normalisation.TermLike
+open import Normalisation.Variables
 open import Normalisation.Values
+open import Normalisation.Values.Weakening
+open import Normalisation.Values.Lemmas
+open import Normalisation.Values.Sets
 open import Normalisation.NormalForms
+open import Normalisation.NormalForms.Weakening
+open import Normalisation.NormalForms.Sets
 open import Normalisation.Evaluator
+open import Normalisation.Evaluator.Weakening
+open import Normalisation.Completeness
 open import Normalisation.Stability
 
 
@@ -41,6 +53,23 @@ scv {Γ = Γ} {A = A ⟶ B} f =
   Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu)
 
 
+
+isSetscv : {Γ : Con} {A : Ty} {u : Val Γ A} → isSet (scv u)
+isSetscv {A = o} {u} =
+  isSetΣ isSetNf (PropisSet isPropq)
+isSetscv {Γ} {A ⟶ B} {f} {x} {y} p q i j {Δ} {u} scvu =
+  isset (λ k _ _ scvu → p k scvu)
+        (λ k _ _ scvu → q k scvu)
+        i j Δ u scvu
+  where
+    -- Make all arguments explicit.
+    isset : isSet ((Δ : Con) (u : Val (Γ ++ Δ) A) → scv u →
+                   Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu))
+    isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
+            isSetΣ isSetVal (isSet× (PropisSet isProp$) isSetscv)
+
+
+
 -- Strong computablility is stable by weakening.
 _+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
 _+scv_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
@@ -52,7 +81,15 @@ _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let fu = tr (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let scvfu = trd scv fu'≡fu scvfu' in
-  fu ,, {!!} ,, scvfu
+  fu ,,
+  (λ i → (V+-++≡ {Δ = Δ} {B = A} {u = f} (1- i)) $ (u≡u' (1- i)) ⇒
+    (fu'≡fu i))
+  * $fu' ,,
+  scvfu
+  where V+-++≡ : {Γ Δ : Con} {A B : Ty} {u : Val Γ A} →
+                 (u +V B) ++V Δ ≡[ ap (λ Γ → Val Γ A) ,++ ]≡ u ++V ((● , B) ++ Δ)
+        V+-++≡ {Δ = ●} = refl
+        V+-++≡ {Δ = Δ , C} = apd (λ u → u +V C) (V+-++≡ {Δ = Δ})
 
 _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
 u ++scv ● = u
@@ -116,6 +153,16 @@ sce (ρ , u) = sce ρ  ×  scv u
         sce ρ → scv (π₂list ρ)
 π₂sce {ρ = _ , _} = snd
 
+πηsce : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} (sceσ : sce σ) →
+        (π₁sce sceσ ,, π₂sce sceσ) ≡[ ap sce πηlist ]≡ sceσ
+πηsce {σ = σ , u} (sceσ ,, scvu) = refl
+
+
+isSetsce : {Γ Δ : Con} {σ : Env Γ Δ} → isSet (sce σ)
+isSetsce {Δ = ●} {ε} = PropisSet isProp⊤
+isSetsce {Δ = Δ , A} {ρ , u} = isSet× isSetsce isSetscv
+
+
 -- Weakenings.
 _+sce_ : {Γ Δ : Con} {ρ : Env Γ Δ} → sce ρ → (A : Ty) → sce (ρ +E A)
 _+sce_ {ρ = ε} tt A = tt
@@ -162,8 +209,8 @@ evalssce = elimTms
 
 
 Methods._[_]ᴹ evalsce-methods IHu IHσ sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
-  let uσρ ,, evalu ,, scvuσρ = IHu sceσρ in
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
+      uσρ ,, evalu ,, scvuσρ = IHu sceσρ in
   uσρ ,, eval[] evalsσ evalu ,, scvuσρ
 Methods.π₂ᴹ evalsce-methods IHσ sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
@@ -176,34 +223,165 @@ Methods.lamᴹ evalsce-methods {Δ} {A} {B} {u} IHu {Γ} {ρ} sceρ =
   -- However, once given an argument to the function, it suffice to evaluate
   -- the function in the appropriate environment to get the result by induction
   -- hypothesis (with a few weakenings and transports, of course).
-  let uρv ,, evalu ,, scvuρv = IHu (sceρ ++sce Θ ,, scvv) in
-  let evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
+  let uρv ,, evalu ,, scvuρv = IHu (sceρ ++sce Θ ,, scvv)
+      evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
   uρv ,, evallamu ,, scvuρv
 Methods.appᴹ evalsce-methods IHu sceρ =
-  let f ,, evalf ,, scvf = IHu (π₁sce sceρ) in
-  let fρ ,, $fρ ,, scvfρ = scvf (π₂sce sceρ) in
+  let f ,, evalf ,, scvf = IHu (π₁sce sceρ)
+      fρ ,, $fρ ,, scvfρ = scvf (π₂sce sceρ) in
   fρ ,, evalapp evalf $fρ ,, scvfρ
 
 Methods.idᴹ evalsce-methods {ρ = ρ} sceρ =
   ρ ,, evalsid ,, sceρ
 Methods._∘ᴹ_ evalsce-methods IHσ IHν sceρ =
-  let νρ ,, evalsν ,, sceνρ = IHν sceρ in
-  let σνρ ,, evalsσ ,, sceσνρ = IHσ sceνρ in
+  let νρ ,, evalsν ,, sceνρ = IHν sceρ
+      σνρ ,, evalsσ ,, sceσνρ = IHσ sceνρ in
   σνρ ,, evals∘ evalsν evalsσ ,, sceσνρ
 Methods.εᴹ evalsce-methods _ =
   ε ,, evalsε ,, tt
 Methods._,ᴹ_ evalsce-methods IHσ IHu sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
-  let uρ ,, evalu ,, scvuρ = IHu sceρ in
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
+      uρ ,, evalu ,, scvuρ = IHu sceρ in
   σρ , uρ ,, evals, evalsσ evalu ,, (sceσρ ,, scvuρ)
 Methods.π₁ᴹ evalsce-methods IHσ sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
   π₁list σρ ,, evalsπ₁ evalsσ ,, π₁sce sceσρ
 
-Methods.id∘ᴹ evalsce-methods IHσ = {!!}
+Methods.id∘ᴹ evalsce-methods IHσ i sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  σρ ,,
+  isprop-dependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals id∘
+                   (evals∘ evalsσ evalsid) evalsσ i ,,
+  sceσρ
+Methods.∘idᴹ evalsce-methods IHσ i sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  σρ ,,
+  isprop-dependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals ∘id
+                   (evals∘ evalsid evalsσ) evalsσ i ,,
+  sceσρ
+Methods.∘∘ᴹ evalsce-methods IHσ IHν IHδ i {ρ = ρ} sceρ =
+  let δρ ,, evalsδ ,, sceδρ = IHδ sceρ
+      νδρ ,, evalsν ,, sceνδρ = IHν sceδρ
+      σνδρ ,, evalsσ ,, sceσνδρ = IHσ sceνδρ in
+  σνδρ ,,
+  isprop-dependent {B = λ σ → evals σ > ρ ⇒ σνδρ} isPropevals ∘∘
+                   (evals∘ evalsδ (evals∘ evalsν evalsσ))
+                   (evals∘ (evals∘ evalsδ evalsν) evalsσ) i ,,
+  sceσνδρ
+Methods.εηᴹ evalsce-methods IHσ i sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  envεη σρ i ,,
+  isprop-path {B = λ i → evals εη i > _ ⇒ envεη σρ i} isPropevals
+              evalsσ evalsε i ,,
+  sceεη sceσρ i
+  where envεη : {Γ : Con} (σ : Env Γ ●) → σ ≡ ε
+        envεη ε = refl
+        sceεη : {Γ : Con} {σ : Env Γ ●} (sceσ : sce σ) →
+                sceσ ≡[ ap sce (envεη σ) ]≡ tt
+        sceεη {σ = ε} tt = refl
+Methods.π₁βᴹ evalsce-methods IHσ IHu i sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
+      uρ ,, evalu ,, scvuρ = IHu sceρ in
+  σρ ,,
+  isprop-dependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals π₁β
+                   (evalsπ₁ (evals, evalsσ evalu)) evalsσ i ,,
+  sceσρ
+Methods.π₂βᴹ evalsce-methods IHσ IHu i sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
+      uρ ,, evalu ,, scvuρ = IHu sceρ in
+  uρ ,,
+  isprop-dependent {B = λ u → eval u > _ ⇒ uρ} isPropeval π₂β
+                   (evalπ₂ (evals, evalsσ evalu)) evalu i ,,
+  scvuρ
+Methods.πηᴹ evalsce-methods IHσ i sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  πηlist {ρ = σρ} i  ,,
+  isprop-path {B = λ i → evals πη i > _ ⇒ πηlist {ρ = σρ} i} isPropevals
+              (evals, (evalsπ₁ evalsσ) (evalπ₂ evalsσ)) evalsσ i ,,
+  πηsce sceσρ i
+Methods.βᴹ evalsce-methods {u = u} IHu i {ρ = ρ} sceρ =
+  let uρ ,, evalu ,, scvuρ = IHu sceρ
+      uρ' ,, evalu' ,, scvuρ' = IHu {ρ = π₁list ρ , π₂list ρ}
+                                    (π₁sce sceρ ,, π₂sce sceρ)
+  in
+  fst (IHu (πηsce sceρ i)) ,,
+  isprop-path {B = λ i → eval β i > ρ ⇒ fst (IHu (πηsce sceρ i))} isPropeval
+              -- This is just the result of evalsce on  app (lam u) ρ
+              -- The transport does nothing, but is required to match
+              -- the definition.
+              (evalapp (evallam u (π₁list ρ))
+                       (tr (λ u → u $ π₂list ρ ⇒ uρ')
+                           ([]++V {Θ = ●})
+                           ($lam evalu')))
+              evalu i ,,
+  snd (snd (IHu (πηsce sceρ i)))
+Methods.ηᴹ evalsce-methods {f = f} IHf i {ρ = ρ} sceρ =
+  let fρ ,, evalf ,, scvfρ = IHf sceρ
+      fρ' = Val.lam (app f) ρ
+      evalf' = evallam (app f) ρ
+      fρ'≡fρ : fρ' ≡ fρ
+      fρ'≡fρ = veq (ap (λ u → u [ _ ]) η ∙ eval≡ evalf)
+  in
+  fρ'≡fρ i ,,
+  isprop-path {B = λ i → eval η i > ρ ⇒ fρ'≡fρ i} isPropeval
+              evalf' evalf i ,,
+  λ {Θ} {v} scvv →
+  let fρv ,, $fρv ,, scvfρv = scvfρ scvv
+      fρ+ ,, evalf+ ,, scvfρ+ = IHf (sceρ ++sce Θ)
+      fρv' ,, $fρv' ,, scvfρv' = scvfρ+ {Δ = ●} scvv
+      evalfρv' = evalapp {ρ = ρ ++E Θ , v} evalf+ $fρv'
+      $lamappfρv = tr (λ u → u $ v ⇒ fρv') ([]++V {Θ = Θ}) ($lam evalfρv')
+      fρv'≡fρv : fρv' ≡ fρv
+      fρv'≡fρv = veq (eval$≡ $fρv' ⁻¹
+                     ∙ ap (λ x → x $ _)
+                          (eval≡ evalf+ ⁻¹
+                          ∙ ap (λ σ → f [ σ ]) (++E≡ {Θ = Θ} {σ = ρ})
+                          ∙ []++
+                          ∙ ap (λ x → x ++t Θ) (eval≡ evalf)
+                          ∙ ++V≡ {Θ = Θ} ⁻¹)
+                     ∙ eval$≡ $fρv)
+      scvfρv'≡scvfρv : scvfρv' ≡[ ap scv fρv'≡fρv ]≡ scvfρv
+      scvfρv'≡scvfρv = {!!}
+  in
+  fρv'≡fρv i ,,
+  {!!} ,,
+  scvfρv'≡scvfρv i
+Methods.lam[]ᴹ evalsce-methods {u = u} {σ} IHu IHσ i {ρ = ρ} sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
+  {!!} ,, {!!} ,, {!!}
+Methods.,∘ᴹ evalsce-methods IHσ IHν IHu i {ρ = ρ} sceρ =
+  let νρ ,, evalsν ,, sceνρ = IHν sceρ
+      σνρ ,, evalsσ ,, sceσνρ = IHσ sceνρ
+      uνρ ,, evalu ,, scvuνρ = IHu sceνρ
+      σuνρ = σνρ , uνρ in
+  σuνρ ,,
+  isprop-dependent {B = λ σ → evals σ > ρ ⇒ σuνρ} isPropevals ,∘
+                   (evals∘ evalsν (evals, evalsσ evalu))
+                   (evals, (evals∘ evalsν evalsσ)
+                           (eval[] evalsν evalu)) i ,,
+  (sceσνρ ,, scvuνρ)
 
-Methods.isSetTmᴹ evalsce-methods q r i j sceρ =
-  {!!}
+Methods.isSetTmᴹ evalsce-methods {Δ} {A} {u} p q i j {Γ} {ρ} sceρ =
+  isset (λ k _ _ sceρ → p k sceρ)
+        (λ k _ _ sceρ → q k sceρ)
+        i j Γ ρ sceρ
+  where
+    -- Make all arguments explicit when proving that it is a set.
+    isset : isSet ((Γ : Con) (ρ : Env Γ Δ) → sce ρ →
+                   Σ[ uρ ∈ Val Γ A ] (eval u > ρ ⇒ uρ  ×  scv uρ))
+    isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
+            isSetΣ isSetVal (isSet× (PropisSet isPropeval) isSetscv)
+
+Methods.isSetTmsᴹ evalsce-methods {Δ} {Θ} {σ} p q i j {Γ} {ρ} sceρ =
+  isset (λ k _ _ sceρ → p k sceρ)
+        (λ k _ _ sceρ → q k sceρ)
+        i j Γ ρ sceρ
+  where
+    -- Make all arguments explicit when proving that it is a set.
+    isset : isSet ((Γ : Con) (ρ : Env Γ Δ) → sce ρ →
+                   Σ[ σρ ∈ Env Γ Θ ] (evals σ > ρ ⇒ σρ  ×  sce σρ))
+    isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
+            isSetΣ isSetEnv (isSet× (PropisSet isPropevals) isSetsce)
 
 
 {-
