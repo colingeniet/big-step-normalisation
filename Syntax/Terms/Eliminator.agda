@@ -103,10 +103,10 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
     ,∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ u) i
 
   termᴹ (isSetTm p q i j) =
-    isset-dependent2 {B = Tmᴹ} isSetTm isSetTmᴹ
+    isSetDependent2 {B = Tmᴹ} isSetTm isSetTmᴹ
                      (λ k → termᴹ (p k)) (λ k → termᴹ (q k)) i j
   termᴹ (isSetTms p q i j) =
-    isset-dependent2 {B = Tmsᴹ} isSetTms isSetTmsᴹ
+    isSetDependent2 {B = Tmsᴹ} isSetTms isSetTmsᴹ
                      (λ k → termᴹ (p k)) (λ k → termᴹ (q k)) i j
 
 

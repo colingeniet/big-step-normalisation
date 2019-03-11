@@ -67,11 +67,11 @@ stable-env : {Γ Δ : Con} (ρ : Env Γ Δ) →
 stable-val (lam u ρ) = eval[] (stable-env ρ) (evallam u ρ)
 stable-val (neu n) = stable-neval n
 stable-val (veq {u = u} {v} p i) =
-  isprop-dependent {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
+  isPropDependent {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
                    isPropeval
                    (veq p) (stable-val u) (stable-val v) i
 stable-val (isSetVal p q i j) =
-  isset-dependent2 {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
+  isSetDependent2 {B = λ v → eval ⌜ v ⌝V > idenv ⇒ v}
                    isSetVal (PropisSet isPropeval)
                    (λ k → stable-val (p k))
                    (λ k → stable-val (q k)) i j

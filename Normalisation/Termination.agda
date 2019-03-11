@@ -250,13 +250,13 @@ Methods.π₁ᴹ evalsce-methods IHσ sceρ =
 Methods.id∘ᴹ evalsce-methods IHσ i sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
   σρ ,,
-  isprop-dependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals id∘
+  isPropDependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals id∘
                    (evals∘ evalsσ evalsid) evalsσ i ,,
   sceσρ
 Methods.∘idᴹ evalsce-methods IHσ i sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
   σρ ,,
-  isprop-dependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals ∘id
+  isPropDependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals ∘id
                    (evals∘ evalsid evalsσ) evalsσ i ,,
   sceσρ
 Methods.∘∘ᴹ evalsce-methods IHσ IHν IHδ i {ρ = ρ} sceρ =
@@ -264,14 +264,14 @@ Methods.∘∘ᴹ evalsce-methods IHσ IHν IHδ i {ρ = ρ} sceρ =
       νδρ ,, evalsν ,, sceνδρ = IHν sceδρ
       σνδρ ,, evalsσ ,, sceσνδρ = IHσ sceνδρ in
   σνδρ ,,
-  isprop-dependent {B = λ σ → evals σ > ρ ⇒ σνδρ} isPropevals ∘∘
+  isPropDependent {B = λ σ → evals σ > ρ ⇒ σνδρ} isPropevals ∘∘
                    (evals∘ evalsδ (evals∘ evalsν evalsσ))
                    (evals∘ (evals∘ evalsδ evalsν) evalsσ) i ,,
   sceσνδρ
 Methods.εηᴹ evalsce-methods IHσ i sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
   envεη σρ i ,,
-  isprop-path {B = λ i → evals εη i > _ ⇒ envεη σρ i} isPropevals
+  isPropPath {B = λ i → evals εη i > _ ⇒ envεη σρ i} isPropevals
               evalsσ evalsε i ,,
   sceεη sceσρ i
   where envεη : {Γ : Con} (σ : Env Γ ●) → σ ≡ ε
@@ -283,20 +283,20 @@ Methods.π₁βᴹ evalsce-methods IHσ IHu i sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
       uρ ,, evalu ,, scvuρ = IHu sceρ in
   σρ ,,
-  isprop-dependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals π₁β
+  isPropDependent {B = λ σ → evals σ > _ ⇒ σρ} isPropevals π₁β
                    (evalsπ₁ (evals, evalsσ evalu)) evalsσ i ,,
   sceσρ
 Methods.π₂βᴹ evalsce-methods IHσ IHu i sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
       uρ ,, evalu ,, scvuρ = IHu sceρ in
   uρ ,,
-  isprop-dependent {B = λ u → eval u > _ ⇒ uρ} isPropeval π₂β
+  isPropDependent {B = λ u → eval u > _ ⇒ uρ} isPropeval π₂β
                    (evalπ₂ (evals, evalsσ evalu)) evalu i ,,
   scvuρ
 Methods.πηᴹ evalsce-methods IHσ i sceρ =
   let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
   πηlist {ρ = σρ} i  ,,
-  isprop-path {B = λ i → evals πη i > _ ⇒ πηlist {ρ = σρ} i} isPropevals
+  isPropPath {B = λ i → evals πη i > _ ⇒ πηlist {ρ = σρ} i} isPropevals
               (evals, (evalsπ₁ evalsσ) (evalπ₂ evalsσ)) evalsσ i ,,
   πηsce sceσρ i
 Methods.βᴹ evalsce-methods {u = u} IHu i {ρ = ρ} sceρ =
@@ -305,7 +305,7 @@ Methods.βᴹ evalsce-methods {u = u} IHu i {ρ = ρ} sceρ =
                                     (π₁sce sceρ ,, π₂sce sceρ)
   in
   fst (IHu (πηsce sceρ i)) ,,
-  isprop-path {B = λ i → eval β i > ρ ⇒ fst (IHu (πηsce sceρ i))} isPropeval
+  isPropPath {B = λ i → eval β i > ρ ⇒ fst (IHu (πηsce sceρ i))} isPropeval
               -- This is just the result of evalsce on  app (lam u) ρ
               -- The transport does nothing, but is required to match
               -- the definition.
@@ -323,7 +323,7 @@ Methods.ηᴹ evalsce-methods {f = f} IHf i {ρ = ρ} sceρ =
       fρ'≡fρ = veq (ap (λ u → u [ _ ]) η ∙ eval≡ evalf)
   in
   fρ'≡fρ i ,,
-  isprop-path {B = λ i → eval η i > ρ ⇒ fρ'≡fρ i} isPropeval
+  isPropPath {B = λ i → eval η i > ρ ⇒ fρ'≡fρ i} isPropeval
               evalf' evalf i ,,
   λ {Θ} {v} scvv →
   let fρv ,, $fρv ,, scvfρv = scvfρ scvv
@@ -355,7 +355,7 @@ Methods.,∘ᴹ evalsce-methods IHσ IHν IHu i {ρ = ρ} sceρ =
       uνρ ,, evalu ,, scvuνρ = IHu sceνρ
       σuνρ = σνρ , uνρ in
   σuνρ ,,
-  isprop-dependent {B = λ σ → evals σ > ρ ⇒ σuνρ} isPropevals ,∘
+  isPropDependent {B = λ σ → evals σ > ρ ⇒ σuνρ} isPropevals ,∘
                    (evals∘ evalsν (evals, evalsσ evalu))
                    (evals, (evals∘ evalsν evalsσ)
                            (eval[] evalsν evalu)) i ,,

@@ -21,7 +21,7 @@ isPropΣ : ∀ {l m} {A : Set l} {B : A → Set m} →
           isProp (Σ A B)
 isPropΣ {B = B} HA HB (x ,, y) (z ,, w) i =
   let x≡z = HA x z in
-  x≡z i ,, isprop-dependent {B = B} HB x≡z y w i
+  x≡z i ,, isPropDependent {B = B} HB x≡z y w i
 
 
 isSet× : ∀ {l m} {A : Set l} {B : Set m} →
@@ -44,5 +44,5 @@ isSetΣ {B = B} HA HB p q i j =
       q2 = λ k → snd (q k)
   in
   HA p1 q1 i j ,,
-  isset-dependent2 {B = B} HA HB
+  isSetDependent2 {B = B} HA HB
                    p2 q2 i j

@@ -25,14 +25,23 @@ isProp A = (x y : A) → x ≡ y
 isSet : ∀ {l} → Set l → Set l
 isSet A = {x y : A} → isProp (x ≡ y)
 
+
+-- In a mere proposition, any two points can be joined by a path
+-- which furthermore coincides with an arbitrary partial path.
+isPropPartial : ∀ {l} {A : Set l} → isProp A →
+                   (x y : A) {φ : I} (p : Partial φ (x ≡ y)) →
+                   (x ≡ y) [ φ ↦ p ]
+isPropPartial H x y {φ} p = inc λ i →
+  hcomp (λ j → λ {(i = i0) → H x x j;
+                  (i = i1) → H y y j;
+                  (φ = i1) → H (H x y i) (p 1=1 i) j})
+        (H x y i)
+
 -- A proposition is a set.
 PropisSet : ∀ {l} {A : Set l} → isProp A → isSet A
-PropisSet isprop {x} {y} p q j i =
-  hcomp (λ k → λ {(i = i0) → isprop x x k;
-                  (i = i1) → isprop x y k;
-                  (j = i0) → isprop x (p i) k;
-                  (j = i1) → isprop x (q i) k})
-        x
+PropisSet H {x} {y} p q i j =
+  ouc (isPropPartial H (p j) (q j) (λ {(j = i0) → refl; (j = i1) → refl})) i
+
 
 -- The proposition and set predicates are themselves propositions.
 isPropisProp : ∀ {l} {A : Set l} → isProp (isProp A)
@@ -77,26 +86,27 @@ make-non-dependent {B = B} H r = change-underlying {B = B} H r
 -- If B is a proposition indexed by A, then B is also a proposition up to
 -- dependent paths, that is if a ≡ b : A, then any two elements of B a and
 -- B b are equal.
-isprop-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
+isPropDependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                      ({x : A} → isProp (B x)) →
                      {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
                      x ≡[ ap B p ]≡ y
-isprop-dependent {B = B} H p x y = trfill B p x d∙ H _ y
+isPropDependent {B = B} H p x y = trfill B p x d∙ H _ y
 
 -- Similar lemma, but with I as indexing set.
-isprop-path : ∀ {l} {B : I → Set l} →
+isPropPath : ∀ {l} {B : I → Set l} →
                 ({i : I} → isProp (B i)) →
                 (x : B i0) (y : B i1) →
                 PathP B x y
-isprop-path {B = B} H x y = (λ k → B k) *fill x d∙ H _ y
+isPropPath {B = B} H x y = (λ k → B k) *fill x d∙ H _ y
+
 
 -- Similar result for sets.
 -- This version assumes a unique underlying path.
-isset-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
+isSetDependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                     ({x : A} → isSet (B x)) →
                     {a b : A} {p : a ≡ b} {x : B a} {y : B b} →
                     isProp (x ≡[ ap B p ]≡ y)
-isset-dependent {B = B} H {a} {b} {p} {x} {y} r s j i =
+isSetDependent {B = B} H {a} {b} {p} {x} {y} r s j i =
   let t = trfill B p x
       -- This is just composition, but with an ad hoc definition to simplify
       -- the underlying path.
@@ -119,17 +129,58 @@ isset-dependent {B = B} H {a} {b} {p} {x} {y} r s j i =
           j i)
 
 -- This version assumes that the indexing type is a set.
-isset-dependent2 :
+isSetDependent2 :
   ∀ {l m} {A : Set l} {B : A → Set m} →
     (HA : isSet A) → ({x : A} → isSet (B x)) →
     {a b : A} {p q : a ≡ b} {x : B a} {y : B b}
     (r : x ≡[ ap B p ]≡ y) (s : x ≡[ ap B q ]≡ y) →
     r ≡[ ap (λ p → x ≡[ ap B p ]≡ y) (HA p q) ]≡ s
-isset-dependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
+isSetDependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
   trfill (λ p → x ≡[ ap B p ]≡ y) (HA p q) r
-  d∙ isset-dependent {B = B} HB (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
+  d∙ isSetDependent {B = B} HB (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
 
 
+{- The type of a square with p q r s as edges.
+       s
+    b_____d
+    |     |
+  p |     | q
+    |_____|
+    a  r  c
+-}
+square-filler : ∀ {l} {A : Set l} {a b c d : A}
+                  (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) →
+                  Setω
+square-filler {A = A} p q r s = (i j : I) →
+  A [ (i ∨ j ∨ 1- i ∨ 1- j) ↦
+      (λ {(i = i0) → p j; (i = i1) → q j;
+          (j = i0) → r i; (j = i1) → s i}) ]
+
+-- In a set, it is always possible to fill a square as above.
+isSetFillSquare : ∀ {l} {A : Set l} → isSet A → {a b c d : A}
+                      (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) →
+                      square-filler p q r s
+isSetFillSquare {A = A} H {a} {b} {c} {d} p q r s i j =
+  inc (hcomp (λ k → λ {(i = i0) → p (j ∨ 1- k);
+                       (i = i1) → q j;
+                       (j = i0) → transitivity-square (r ⁻¹) p (1- i) (1- k);
+                       (j = i1) → H ((r ⁻¹ ∙ p) ⁻¹ ∙ q) s k i})
+             (transitivity-square ((r ⁻¹ ∙ p) ⁻¹) q i j))
+
+-- Furthermore, the square can be filled by extending a partial square.
+isSetFillPartialSquare : ∀ {l} {A : Set l} → isSet A →
+  {a b c d : A} (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) →
+  {φ : I} (u : (IsOne φ) → square-filler p q r s) → (i j : I) →
+  A [ i ∨ 1- i ∨ j ∨ 1- j ∨ φ ↦
+    (λ {(i = i0) → p j; (i = i1) → q j;
+        (j = i0) → r i; (j = i1) → s i;
+        (φ = i1) → ouc (u 1=1 i j)}) ]
+isSetFillPartialSquare H p q r s {φ} u i j =
+  inc (hcomp (λ k → λ {(i = i0) → p j; (i = i1) → q j;
+                       (j = i0) → H r r k i; (j = i1) → H s s k i;
+                       (φ = i1) → H (λ i → ouc (isSetFillSquare H p q r s i j))
+                                    (λ i → ouc (u 1=1 i j)) k i})
+             (ouc (isSetFillSquare H p q r s i j)))
 
 isSet⇒ : ∀ {l m} {A : Set l} {B : A → Set m} →
            ({x : A} → isSet (B x)) → isSet ((x : A) → B x)

@@ -76,7 +76,8 @@ abstract
                   (envgenwk Δ σ C) +E B ≡ envgenwk (Δ , B) (σ +E B) C
           ++-+V {u = lam u ρ} = ap (lam u) ++-+E
           ++-+V {u = neu u} = ap neu ++-+NV
-          ++-+V {u = veq p i} j = {!!}
+          ++-+V {Δ = Δ} {B = B} {C} {u = veq p i} j =
+            {!!}
           ++-+V {u = isSetVal p q i j} k = {!!}
           ++-+NV {u = var x} = refl
           ++-+NV {u = app f u} = ap2 app (++-+NV {u = f}) (++-+V {u = u})
