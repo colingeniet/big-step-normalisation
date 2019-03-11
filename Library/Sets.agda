@@ -81,7 +81,14 @@ isprop-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                      ({x : A} → isProp (B x)) →
                      {a b : A} (p : a ≡ b) (x : B a) (y : B b) →
                      x ≡[ ap B p ]≡ y
-isprop-dependent {B = B} H p x y = trfill B p x d∙ H (tr B p x) y
+isprop-dependent {B = B} H p x y = trfill B p x d∙ H _ y
+
+-- Similar lemma, but with I as indexing set.
+isprop-path : ∀ {l} {B : I → Set l} →
+                ({i : I} → isProp (B i)) →
+                (x : B i0) (y : B i1) →
+                PathP B x y
+isprop-path {B = B} H x y = (λ k → B k) *fill x d∙ H _ y
 
 -- Similar result for sets.
 -- This version assumes a unique underlying path.
