@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical --allow-unsolved-meta #-}
+{-# OPTIONS --cubical --safe #-}
 
 {-
   Proof of termination of eval and quote.

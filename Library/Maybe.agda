@@ -14,9 +14,14 @@ data Maybe {l} (A : Set l) : Set l where
 
 
 maybe-lift : ∀ {l m} {A : Set l} {B : Set m} →
-               (A → B) → (Maybe A → Maybe B)
+               (A → B) → Maybe A → Maybe B
 maybe-lift _ no = no
 maybe-lift f (yes x) = yes (f x)
+
+maybe-bind : ∀ {l m} {A : Set l} {B : Set m} →
+               (A → Maybe B) → Maybe A → Maybe B
+maybe-bind _ no = no
+maybe-bind f (yes x) = f x
 
 
 yes-injective : ∀ {l} {A : Set l} {x y : A} → yes x ≡ yes y → x ≡ y
