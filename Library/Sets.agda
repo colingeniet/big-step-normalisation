@@ -192,6 +192,12 @@ isSetFillPartialSquare H p q r s {φ} u i j =
                                     (λ i → ouc (u 1=1 i j)) k i})
              (ouc (isSetFillSquare H p q r s i j)))
 
+
+
+isProp⇒ : ∀ {l m} {A : Set l} {B : A → Set m} →
+            ({x : A} → isProp (B x)) → isProp ((x : A) → B x)
+isProp⇒ {A = A} {B} H f g i x = H (f x) (g x) i
+
 isSet⇒ : ∀ {l m} {A : Set l} {B : A → Set m} →
            ({x : A} → isSet (B x)) → isSet ((x : A) → B x)
 isSet⇒ {A = A} {B} H {f} {g} p q i j x =
