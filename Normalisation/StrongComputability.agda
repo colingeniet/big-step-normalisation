@@ -117,7 +117,7 @@ q-scv {A = o} {n = n} qu = neu n ,, qo qu
 -- to a value is trivial. Quote simply quotes the function and the value
 -- separately, hence the proof would be simple if it was not for a few
 -- weakenings and transports.
-q-scv {A = A ⟶ pB} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
+q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
   let fu = app (f ++NV Δ) u in
   let $fu = tr (λ x → (x $ u ⇒ neu fu))
                (++VNV {v = f} ⁻¹)
