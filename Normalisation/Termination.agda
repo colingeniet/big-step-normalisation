@@ -226,8 +226,8 @@ Methods.lamᴹ evalsce-methods {Δ} {A} {B} {u} IHu {Γ} {ρ} sceρ =
   let uρv ,, evalu ,, scvuρv = IHu (sceρ ++sce Θ ,, scvv)
       evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
   uρv ,, evallamu ,, scvuρv
-Methods.appᴹ evalsce-methods IHu sceρ =
-  let f ,, evalf ,, scvf = IHu (π₁sce sceρ)
+Methods.appᴹ evalsce-methods IHf sceρ =
+  let f ,, evalf ,, scvf = IHf (π₁sce sceρ)
       fρ ,, $fρ ,, scvfρ = scvf (π₂sce sceρ) in
   fρ ,, evalapp evalf $fρ ,, scvfρ
 
@@ -324,15 +324,15 @@ Methods.ηᴹ evalsce-methods {f = f} IHf i {ρ = ρ} sceρ =
   in
   fρ'≡fρ i ,,
   isPropPath {B = λ i → eval η i > ρ ⇒ fρ'≡fρ i} isPropeval
-              evalf' evalf i ,,
+             evalf' evalf i ,,
   λ {Θ} {v} scvv →
   let fρv ,, $fρv ,, scvfρv = scvfρ scvv
       fρ+ ,, evalf+ ,, scvfρ+ = IHf (sceρ ++sce Θ)
-      fρv' ,, $fρv' ,, scvfρv' = scvfρ+ {Δ = ●} scvv
-      evalfρv' = evalapp {ρ = ρ ++E Θ , v} evalf+ $fρv'
-      $lamappfρv = tr (λ u → u $ v ⇒ fρv') ([]++V {Θ = Θ}) ($lam evalfρv')
-      fρv'≡fρv : fρv' ≡ fρv
-      fρv'≡fρv = veq (eval$≡ $fρv' ⁻¹
+      fρv+ ,, $fρv+ ,, scvfρv+ = scvfρ+ {Δ = ●} scvv
+      evalfρv+ = evalapp {ρ = ρ ++E Θ , v} evalf+ $fρv+
+      $lamappfρv = tr (λ u → u $ v ⇒ fρv+) ([]++V {Θ = Θ}) ($lam evalfρv+)
+      fρv+≡fρv : fρv+ ≡ fρv
+      fρv+≡fρv = veq (eval$≡ $fρv+ ⁻¹
                      ∙ ap (λ x → x $ _)
                           (eval≡ evalf+ ⁻¹
                           ∙ ap (λ σ → f [ σ ]) (++E≡ {Θ = Θ} {σ = ρ})
@@ -340,15 +340,55 @@ Methods.ηᴹ evalsce-methods {f = f} IHf i {ρ = ρ} sceρ =
                           ∙ ap (λ x → x ++t Θ) (eval≡ evalf)
                           ∙ ++V≡ {Θ = Θ} ⁻¹)
                      ∙ eval$≡ $fρv)
-      scvfρv'≡scvfρv : scvfρv' ≡[ ap scv fρv'≡fρv ]≡ scvfρv
-      scvfρv'≡scvfρv = {!!}
+      scvfρv+≡scvfρv : scvfρv+ ≡[ ap scv fρv+≡fρv ]≡ scvfρv
+      scvfρv+≡scvfρv = {!!}
   in
-  fρv'≡fρv i ,,
-  {!!} ,,
-  scvfρv'≡scvfρv i
-Methods.lam[]ᴹ evalsce-methods {u = u} {σ} IHu IHσ i {ρ = ρ} sceρ =
-  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ in
-  {!!} ,, {!!} ,, {!!}
+  fρv+≡fρv i ,,
+  isPropPath {B = λ i → (fρ'≡fρ i ++V Θ) $ v ⇒ (fρv+≡fρv i)} isProp$
+             $lamappfρv $fρv i ,,
+  scvfρv+≡scvfρv i
+Methods.lam[]ᴹ evalsce-methods {A = A} {u = u} {σ} IHu IHσ i {ρ = ρ} sceρ =
+  let σρ ,, evalsσ ,, sceσρ = IHσ sceρ
+      uσρ = Val.lam u σρ
+      evaluσρ : eval (lam u [ σ ]) > ρ ⇒ uσρ
+      evaluσρ = eval[] evalsσ (evallam u σρ)
+      uσρ' = Val.lam (u [ σ ↑ A ]) ρ
+      evaluσρ' : eval (lam (u [ σ ↑ A ])) > ρ ⇒ uσρ'
+      evaluσρ' = evallam (u [ σ ↑ A ]) ρ
+      uσρ≡uσρ' : uσρ ≡ uσρ'
+      uσρ≡uσρ' = veq (ap (λ σ → lam u [ σ ])
+                               (evals≡ evalsσ ⁻¹)
+                           ∙ [][] ∙ ap (λ u → u [ ⌜ ρ ⌝E ]) lam[])
+  in
+  uσρ≡uσρ' i ,,
+  isPropPath {B = λ i → eval (lam[] i) > ρ ⇒ uσρ≡uσρ' i} isPropeval
+             evaluσρ evaluσρ' i ,,
+  λ {Θ} {v} scvv →
+  let uσρv ,, evalu ,, scvuσρv = IHu (sceσρ ++sce Θ ,, scvv)
+      evaluσρv = tr (λ u → u $ v ⇒ uσρv) ([]++V {Θ = Θ}) ($lam evalu)
+      σρ' ,, evalsσ' ,, sceσρ' = IHσ (sceρ ++sce Θ)
+      evalsσρ' : evals (σ ∘ wk) > (ρ ++E Θ , v) ⇒ σρ'
+      evalsσρ' = evals∘ (evalsπ₁ evalsid) evalsσ'
+      σρv' = σρ' , v
+      evalsσρv' : evals (σ ↑ A) > (ρ ++E Θ , v) ⇒ σρv'
+      evalsσρv' = evals, evalsσρ' (evalπ₂ evalsid)
+      sceσρv' : sce σρv'
+      sceσρv' = sceσρ' ,, scvv
+      uσρv' ,, evalu' ,, scvuσρv' = IHu sceσρv'
+      evaluσ' : eval (u [ σ ↑ A ]) > (ρ ++E Θ , v) ⇒ uσρv'
+      evaluσ' = eval[] evalsσρv' evalu'
+      evaluσρv' = tr (λ u → u $ v ⇒ uσρv') ([]++V {Θ = Θ}) ($lam evaluσ')
+      uσρv≡uσρv' : uσρv ≡ uσρv'
+      uσρv≡uσρv' = veq (eval$≡ evaluσρv ⁻¹
+                       ∙ ap (λ u → ⌜ u ++V Θ ⌝V $ ⌜ v ⌝V) uσρ≡uσρ'
+                       ∙ eval$≡ evaluσρv')
+      scvuσρv≡scvuσρv' : scvuσρv ≡[ ap scv uσρv≡uσρv' ]≡ scvuσρv'
+      scvuσρv≡scvuσρv' = {!!}
+  in
+  uσρv≡uσρv' i ,,
+  isPropPath {B = λ i → (uσρ≡uσρ' i ++V Θ) $ v ⇒ uσρv≡uσρv' i} isProp$
+             evaluσρv evaluσρv' i ,,
+  scvuσρv≡scvuσρv' i
 Methods.,∘ᴹ evalsce-methods IHσ IHν IHu i {ρ = ρ} sceρ =
   let νρ ,, evalsν ,, sceνρ = IHν sceρ
       σνρ ,, evalsσ ,, sceσνρ = IHσ sceνρ
