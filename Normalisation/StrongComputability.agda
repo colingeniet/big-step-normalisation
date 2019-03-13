@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical --safe #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -20,6 +20,7 @@ open import Normalisation.Variables
 open import Normalisation.Values
 open import Normalisation.Values.Weakening
 open import Normalisation.Values.Lemmas
+open import Normalisation.Values.Sets
 open import Normalisation.NormalForms
 open import Normalisation.NormalForms.Weakening
 open import Normalisation.NormalForms.Sets
@@ -159,6 +160,31 @@ _+sce_ {ρ = ρ , u} (sceρ ,, scvu) A = sceρ +sce A ,, scvu +scv A
 _++sce_ : {Γ Θ : Con} {σ : Env Γ Θ} → sce σ → (Δ : Con) → sce (σ ++E Δ)
 σ ++sce ● = σ
 σ ++sce (Δ , A) = (σ ++sce Δ) +sce A
+
+
+π₁sce+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
+         π₁sce (sceσ +sce B) ≡[ ap sce (π₁+ {Δ = ●} {σ = σ}) ]≡ (π₁sce sceσ) +sce B
+π₁sce+ {σ = _ , _} = refl
+π₂sce+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
+         π₂sce (sceσ +sce B) ≡[ ap scv (π₂+ {Δ = ●} {σ = σ}) ]≡ (π₂sce sceσ) +scv B
+π₂sce+ {σ = _ , _} = refl
+
+π₁sce++ : {Γ Δ Θ : Con} {A : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
+          π₁sce (sceσ ++sce Θ) ≡[ ap sce (π₁++ {σ = σ}) ]≡ (π₁sce sceσ) ++sce Θ
+π₁sce++ {Θ = ●} = refl
+π₁sce++ {Θ = Θ , B} {sceσ = σ} =
+  ≅-to-≡[] {B = sce} isSetEnv
+           (≡[]-to-≅ {B = sce} (π₁sce+ {sceσ = σ ++sce Θ})
+           ∙≅ ≡[]-to-≅ (apd (λ σ → σ +sce B) (π₁sce++ {Θ = Θ} {sceσ = σ})))
+π₂sce++ : {Γ Δ Θ : Con} {A : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
+          π₂sce (sceσ ++sce Θ) ≡[ ap scv (π₂++ {σ = σ}) ]≡ (π₂sce sceσ) ++scv Θ
+π₂sce++ {Θ = ●} = refl
+π₂sce++ {Θ = Θ , B} {sceσ = σ} =
+  ≅-to-≡[] {B = scv} isSetVal
+           (≡[]-to-≅ {B = scv} (π₂sce+ {sceσ = σ ++sce Θ})
+           ∙≅ ≡[]-to-≅ (apd (λ u → u +scv B) (π₂sce++ {Θ = Θ} {sceσ = σ})))
+
+
 
 -- The identity environment is strongly computable.
 sceid : {Γ : Con} → sce (idenv {Γ})

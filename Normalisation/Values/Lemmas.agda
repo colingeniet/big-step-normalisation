@@ -33,6 +33,17 @@ open import Normalisation.Values.Weakening
       π₂list (envgenwk Δ σ A) ≡ valgenwk Δ (π₂list σ) A
 π₂+ {σ = _ , _} = refl
 
+π₁++ : {Γ Δ Θ : Con} {A : Ty} {σ : Env Γ (Δ , A)} →
+       π₁list (σ ++E Θ) ≡ (π₁list σ) ++E Θ
+π₁++ {Θ = ●} = refl
+π₁++ {Θ = Θ , B} {σ = σ} = π₁+ {Δ = ●} {A = B} {σ = σ ++E Θ}
+                           ∙ ap (λ σ → σ +E B) (π₁++ {Θ = Θ} {σ = σ})
+π₂++ : {Γ Δ Θ : Con} {A : Ty} {σ : Env Γ (Δ , A)} →
+       π₂list (σ ++E Θ) ≡ (π₂list σ) ++V Θ
+π₂++ {Θ = ●} = refl
+π₂++ {Θ = Θ , B} {σ = σ} = π₂+ {Δ = ●} {A = B} {σ = σ ++E Θ}
+                           ∙ ap (λ σ → σ +V B) (π₂++ {Θ = Θ} {σ = σ})
+
 -- Weakening and environment extension commute.
 ,++E : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Γ Δ} {v : Val Γ A} →
        (ρ , v) ++E Θ ≡ (ρ ++E Θ , v ++V Θ)
