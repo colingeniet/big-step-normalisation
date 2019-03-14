@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -83,6 +83,18 @@ _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
 _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
 u ++scv ● = u
 u ++scv (Δ , A) = (u ++scv Δ) +scv A
+
+{-
++scv≡ : {Γ Δ : Con} {A B C : Ty} {f : Val Γ (B ⟶ C)} {scvf : scv f}
+        {v : Val ((Γ , A) ++ Δ) B} {scvv : scv v} →
+        ((λ {Δ} → scvf {Δ}) +scv A) scvv
+        ≡ {!scvf (trd scv (trfill (λ Γ → Val Γ B) ,++ v) scvv)!}
++scv≡ = {!!}
+-}
+postulate
+  ++scv≡ : {Γ Δ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {scvf : scv f}
+           {v : Val (Γ ++ Δ) A} {scvv : scv v} →
+           ((λ {Δ} → scvf {Δ}) ++scv Δ) {Δ = ●} scvv ≡ scvf scvv
 
 
 
