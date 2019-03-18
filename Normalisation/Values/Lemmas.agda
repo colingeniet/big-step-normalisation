@@ -61,6 +61,18 @@ open import Normalisation.Values.Weakening
 ++VNV {Δ = ●} = refl
 ++VNV {Δ = Δ , B} {v = v} = ap (λ u → u +V B) (++VNV {Δ = Δ} {v = v})
 
+-- 'Associativity' of weakening.
+V+-++ : {Γ Δ : Con} {A B : Ty} {u : Val Γ A} →
+                 (u +V B) ++V Δ ≡[ ap (λ Γ → Val Γ A) ,++ ]≡ u ++V ((● , B) ++ Δ)
+V+-++ {Δ = ●} = refl
+V+-++ {Δ = Δ , C} = apd (λ u → u +V C) (V+-++ {Δ = Δ})
+
+E+-++ : {Γ Δ Θ : Con} {B : Ty} {σ : Env Γ Θ} →
+        (σ +E B) ++E Δ ≡[ ap (λ Γ → Env Γ Θ) ,++ ]≡ σ ++E ((● , B) ++ Δ)
+E+-++ {Δ = ●} = refl
+E+-++ {Δ = Δ , C} = apd (λ σ → σ +E C) E+-++
+
+
 
 -- The identity environment.
 idenv : {Γ : Con} → Env Γ Γ

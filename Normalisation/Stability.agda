@@ -43,17 +43,10 @@ stable-var {Γ} {Δ} {A} (s {B = B} x) =
   eval[] (tr (λ ρ → evals wk > ρ ⇒ ((idenv +E B) ++E Δ))
              (,++E {ρ = idenv +E B} {v = neu (var z)} ⁻¹)
              (evalsπ₁ evalsid))
-         ((λ k → eval ⌜ x ⌝v > (E+-++≡ {Δ = Δ} {B = B} {σ = idenv} (1- k)) ⇒
-                      neu (var (v+-++≡ {Δ = Δ} {B = B} {x = x} (1- k))))
+         ((λ k → eval ⌜ x ⌝v > (E+-++ {Δ = Δ} {B = B} {σ = idenv} (1- k)) ⇒
+                      neu (var (v+-++ {Δ = Δ} {B = B} {x = x} (1- k))))
           * (stable-var {Δ = ((● , B) ++ Δ)} x))
-  where v+-++≡ : {Γ Δ : Con} {A B : Ty} {x : Var Γ A} →
-                 (s x) ++v Δ ≡[ ap (λ Γ → Var Γ A) ,++ ]≡ x ++v ((● , B) ++ Δ)
-        v+-++≡ {Δ = ●} = refl
-        v+-++≡ {Δ = Δ , C} = apd s v+-++≡
-        E+-++≡ : {Γ Δ Θ : Con} {B : Ty} {σ : Env Γ Θ} →
-                 (σ +E B) ++E Δ ≡[ ap (λ Γ → Env Γ Θ) ,++ ]≡ σ ++E ((● , B) ++ Δ)
-        E+-++≡ {Δ = ●} = refl
-        E+-++≡ {Δ = Δ , C} = apd (λ σ → σ +E C) E+-++≡
+
 
 
 -- Stability by evaluation for values, neutral values and environments.
