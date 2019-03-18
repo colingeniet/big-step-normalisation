@@ -72,3 +72,13 @@ idenv≡ {●} = εη ⁻¹
 idenv≡ {Γ , A} = ap (λ σ → σ , vz)
                     (+E≡ ∙ ap (λ σ → σ ∘ wk) idenv≡)
                  ∙ ↑id
+
+
+enveq : {Γ Δ : Con} {σ ν : Env Γ Δ} → ⌜ σ ⌝E ≡ ⌜ ν ⌝E → σ ≡ ν
+enveq {Δ = ●} {ε} {ε} _ = refl
+enveq {Δ = Δ , A} {σ , u} {ν , v} p =
+  let p1 : σ ≡ ν
+      p1 = enveq (π₁β ⁻¹ ∙ ap π₁ p ∙ π₁β)
+      p2 : u ≡ v
+      p2 = veq (π₂β ⁻¹ ∙ ap π₂ p ∙ π₂β)
+  in ap2 _,_ p1 p2
