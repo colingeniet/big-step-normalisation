@@ -379,6 +379,7 @@ _≅⁻¹ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b
        x ≅⟨ B ⟩ y → y ≅⟨ B ⟩ x
 (p ,≅ q) ≅⁻¹ = p ⁻¹ ,≅ q ⁻¹
 
+infixr 6 _∙≅_
 _∙≅_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
          {x : B a} {y : B b} {z : B c} →
          x ≅⟨ B ⟩ y → y ≅⟨ B ⟩ z → x ≅⟨ B ⟩ z

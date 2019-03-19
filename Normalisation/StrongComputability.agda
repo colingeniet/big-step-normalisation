@@ -15,6 +15,7 @@ open import Library.Pairs
 open import Library.Pairs.Sets
 open import Syntax.Terms
 open import Syntax.Terms.Lemmas
+open import Syntax.Types.Sets
 open import Normalisation.TermLike
 open import Normalisation.Variables
 open import Normalisation.Values
@@ -30,26 +31,36 @@ open import Normalisation.Completeness
 open import Normalisation.Stability
 
 
--- Termination of quote, truncated to a mere proposition.
+-- Termination and soundness of quote.
+-- This could be defined without an inductive type, but somehow agda is
+-- better at infering implicit arguments this way.
 data Norm {Γ : Con} {A : Ty} (u : Val Γ A) : Set where
-  norm : {n : Nf Γ A} → q u ⇒ n → Norm u
-  isPropNorm : isProp (Norm u)
+  norm : {n : Nf Γ A} → q u ⇒ n →
+         ({Δ : Con} {m : Nf (Γ ++ Δ) A} →
+                    q (u ++V Δ) ⇒ m → m ≡ (n ++N Δ)) →
+         Norm u
 
-_+Norm_ : {Γ : Con} {B : Ty} {u : Val Γ B} → Norm u → (A : Ty) → Norm (u +V A)
-(norm q) +Norm A = norm (qwk q A)
-(isPropNorm x y i) +Norm A = isPropNorm (x +Norm A) (y +Norm A) i
+isPropNorm : {Γ : Con} {A : Ty} {u : Val Γ A} → isProp (Norm u)
+isPropNorm {Γ} {A} {u} (norm {n = n} qn x) (norm {n = m} qm y) i =
+  let n≡m = y {Δ = ●} qn
+      qn≡qm = isPropDependent {B = λ n → q u ⇒ n} isPropq
+                              n≡m qn qm
+  in norm (qn≡qm i) λ {Δ} q j →
+    ouc (isSetFillSquare isSetNf (x q) (y q) refl (λ i → (n≡m i) ++N Δ) i j)
 
-
-data Norms {Γ : Con} {A : Ty} (u : Ne Val Γ A) : Set where
-  norms : {n : Ne Nf Γ A} → qs u ⇒ n → Norms u
-  isPropNorms : isProp (Norms u)
-
-
-Norms-o→Norm : {Γ : Con} {u : Ne Val Γ o} → Norms u → Norm (neu u)
-Norms-o→Norm (norms q) = norm (qo q)
-Norms-o→Norm (isPropNorms x y i) = isPropNorm (Norms-o→Norm x) (Norms-o→Norm y) i
-
-
+_+norm_ : {Γ : Con} {B : Ty} {u : Val Γ B} → Norm u → (A : Ty) → Norm (u +V A)
+_+norm_ {Γ} {B} {u} (norm {n = n} qn p) A =
+  norm (qwk qn A) λ {Δ} {m} qm →
+  let u≡u' = V+-++ {Δ = Δ} {B = A} {u = u}
+      n≡n' = N+-++ {Δ = Δ} {B = A} {n = n}
+      m' = tr (λ Γ → Nf Γ B) (,++ {Δ = Δ}) m
+      m≡m' = trfill (λ Γ → Nf Γ B) (,++ {Δ = Δ}) m
+      qm' = (λ i → q (u≡u' i) ⇒ (m≡m' i)) * qm
+      m≅n : m ≅⟨(λ Γ → Nf Γ B)⟩ (n +N A) ++N Δ
+      m≅n = ≡[]-to-≅ m≡m'
+            ∙≅ ≡-to-≅ (p qm')
+            ∙≅ ≡[]-to-≅ n≡n' ≅⁻¹
+  in ≅-to-≡ isSetCon m≅n
 
 
 -- Definition of strongly computable values.
@@ -65,7 +76,6 @@ scv {Γ} {A ⟶ B} f =
   Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu)
 
 
-
 isPropscv : {Γ : Con} {A : Ty} {u : Val Γ A} → isProp (scv u)
 isPropscv {A = o} = isPropNorm
 isPropscv {Γ} {A ⟶ B} {f} x y i {Δ} {u} scvu =
@@ -76,14 +86,12 @@ isPropscv {Γ} {A ⟶ B} {f} x y i {Δ} {u} scvu =
   in v≡v' i ,,
      isPropPath {B = λ i → (f ++V Δ) $ u ⇒ (v≡v' i)} isProp$
                 $fu $fu' i ,,
-     isPropDependent {B = scv} isPropscv v≡v' scvv scvv' i
-
-
+     isPropDependent {B = scv} (isPropscv {A = B}) v≡v' scvv scvv' i
 
 
 -- Strong computablility is stable by weakening.
 _+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
-_+scv_ {B = o} = _+Norm_
+_+scv_ {B = o} = _+norm_
 _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let u' = tr (λ Γ → Val Γ B) ,++ u in
   let u≡u' = trfill (λ Γ → Val Γ B) ,++ u in
@@ -101,60 +109,6 @@ _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
 _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
 u ++scv ● = u
 u ++scv (Δ , A) = (u ++scv Δ) +scv A
-
-
-
-{-
-  Main lemma:
-  The fact that strong computability implies termination of quote is actually
-  not obvious. The proof requires to simultaneously prove the converse for
-  neutral values.
--}
--- Main direction: strong computability implies termination of quote.
-scv-q : {Γ : Con} {A : Ty} {u : Val Γ A} →
-        scv u → Norm u
--- Converse for neutral values.
-q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} →
-        Norms u → scv (neu u)
-
--- The converse allows in particular to show that variables are sc.
-scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (neu (var x))
-scvvar = q-scv (norms qsvar)
-
-
-scv-q {A = o} scvu = scvu
--- For functions, we follow the definition of quote and apply
--- the function to vz. This is why sc of variables is required.
-scv-q {Γ} {A ⟶ B} {u = u} scvu =
-  match (scv-q (snd (snd (scvu scvvar))))
-  where uz : Val (Γ , A) B
-        uz = fst (scvu scvvar)
-        $uz : (u +V A) $ (neu (var z)) ⇒ uz
-        $uz = fst (snd (scvu scvvar))
-        match : Norm uz → Norm u
-        match (norm quz) = norm (q⟶ $uz quz)
-        match (isPropNorm x y i) = isPropNorm (match x) (match y) i
-
-
-q-scv {A = o} q = Norms-o→Norm q
--- For functions, since we are considering neutral values, application
--- to a value is trivial. Quote simply quotes the function and the value
--- separately, hence the proof would be simple if it was not for a few
--- weakenings and transports.
-q-scv {A = A ⟶ B} {u = f} (norms qf) {Δ = Δ} {u = u} scu =
-  let fu = app (f ++NV Δ) u
-      $fu = tr (λ x → (x $ u ⇒ neu fu))
-               (++VNV {v = f} ⁻¹)
-               ($app (f ++NV Δ) u)
-      normu = scv-q scu
-  in neu fu ,, $fu ,, q-scv (match normu)
-  where match : Norm u → Norms (app (f ++NV Δ) u)
-        match (norm qu) = norms (qsapp (qswks qf Δ) qu)
-        match (isPropNorm x y i) = isPropNorms (match x) (match y) i
-q-scv {A = A ⟶ B} (isPropNorms x y i) =
-  -- Without the η-expansion, agda tries to find some implicit arguments and
-  -- thinks that SCV ≠ SCV because the implicit arguments are not there ...
-  isPropscv (λ {Δ} → q-scv x {Δ}) (q-scv y) i
 
 
 
@@ -215,8 +169,63 @@ _++sce_ : {Γ Θ : Con} {σ : Env Γ Θ} → sce σ → (Δ : Con) → sce (σ +
            ∙≅ ≡[]-to-≅ (apd (λ u → u +scv B) (π₂sce++ {Θ = Θ} {sceσ = σ})))
 
 
+{-
+{-
+  Main lemma:
+  The fact that strong computability implies termination of quote is actually
+  not obvious. The proof requires to simultaneously prove the converse for
+  neutral values.
+-}
+-- Main direction: strong computability implies termination of quote.
+scv-q : {Γ : Con} {A : Ty} {u : Val Γ A} →
+        scv u → Norm u
+-- Converse for neutral values.
+q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} →
+        Norms u → scv (neu u)
+
+-- The converse allows in particular to show that variables are sc.
+scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (neu (var x))
+scvvar = q-scv (norms qsvar)
+
+
+scv-q {A = o} scvu = scvu
+-- For functions, we follow the definition of quote and apply
+-- the function to vz. This is why sc of variables is required.
+scv-q {Γ} {A ⟶ B} {u = u} scvu =
+  match (scv-q (snd (snd (scvu scvvar))))
+  where uz : Val (Γ , A) B
+        uz = fst (scvu scvvar)
+        $uz : (u +V A) $ (neu (var z)) ⇒ uz
+        $uz = fst (snd (scvu scvvar))
+        match : Norm uz → Norm u
+        match (norm quz) = norm (q⟶ $uz quz)
+        match (isPropNorm x y i) = isPropNorm (match x) (match y) i
+
+
+q-scv {A = o} q = Norms-o→Norm q
+-- For functions, since we are considering neutral values, application
+-- to a value is trivial. Quote simply quotes the function and the value
+-- separately, hence the proof would be simple if it was not for a few
+-- weakenings and transports.
+q-scv {A = A ⟶ B} {u = f} (norms qf) {Δ = Δ} {u = u} scu =
+  let fu = app (f ++NV Δ) u
+      $fu = tr (λ x → (x $ u ⇒ neu fu))
+               (++VNV {v = f} ⁻¹)
+               ($app (f ++NV Δ) u)
+      normu = scv-q scu
+  in neu fu ,, $fu ,, q-scv (match normu)
+  where match : Norm u → Norms (app (f ++NV Δ) u)
+        match (norm qu) = norms (qsapp (qswks qf Δ) qu)
+        match (isPropNorm x y i) = isPropNorms (match x) (match y) i
+q-scv {A = A ⟶ B} (isPropNorms x y i) =
+  -- Without the η-expansion, agda tries to find some implicit arguments and
+  -- thinks that SCV ≠ SCV because the implicit arguments are not there ...
+  isPropscv (λ {Δ} → q-scv x {Δ}) (q-scv y) i
+
+
 
 -- The identity environment is strongly computable.
 sceid : {Γ : Con} → sce (idenv {Γ})
 sceid {●} = tt
 sceid {Γ , A} = sceid +sce A ,, scvvar
+-}

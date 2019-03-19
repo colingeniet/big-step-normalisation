@@ -4,6 +4,7 @@ module Normalisation.NormalForms.Weakening where
 
 open import Library.Equality
 open import Syntax.Terms
+open import Syntax.Terms.Lemmas
 open import Normalisation.Variables.Weakening
 open import Normalisation.NormalForms
 
@@ -31,3 +32,9 @@ u ++N (Δ , A) = (u ++N Δ) +N A
 _++NN_ : {Γ : Con} {A : Ty} → Ne Nf Γ A → (Δ : Con) → Ne Nf (Γ ++ Δ) A
 u ++NN ● = u
 u ++NN (Δ , A) = (u ++NN Δ) +NN A
+
+
+N+-++ : {Γ Δ : Con} {A B : Ty} {n : Nf Γ A} →
+        (n +N B) ++N Δ ≡[ ap (λ Γ → Nf Γ A) ,++ ]≡ n ++N ((● , B) ++ Δ)
+N+-++ {Δ = ●} = refl
+N+-++ {Δ = Δ , C} = apd (λ n → n +N C) (N+-++ {Δ = Δ})

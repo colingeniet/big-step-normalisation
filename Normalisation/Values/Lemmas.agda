@@ -63,7 +63,7 @@ open import Normalisation.Values.Weakening
 
 -- 'Associativity' of weakening.
 V+-++ : {Γ Δ : Con} {A B : Ty} {u : Val Γ A} →
-                 (u +V B) ++V Δ ≡[ ap (λ Γ → Val Γ A) ,++ ]≡ u ++V ((● , B) ++ Δ)
+        (u +V B) ++V Δ ≡[ ap (λ Γ → Val Γ A) ,++ ]≡ u ++V ((● , B) ++ Δ)
 V+-++ {Δ = ●} = refl
 V+-++ {Δ = Δ , C} = apd (λ u → u +V C) (V+-++ {Δ = Δ})
 
