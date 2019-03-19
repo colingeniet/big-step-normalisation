@@ -191,8 +191,16 @@ Methods.ηᴹ evalsce-methods {f = f} IHf i {ρ = ρ} sceρ =
                           ∙ ap (λ x → x ++t Θ) (eval≡ evalf)
                           ∙ ++V≡ {Θ = Θ} ⁻¹)
                      ∙ eval$≡ $fρv)
-      scvfρv+≡scvfρv : scvfρv+ ≡[ ap scv fρv+≡fρv ]≡ scvfρv
+      fρ+≡fρ : fρ+ ≡ fρ ++V Θ
+      fρ+≡fρ = ap fst (++evalsce≡ f sceρ Θ)
+      scvfρ+≡scvfρ : (λ {Δ} {u} → scvfρ+ {Δ} {u})
+                     ≡[ ap scv fρ+≡fρ ]≡
+                     (λ {Δ} {u} → ((λ {Δ} → scvfρ {Δ}) ++scv Θ) {Δ} {u})
+      scvfρ+≡scvfρ = λ i {Δ} {u} →  snd (snd (++evalsce≡ f sceρ Θ i)) {Δ} {u}
+      scvfρv+≡scvfρv : scvfρv+ ≅⟨ scv ⟩ scvfρv
       scvfρv+≡scvfρv = {!!}
+      scvfρv+≡scvfρv : scvfρv+ ≡[ ap scv fρv+≡fρv ]≡ scvfρv
+      scvfρv+≡scvfρv = ≅-to-≡[] {B = scv} isSetVal scvfρv+≡scvfρv
   in
   fρv+≡fρv i ,,
   isPropPath {B = λ i → (fρ'≡fρ i ++V Θ) $ v ⇒ (fρv+≡fρv i)} isProp$
@@ -234,7 +242,9 @@ Methods.lam[]ᴹ evalsce-methods {A = A} {u = u} {σ} IHu IHσ i {ρ = ρ} sceρ
                        ∙ ap (λ u → ⌜ u ++V Θ ⌝V $ ⌜ v ⌝V) uσρ≡uσρ'
                        ∙ eval$≡ evaluσρv')
       scvuσρv≡scvuσρv' : scvuσρv ≡[ ap scv uσρv≡uσρv' ]≡ scvuσρv'
-      scvuσρv≡scvuσρv' = {!!}
+      scvuσρv≡scvuσρv' = change-underlying {B = scv} isSetVal
+        (λ i → snd (snd (evalsce u {ρ = fst (++evalssce≡ σ {ρ = ρ} sceρ Θ (1- i)) , v}
+                                 ((snd (snd (++evalssce≡ σ {ρ = ρ} sceρ Θ (1- i)))) ,, scvv))))
   in
   uσρv≡uσρv' i ,,
   isPropPath {B = λ i → (uσρ≡uσρ' i ++V Θ) $ v ⇒ uσρv≡uσρv' i} isProp$
@@ -274,6 +284,10 @@ Methods.isSetTmsᴹ evalsce-methods {Δ} {Θ} {σ} p q i j {Γ} {ρ} sceρ =
     isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
             isSetΣ isSetEnv (isSet× (PropisSet isPropevals) isSetsce)
 
+++evalssce≡ id {ρ = ρ} sceρ Ψ i =
+  ρ ++E Ψ ,, isPropevals evalsid (evalswks evalsid Ψ) i ,, sceρ ++sce Ψ
+++evalssce≡ (σ ∘ ν) {ρ = ρ} sceρ Ψ i =
+  let νρ ,, evalsν ,, sceνρ = evalsce ν ρ
 
 {-
 -- By stability and determinism, a value can only evaluate to itself.
