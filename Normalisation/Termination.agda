@@ -26,6 +26,7 @@ open import Normalisation.Values.Lemmas
 open import Normalisation.Values.Sets
 open import Normalisation.Evaluator
 open import Normalisation.Completeness
+open import Normalisation.Stability
 open import Normalisation.StrongComputability
 
 
@@ -277,7 +278,7 @@ Methods.isSetTmsᴹ evalsce-methods {Δ} {Θ} {σ} p q i j {Γ} {ρ} sceρ =
             isSetΣ isSetEnv (PropisSet (isProp× isPropevals isPropsce))
 
 
-{-
+
 -- By stability and determinism, a value can only evaluate to itself.
 -- Thus the previous theorem applied to values implies that every value
 -- is strongly computable.
@@ -292,4 +293,3 @@ env-sce {Γ = Γ} ρ =
   let ρ' ,, evalsρ ,, sceρ' = evalssce ⌜ ρ ⌝E (sceid {Γ})
       ρ'≡ρ = enveq (evals≡ evalsρ ⁻¹ ∙ evals≡ (stable-env ρ))
   in tr sce ρ'≡ρ sceρ'
--}

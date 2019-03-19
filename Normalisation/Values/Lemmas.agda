@@ -29,7 +29,6 @@ open import Normalisation.Values.Weakening
 π₂+ {ρ = _ , _} = refl
 
 -- The identity environment.
-
 idenv : {Γ : Con} → Env Γ Γ
 idenv {●} = ε
 idenv {Γ , A} = idenv +E (drop A idw) , neu (var z)
