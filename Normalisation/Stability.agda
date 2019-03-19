@@ -3,10 +3,6 @@
 {-
   Values are invariant by evaluation (in the identity environment),
   normal forms are invariant by normalisation.
-
-  The lemmas in this module prove that a value _can_ be evaluated to itself,
-  it follows by determinism that it also _can only_ be evaluated to itself
-  (and idem for normal forms).
 -}
 
 module Normalisation.Stability where
@@ -16,6 +12,7 @@ open import Library.Pairs
 open import Library.Sets
 open import Syntax.Terms
 open import Syntax.Terms.Lemmas
+open import Syntax.Weakening
 open import Normalisation.TermLike
 open import Normalisation.Variables
 open import Normalisation.Variables.Weakening
@@ -24,29 +21,39 @@ open import Normalisation.Values.Weakening
 open import Normalisation.Values.Lemmas
 open import Normalisation.NormalForms
 open import Normalisation.Evaluator
+open import Normalisation.Evaluator.Weakening
 
 
 
 -- Stability by evaluation for variables.
-stable-var : {Γ Δ : Con} {A : Ty} (x : Var Γ A) →
-             eval ⌜ x ⌝v > (idenv ++E Δ) ⇒ neu (var (x ++v Δ))
+stable-var : {Γ : Con} {A : Ty} (x : Var Γ A) →
+             eval ⌜ x ⌝v > idenv ⇒ neu (var x)
 
-stable-var {Δ = Δ} {A} z =
-  (ap (λ ρ → eval vz > ρ ⇒ (neu (var z) ++V Δ))
-      (,++E {ρ = idenv +E A} {v = neu (var z)} ⁻¹)
-  ∙ ap (λ x → eval vz > (idenv ++E Δ) ⇒ x)
-       (++VNV {Δ = Δ} {v = var z}
-      ∙ ap neu (++var {Δ = Δ} {x = z})))
-  * evalπ₂ evalsid
+-- The induction requires an appropriate weakening.
+stable-var-aux : {Γ Δ : Con} {A : Ty} {x : Var Δ A} {σ : Wk Γ Δ} →
+                 eval ⌜ x ⌝v > (idenv +E σ) ⇒ neu (var (x +v σ))
 
-stable-var {Γ} {Δ} {A} (s {B = B} x) =
-  eval[] (tr (λ ρ → evals wk > ρ ⇒ ((idenv +E B) ++E Δ))
-             (,++E {ρ = idenv +E B} {v = neu (var z)} ⁻¹)
-             (evalsπ₁ evalsid))
-         ((λ k → eval ⌜ x ⌝v > (E+-++ {Δ = Δ} {B = B} {σ = idenv} (1- k)) ⇒
-                      neu (var (v+-++ {Δ = Δ} {B = B} {x = x} (1- k))))
-          * (stable-var {Δ = ((● , B) ++ Δ)} x))
+stable-var x =
+  ap2 (λ ρ y → eval ⌜ x ⌝v > ρ ⇒ neu (var y)) +Eid +vid
+  * stable-var-aux {σ = idw}
 
+stable-var-aux {x = z} = evalπ₂ evalsid
+stable-var-aux {x = s {B = B} x} {σ = drop C σ} =
+  let p : ((idenv +E drop B idw) +E σ) +E drop C idw
+          ≡ (idenv +E drop B idw) +E drop C σ
+      p = +E∘ ⁻¹ ∙ ap (λ σ → _ +E (drop C σ)) ∘idw
+      q : (z +v σ) +v idw ≡ z +v σ
+      q = +vid
+      r : (s x +v σ) +v idw ≡ s x +v σ
+      r = +vid
+  in (λ i → eval vs ⌜ x ⌝v > (p i , neu (var (s (q i)))) ⇒ neu (var (s (r i))))
+      * ((stable-var-aux {x = s x} {σ = σ}) +eval (drop C idw))
+stable-var-aux {x = s {B = B} x} {σ = keep B σ} =
+  let p : (idenv +E (drop B idw)) +E (keep B σ) ≡ idenv +E (drop B σ)
+      p = +E∘ ⁻¹ ∙ ap (λ σ → _ +E (drop B σ)) id∘w 
+  in eval[] (tr (λ ρ → evals wk > (ρ , neu (var z)) ⇒ (idenv +E (drop B σ)))
+                (p ⁻¹) (evalsπ₁ evalsid))
+            (stable-var-aux {x = x} {σ = drop B σ})
 
 
 -- Stability by evaluation for values, neutral values and environments.

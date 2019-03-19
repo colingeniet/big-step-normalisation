@@ -15,9 +15,3 @@ infixr 10 _,_
 data Con : Set where
   ● : Con
   _,_ : Con → Ty → Con
-
-
--- Context extension.
-_++_ : Con → Con → Con
-Γ ++ ● = Γ
-Γ ++ (Δ , A) = (Γ ++ Δ) , A

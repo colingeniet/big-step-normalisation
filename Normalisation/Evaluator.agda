@@ -5,6 +5,7 @@ module Normalisation.Evaluator where
 open import Library.Equality
 open import Library.Sets
 open import Syntax.Terms
+open import Syntax.Weakening
 open import Normalisation.TermLike
 open import Normalisation.Variables
 open import Normalisation.Values
@@ -101,7 +102,7 @@ data q_⇒_ where
   -- q (f : A ⟶ B) = lam (q (f $ vz))
   q⟶ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)}
        {fz : Val (Γ , A) B} {nffvz : Nf (Γ , A) B} →
-       (f +V A) $ (neu (var z)) ⇒ fz → q fz ⇒ nffvz →
+       (f +V (drop A idw)) $ (neu (var z)) ⇒ fz → q fz ⇒ nffvz →
        q f ⇒ lam nffvz
   isPropq : {Γ : Con} {A : Ty} {v : Val Γ A} {n : Nf Γ A} →
             isProp (q v ⇒ n)

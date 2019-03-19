@@ -4,37 +4,43 @@ module Normalisation.NormalForms.Weakening where
 
 open import Library.Equality
 open import Syntax.Terms
+open import Syntax.Weakening
 open import Syntax.Terms.Lemmas
+open import Syntax.Terms.Weakening
 open import Normalisation.Variables.Weakening
 open import Normalisation.NormalForms
 
--- Weakenings:
--- - below a context.
-nfgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Nf (Γ ++ Δ) B → (A : Ty) →
-          Nf ((Γ , A) ++ Δ) B
-nefgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Ne Nf (Γ ++ Δ) B → (A : Ty) →
-           Ne Nf ((Γ , A) ++ Δ) B
-nfgenwk {B = B ⟶ C} Δ (lam u) A = lam (nfgenwk (Δ , B) u A)
-nfgenwk Δ (neu u) A = neu (nefgenwk Δ u A)
-nefgenwk Δ (var x) A = var (varwk Δ x A)
-nefgenwk Δ (app f u) A = app (nefgenwk Δ f A) (nfgenwk Δ u A)
+_+N_ : {Γ Δ : Con} {A : Ty} → Nf Δ A → Wk Γ Δ → Nf Γ A
+_+NN_ : {Γ Δ : Con} {A : Ty} → Ne Nf Δ A → Wk Γ Δ → Ne Nf Γ A
 
--- - simple.
-_+N_ : {Γ : Con} {B : Ty} → Nf Γ B → (A : Ty) → Nf (Γ , A) B
-u +N A = nfgenwk ● u A
-_+NN_ : {Γ : Con} {B : Ty} → Ne Nf Γ B → (A : Ty) → Ne Nf (Γ , A) B
-u +NN A = nefgenwk ● u A
-
--- - by a context.
-_++N_ : {Γ : Con} {A : Ty} → Nf Γ A → (Δ : Con) → Nf (Γ ++ Δ) A
-u ++N ● = u
-u ++N (Δ , A) = (u ++N Δ) +N A
-_++NN_ : {Γ : Con} {A : Ty} → Ne Nf Γ A → (Δ : Con) → Ne Nf (Γ ++ Δ) A
-u ++NN ● = u
-u ++NN (Δ , A) = (u ++NN Δ) +NN A
+(lam n) +N σ = lam (n +N (keep _ σ))
+(neu n) +N σ = neu (n +NN σ)
+(var x) +NN σ = var (x +v σ)
+(app f n) +NN σ = app (f +NN σ) (n +N σ)
 
 
-N+-++ : {Γ Δ : Con} {A B : Ty} {n : Nf Γ A} →
-        (n +N B) ++N Δ ≡[ ap (λ Γ → Nf Γ A) ,++ ]≡ n ++N ((● , B) ++ Δ)
-N+-++ {Δ = ●} = refl
-N+-++ {Δ = Δ , C} = apd (λ n → n +N C) (N+-++ {Δ = Δ})
++Nid : {Γ : Con} {A : Ty} {n : Nf Γ A} → n +N idw ≡ n
++NNid : {Γ : Con} {A : Ty} {n : Ne Nf Γ A} → n +NN idw ≡ n
++Nid {n = lam n} = ap lam +Nid
++Nid {n = neu n} = ap neu +NNid
++NNid {n = var x} = ap var +vid
++NNid {n = app f n} = ap2 app +NNid +Nid
+
++N∘ : {Γ Δ Θ : Con} {A : Ty} {n : Nf Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
+      n +N (σ ∘w ν) ≡ (n +N σ) +N ν
++NN∘ : {Γ Δ Θ : Con} {A : Ty} {n : Ne Nf Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
+       n +NN (σ ∘w ν) ≡ (n +NN σ) +NN ν
++N∘ {n = lam n} = ap lam +N∘
++N∘ {n = neu n} = ap neu +NN∘
++NN∘ {n = var x} = ap var +v∘
++NN∘ {n = app f n} = ap2 app +NN∘ +N∘
+
+
+⌜⌝+N : {Γ Δ : Con} {A : Ty} {n : Nf Δ A} {σ : Wk Γ Δ} →
+       ⌜ n +N σ ⌝N ≡ ⌜ n ⌝N +t σ
+⌜⌝+NN : {Γ Δ : Con} {A : Ty} {n : Ne Nf Δ A} {σ : Wk Γ Δ} →
+        ⌜ n +NN σ ⌝NN ≡ ⌜ n ⌝NN +t σ
+⌜⌝+N {n = lam n} = ap lam (⌜⌝+N {n = n} {keep _ _}) ∙ lam[] ⁻¹
+⌜⌝+N {n = neu n} = ⌜⌝+NN {n = n}
+⌜⌝+NN {n = var x} = ⌜⌝+v 
+⌜⌝+NN {n = app f n} = ap2 _$_ (⌜⌝+NN {n = f}) (⌜⌝+N {n = n}) ∙ $[] ⁻¹

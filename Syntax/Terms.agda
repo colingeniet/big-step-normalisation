@@ -82,10 +82,6 @@ vs u = u [ wk ]
 _↑_ : {Γ Δ : Con} → Tms Γ Δ → (A : Ty) → Tms (Γ , A) (Δ , A)
 σ ↑ A = σ ∘ wk , vz
 
-_↑↑_ : {Γ Δ : Con} → Tms Γ Δ → (Θ : Con) → Tms (Γ ++ Θ) (Δ ++ Θ)
-σ ↑↑ ● = σ
-σ ↑↑ (Θ , A) = (σ ↑↑ Θ) ↑ A
-
 -- Classical application.
 <_> : {Γ : Con} {A : Ty} → Tm Γ A → Tms Γ (Γ , A)
 < u > = id , u

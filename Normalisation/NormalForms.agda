@@ -27,4 +27,3 @@ data Nf : Tm-like where
 ⌜ neu n ⌝N = ⌜ n ⌝NN
 ⌜ var x ⌝NN = ⌜ x ⌝v
 ⌜ app n u ⌝NN = ⌜ n ⌝NN $ ⌜ u ⌝N
-
