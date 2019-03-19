@@ -55,12 +55,12 @@ Norms-o→Norm (isPropNorms x y i) = isPropNorm (Norms-o→Norm x) (Norms-o→No
 -- Definition of strongly computable values.
 scv : {Γ : Con} {A : Ty} → Val Γ A → Set
 -- At the base type, a value is strongly computable if quote is defined on it.
-scv {A = o} = Norm
+scv {Γ = Γ} {A = o} u = Norm u
 -- For function types, a function is strongly computable if for any sc argument,
 -- the application of that function to that argument gives a scv.
 -- Furthermore, the argument may come from an extended environment, in which
 -- case the function is to be weakened.
-scv {Γ} {A ⟶ B} f =
+scv {Γ = Γ} {A = A ⟶ B} f =
   {Δ : Con} {u : Val (Γ ++ Δ) A} → scv u →
   Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu)
 
@@ -93,10 +93,14 @@ _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
   let scvfu = trd scv fu'≡fu scvfu' in
   fu ,,
-  (λ i → (V+-++ {Δ = Δ} {B = A} {u = f} (1- i)) $ (u≡u' (1- i)) ⇒
+  (λ i → (V+-++≡ {Δ = Δ} {B = A} {u = f} (1- i)) $ (u≡u' (1- i)) ⇒
     (fu'≡fu i))
   * $fu' ,,
   scvfu
+  where V+-++≡ : {Γ Δ : Con} {A B : Ty} {u : Val Γ A} →
+                 (u +V B) ++V Δ ≡[ ap (λ Γ → Val Γ A) ,++ ]≡ u ++V ((● , B) ++ Δ)
+        V+-++≡ {Δ = ●} = refl
+        V+-++≡ {Δ = Δ , C} = apd (λ u → u +V C) (V+-++≡ {Δ = Δ})
 
 _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
 u ++scv ● = u
