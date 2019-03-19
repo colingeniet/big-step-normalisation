@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -26,36 +26,13 @@ open import Normalisation.NormalForms.Weakening
 open import Normalisation.NormalForms.Sets
 open import Normalisation.Evaluator
 open import Normalisation.Evaluator.Weakening
-open import Normalisation.Completeness
-open import Normalisation.Stability
-
-
--- Termination of quote, truncated to a mere proposition.
-data Norm {Γ : Con} {A : Ty} (u : Val Γ A) : Set where
-  norm : {n : Nf Γ A} → q u ⇒ n → Norm u
-  isPropNorm : isProp (Norm u)
-
-_+Norm_ : {Γ : Con} {B : Ty} {u : Val Γ B} → Norm u → (A : Ty) → Norm (u +V A)
-(norm q) +Norm A = norm (qwk q A)
-(isPropNorm x y i) +Norm A = isPropNorm (x +Norm A) (y +Norm A) i
-
-
-data Norms {Γ : Con} {A : Ty} (u : Ne Val Γ A) : Set where
-  norms : {n : Ne Nf Γ A} → qs u ⇒ n → Norms u
-  isPropNorms : isProp (Norms u)
-
-
-Norms-o→Norm : {Γ : Con} {u : Ne Val Γ o} → Norms u → Norm (neu u)
-Norms-o→Norm (norms q) = norm (qo q)
-Norms-o→Norm (isPropNorms x y i) = isPropNorm (Norms-o→Norm x) (Norms-o→Norm y) i
-
 
 
 
 -- Definition of strongly computable values.
 scv : {Γ : Con} {A : Ty} → Val Γ A → Set
 -- At the base type, a value is strongly computable if quote is defined on it.
-scv {Γ = Γ} {A = o} u = Norm u
+scv {Γ = Γ} {A = o} u = Σ (Nf Γ o) λ n → q u ⇒ n
 -- For function types, a function is strongly computable if for any sc argument,
 -- the application of that function to that argument gives a scv.
 -- Furthermore, the argument may come from an extended environment, in which
@@ -66,24 +43,25 @@ scv {Γ = Γ} {A = A ⟶ B} f =
 
 
 
-isPropscv : {Γ : Con} {A : Ty} {u : Val Γ A} → isProp (scv u)
-isPropscv {A = o} = isPropNorm
-isPropscv {Γ} {A ⟶ B} {f} x y i {Δ} {u} scvu =
-  let v ,, $fu ,, scvv = x scvu
-      v' ,, $fu' ,, scvv' = y scvu
-      v≡v' : v ≡ v'
-      v≡v' = veq (eval$≡ $fu ⁻¹ ∙ eval$≡ $fu')
-  in v≡v' i ,,
-     isPropPath {B = λ i → (f ++V Δ) $ u ⇒ (v≡v' i)} isProp$
-                $fu $fu' i ,,
-     isPropDependent {B = scv} isPropscv v≡v' scvv scvv' i
-
+isSetscv : {Γ : Con} {A : Ty} {u : Val Γ A} → isSet (scv u)
+isSetscv {A = o} {u} =
+  isSetΣ isSetNf (PropisSet isPropq)
+isSetscv {Γ} {A ⟶ B} {f} {x} {y} p q i j {Δ} {u} scvu =
+  isset (λ k _ _ scvu → p k scvu)
+        (λ k _ _ scvu → q k scvu)
+        i j Δ u scvu
+  where
+    -- Make all arguments explicit.
+    isset : isSet ((Δ : Con) (u : Val (Γ ++ Δ) A) → scv u →
+                   Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu))
+    isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
+            isSetΣ isSetVal (isSet× (PropisSet isProp$) isSetscv)
 
 
 
 -- Strong computablility is stable by weakening.
 _+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
-_+scv_ {B = o} = _+Norm_
+_+scv_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
 _+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
   let u' = tr (λ Γ → Val Γ B) ,++ u in
   let u≡u' = trfill (λ Γ → Val Γ B) ,++ u in
@@ -106,6 +84,18 @@ _++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u
 u ++scv ● = u
 u ++scv (Δ , A) = (u ++scv Δ) +scv A
 
+{-
++scv≡ : {Γ Δ : Con} {A B C : Ty} {f : Val Γ (B ⟶ C)} {scvf : scv f}
+        {v : Val ((Γ , A) ++ Δ) B} {scvv : scv v} →
+        ((λ {Δ} → scvf {Δ}) +scv A) scvv
+        ≡ {!scvf (trd scv (trfill (λ Γ → Val Γ B) ,++ v) scvv)!}
++scv≡ = {!!}
+-}
+postulate
+  ++scv≡ : {Γ Δ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {scvf : scv f}
+           {v : Val (Γ ++ Δ) A} {scvv : scv v} →
+           ((λ {Δ} → scvf {Δ}) ++scv Δ) {Δ = ●} scvv ≡ scvf scvv
+
 
 
 {-
@@ -116,50 +106,38 @@ u ++scv (Δ , A) = (u ++scv Δ) +scv A
 -}
 -- Main direction: strong computability implies termination of quote.
 scv-q : {Γ : Con} {A : Ty} {u : Val Γ A} →
-        scv u → Norm u
+        scv u → Σ (Nf Γ A) (λ n → q u ⇒ n)
 -- Converse for neutral values.
-q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} →
-        Norms u → scv (neu u)
+q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
+        qs u ⇒ n → scv (neu u)
 
 -- The converse allows in particular to show that variables are sc.
 scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (neu (var x))
-scvvar = q-scv (norms qsvar)
+scvvar = q-scv qsvar
 
 
-scv-q {A = o} scvu = scvu
+scv-q {A = o} scu = scu
 -- For functions, we follow the definition of quote and apply
 -- the function to vz. This is why sc of variables is required.
-scv-q {Γ} {A ⟶ B} {u = u} scvu =
-  match (scv-q (snd (snd (scvu scvvar))))
-  where uz : Val (Γ , A) B
-        uz = fst (scvu scvvar)
-        $uz : (u +V A) $ (neu (var z)) ⇒ uz
-        $uz = fst (snd (scvu scvvar))
-        match : Norm uz → Norm u
-        match (norm quz) = norm (q⟶ $uz quz)
-        match (isPropNorm x y i) = isPropNorm (match x) (match y) i
+scv-q {A = A ⟶ B} scu =
+  let uz ,, $uz ,, scuz = scu {Δ = ● , A} (scvvar {x = z}) in
+  let nfuz ,, quz = scv-q scuz in
+  lam nfuz ,, q⟶ $uz quz
 
 
-q-scv {A = o} q = Norms-o→Norm q
+q-scv {A = o} {n = n} qu = neu n ,, qo qu
 -- For functions, since we are considering neutral values, application
 -- to a value is trivial. Quote simply quotes the function and the value
 -- separately, hence the proof would be simple if it was not for a few
 -- weakenings and transports.
-q-scv {A = A ⟶ B} {u = f} (norms qf) {Δ = Δ} {u = u} scu =
-  let fu = app (f ++NV Δ) u
-      $fu = tr (λ x → (x $ u ⇒ neu fu))
+q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
+  let fu = app (f ++NV Δ) u in
+  let $fu = tr (λ x → (x $ u ⇒ neu fu))
                (++VNV {v = f} ⁻¹)
                ($app (f ++NV Δ) u)
-      normu = scv-q scu
-  in neu fu ,, $fu ,, q-scv (match normu)
-  where match : Norm u → Norms (app (f ++NV Δ) u)
-        match (norm qu) = norms (qsapp (qswks qf Δ) qu)
-        match (isPropNorm x y i) = isPropNorms (match x) (match y) i
-q-scv {A = A ⟶ B} (isPropNorms x y i) =
-  -- Without the η-expansion, agda tries to find some implicit arguments and
-  -- thinks that SCV ≠ SCV because the implicit arguments are not there ...
-  isPropscv (λ {Δ} → q-scv x {Δ}) (q-scv y) i
-
+  in
+  let nfu ,, qu = scv-q scu in
+  neu fu ,, $fu ,, q-scv (qsapp (qswks qf Δ) qu)
 
 
 -- Extension of strong computability to environments.
@@ -181,9 +159,9 @@ sce (ρ , u) = sce ρ  ×  scv u
 πηsce {σ = σ , u} (sceσ ,, scvu) = refl
 
 
-isPropsce : {Γ Δ : Con} {σ : Env Γ Δ} → isProp (sce σ)
-isPropsce {Δ = ●} {ε} = isProp⊤
-isPropsce {Δ = Δ , A} {ρ , u} = isProp× isPropsce isPropscv
+isSetsce : {Γ Δ : Con} {σ : Env Γ Δ} → isSet (sce σ)
+isSetsce {Δ = ●} {ε} = PropisSet isProp⊤
+isSetsce {Δ = Δ , A} {ρ , u} = isSet× isSetsce isSetscv
 
 
 -- Weakenings.
