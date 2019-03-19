@@ -6,6 +6,8 @@ module Normalisation.Evaluator.Weakening where
 open import Library.Equality
 open import Library.Sets
 open import Syntax.Terms
+open import Syntax.Terms.Weakening
+open import Syntax.Weakening
 open import Normalisation.TermLike
 open import Normalisation.Variables
 open import Normalisation.Variables.Weakening
@@ -18,107 +20,49 @@ open import Normalisation.Evaluator
 
 
 -- All computations can be weakened.
-abstract
-  -- Most general version, for the induction.
-  evalgenwk : {Γ Δ : Con} {B : Ty} (Ψ : Con) {u : Tm Δ B} {ρ : Env (Γ ++ Ψ) Δ}
-              {uρ : Val (Γ ++ Ψ) B} → eval u > ρ ⇒ uρ → (A : Ty) →
-              eval u > (envgenwk Ψ ρ A) ⇒ (valgenwk Ψ uρ A)
-  evalsgenwk : {Γ Δ Θ : Con} (Ψ : Con) {σ : Tms Δ Θ} {ρ : Env (Γ ++ Ψ) Δ}
-               {σρ : Env (Γ ++ Ψ) Θ} → evals σ > ρ ⇒ σρ → (A : Ty) →
-               evals σ > (envgenwk Ψ ρ A) ⇒ (envgenwk Ψ σρ A)
-  $genwk : {Γ : Con} {A B : Ty} (Δ : Con) {f : Val (Γ ++ Δ) (A ⟶ B)}
-           {u : Val (Γ ++ Δ) A} {fu : Val (Γ ++ Δ) B} → f $ u ⇒ fu → (C : Ty) →
-           (valgenwk Δ f C) $ (valgenwk Δ u C) ⇒ (valgenwk Δ fu C)
+_+eval_ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {ρ : Env Δ Θ} {uρ : Val Δ A} →
+          eval u > ρ ⇒ uρ → (σ : Wk Γ Δ) → eval u > (ρ +E σ)  ⇒ (uρ +V σ)
+_+evals_ : {Γ Δ Θ Ψ : Con} {σ : Tms Θ Ψ} {ρ : Env Δ Θ} {σρ : Env Δ Ψ} →
+          evals σ > ρ ⇒ σρ → (ν : Wk Γ Δ) → evals σ > (ρ +E ν)  ⇒ (σρ +E ν)
+_+$_ : {Γ Δ : Con} {A B : Ty} {f : Val Δ (A ⟶ B)} {v : Val Δ A} {fv : Val Δ B} →
+       f $ v ⇒ fv → (σ : Wk Γ Δ) → (f +V σ) $ (v +V σ) ⇒ (fv +V σ)
 
-  evalgenwk Δ (eval[] cσ cu) A =
-    eval[] (evalsgenwk Δ cσ A) (evalgenwk Δ cu A)
-  evalgenwk Δ (evalπ₂ {σρ = σρ} cσ) A =
-    tr (λ u → eval _ > _ ⇒ u) (π₂+ {σ = σρ}) (evalπ₂ (evalsgenwk Δ cσ A))
-  evalgenwk Δ (evallam u ρ) A = evallam u (envgenwk Δ ρ A)
-  evalgenwk Δ (evalapp {ρ = ρ} cf $fρ) A =
-    evalapp
-    (tr (λ ρ → eval _ > ρ ⇒ _) (π₁+ {σ = ρ} ⁻¹) (evalgenwk Δ cf A))
-    (tr (λ v → _ $ v ⇒ _) (π₂+ {σ = ρ} ⁻¹) ($genwk Δ $fρ A))
-  evalgenwk Δ (isPropeval c c' i) A =
-    isPropeval (evalgenwk Δ c A) (evalgenwk Δ c' A) i
+(eval[] cσ cu) +eval δ = eval[] (cσ +evals δ) (cu +eval δ)
+(evalπ₂ {σρ = σρ} cσ) +eval δ =
+  tr (λ x → eval _ > _ ⇒ x) (π₂+ {ρ = σρ} {σ = δ}) (evalπ₂ (cσ +evals δ))
+(evallam u ρ) +eval δ = evallam u (ρ +E δ)
+(evalapp {ρ = ρ} cf $fρ) +eval δ =
+  evalapp (tr (λ ρ → eval _ > ρ ⇒ _) (π₁+ {ρ = ρ} ⁻¹) (cf +eval δ))
+          (tr (λ v → _ $ v ⇒ _) (π₂+ {ρ = ρ} ⁻¹) ($fρ +$ δ))
+(isPropeval x y i) +eval δ = isPropeval (x +eval δ) (y +eval δ) i
 
-  evalsgenwk Δ evalsid A = evalsid
-  evalsgenwk Δ (evals∘ cν cσ) A = evals∘ (evalsgenwk Δ cν A) (evalsgenwk Δ cσ A)
-  evalsgenwk Δ evalsε A = evalsε
-  evalsgenwk Δ (evals, cσ cu) A = evals, (evalsgenwk Δ cσ A) (evalgenwk Δ cu A)
-  evalsgenwk Δ (evalsπ₁ {σρ = σρ} cσ) A =
-    tr (λ u → evals _ > _ ⇒ u) (π₁+ {σ = σρ}) (evalsπ₁ (evalsgenwk Δ cσ A))
-  evalsgenwk Δ (isPropevals c c' i) A =
-    isPropevals (evalsgenwk Δ c A) (evalsgenwk Δ c' A) i
+evalsid +evals δ = evalsid
+(evals∘ cν cσ) +evals δ = evals∘ (cν +evals δ) (cσ +evals δ)
+evalsε +evals δ = evalsε
+(evals, cσ cu) +evals δ = evals, (cσ +evals δ) (cu +eval δ)
+(evalsπ₁ {σρ = σρ} cσ) +evals δ =
+  tr (λ x → evals _ > _ ⇒ x) (π₁+ {ρ = σρ} {σ = δ}) (evalsπ₁ (cσ +evals δ))
+(isPropevals x y i) +evals δ = isPropevals (x +evals δ) (y +evals δ) i
 
-  $genwk Δ ($lam cu) A = $lam (evalgenwk Δ cu A)
-  $genwk Δ ($app n v) A = $app (nvgenwk Δ n A) (valgenwk Δ v A)
-  $genwk Δ (isProp$ c c' i) A =
-    isProp$ ($genwk Δ c A) ($genwk Δ c' A) i
-
-
-  qgenwk : {Γ : Con} {B : Ty} (Δ : Con) {u : Val (Γ ++ Δ) B}
-           {n : Nf (Γ ++ Δ) B} → q u ⇒ n → (A : Ty) →
-           q (valgenwk Δ u A) ⇒ (nfgenwk Δ n A)
-  qsgenwk : {Γ : Con} {B : Ty} (Δ : Con) {u : Ne Val (Γ ++ Δ) B}
-            {n : Ne Nf (Γ ++ Δ) B} → qs u ⇒ n → (A : Ty) →
-            qs (nvgenwk Δ u A) ⇒ (nefgenwk Δ n A)
-
-  qgenwk Δ (qo qn) A = qo (qsgenwk Δ qn A)
-  qgenwk Δ (q⟶ {A = A} {f = u} $f qf) C =
-    q⟶ (tr (λ x → x $ _ ⇒ _) (++-+V {u = u} ⁻¹) ($genwk (Δ , A) $f C))
-       (qgenwk (Δ , A) qf C)
-    where ++-+V : {Γ Δ : Con} {A B C : Ty} {u : Val (Γ ++ Δ) A} →
-                  (valgenwk Δ u C) +V B ≡ valgenwk (Δ , B) (u +V B) C
-          ++-+NV : {Γ Δ : Con} {A B C : Ty} {u : Ne Val (Γ ++ Δ) A} →
-                   (nvgenwk Δ u C) +NV B ≡ nvgenwk (Δ , B) (u +NV B) C
-          ++-+E : {Γ Δ Θ : Con} {B C : Ty} {σ : Env (Γ ++ Δ) Θ} →
-                  (envgenwk Δ σ C) +E B ≡ envgenwk (Δ , B) (σ +E B) C
-          ++-+V {u = lam u ρ} = ap (lam u) ++-+E
-          ++-+V {u = neu u} = ap neu ++-+NV
-          ++-+V {Δ = Δ} {B = B} {C} {u = veq {u = u} {v} p j} i =
-            let IHu = ++-+V {Δ = Δ} {B = B} {C} {u = u}
-                IHv = ++-+V {Δ = Δ} {B = B} {C} {u = v}
-                r = λ j → (valgenwk Δ (veq {u = u} {v} p j) C) +V B
-                s = λ j → valgenwk (Δ , B) (veq {u = u} {v} p j +V B) C
-            in  ouc (isSetFillSquare isSetVal r s IHu IHv i j)
-          ++-+V {Δ = Δ} {B = B} {C} {u = isSetVal p q i j} k =
-            ouc (isSetPartial isSetVal
-                 (λ j → ++-+V {Δ = Δ} {B = B} {C} {u = p j} k)
-                 (λ j → ++-+V {Δ = Δ} {B = B} {C} {u = q j} k)
-                 (λ {(k = i0) → λ i j → (valgenwk Δ (isSetVal p q i j) C) +V B;
-                     (k = i1) → λ i j → valgenwk (Δ , B) (isSetVal p q i j +V B) C}))
-                i j
-          ++-+NV {u = var x} = refl
-          ++-+NV {u = app f u} = ap2 app (++-+NV {u = f}) (++-+V {u = u})
-          ++-+E {σ = ε} = refl
-          ++-+E {σ = σ , u} = ap2 _,_ (++-+E {σ = σ}) (++-+V {u = u})
-  qgenwk Δ (isPropq c c' i) A =
-    isPropq (qgenwk Δ c A) (qgenwk Δ c' A) i
-  
-  qsgenwk Δ qsvar A = qsvar
-  qsgenwk Δ (qsapp qf qu) A = qsapp (qsgenwk Δ qf A) (qgenwk Δ qu A)
-  qsgenwk Δ (isPropqs c c' i) A =
-    isPropqs (qsgenwk Δ c A) (qsgenwk Δ c' A) i
+($lam cu) +$ σ = $lam (cu +eval σ)
+($app n v) +$ σ = $app (n +NV σ) (v +V σ)
+(isProp$ x y i) +$ σ = isProp$ (x +$ σ) (y +$ σ) i
 
 
 
-  -- Those are the lemmas which are actually used later on.
-  qwk : {Γ : Con} {B : Ty} {u : Val Γ B} {n : Nf Γ B} →
-        q u ⇒ n → (A : Ty) → q (u +V A) ⇒ (n +N A)
-  qwk = qgenwk ●
-
-  evalwks : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {v : Val Γ A} →
-            eval u > ρ ⇒ v → (Θ : Con) → eval u > (ρ ++E Θ) ⇒ (v ++V Θ)
-  evalwks c ● = c
-  evalwks c (Θ , A) = evalgenwk ● (evalwks c Θ) A
-
-  evalswks : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} {ν : Env Γ Θ} →
-            evals σ > ρ ⇒ ν → (Θ : Con) → evals σ > (ρ ++E Θ) ⇒ (ν ++E Θ)
-  evalswks c ● = c
-  evalswks c (Θ , A) = evalsgenwk ● (evalswks c Θ) A
-
-  qswks : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
-          qs u ⇒ n → (Δ : Con) → qs (u ++NV Δ) ⇒ (n ++NN Δ)
-  qswks qu ● = qu
-  qswks qu (Δ , A) = qsgenwk ● (qswks qu Δ) A
+_+q_ : {Γ Δ : Con} {A : Ty} {v : Val Δ A} {n : Nf Δ A} →
+       q v ⇒ n → (σ : Wk Γ Δ) → q (v +V σ) ⇒ (n +N σ)
+_+qs_ : {Γ Δ : Con} {A : Ty} {v : Ne Val Δ A} {n : Ne Nf Δ A} →
+        qs v ⇒ n → (σ : Wk Γ Δ) → qs (v +NV σ) ⇒ (n +NN σ)
+(qo qv) +q δ = qo (qv +qs δ)
+(q⟶ {A = A} {f = f} $f qf) +q δ =
+  let p : (f +V δ) +V (drop A idw) ≡ (f +V (drop A idw)) +V (keep A δ)
+      p = +V∘ {v = f} {σ = δ} {ν = drop A idw} ⁻¹
+          ∙ ap (λ σ → f +V (drop A σ)) (∘idw ∙ id∘w ⁻¹)
+          ∙ +V∘ {v = f} {σ = drop A idw} {ν = keep A δ}
+  in q⟶ (tr (λ x → x $ _ ⇒ _) (p ⁻¹) ($f +$ (keep A δ)))
+        (qf +q (keep A δ))
+(isPropq x y i) +q δ = isPropq (x +q δ) (y +q δ) i
+qsvar +qs δ = qsvar
+(qsapp qsf qv) +qs δ = qsapp (qsf +qs δ) (qv +q δ)
+(isPropqs x y i) +qs δ = isPropqs (x +qs δ) (y +qs δ) i

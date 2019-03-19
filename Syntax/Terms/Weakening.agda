@@ -2,31 +2,32 @@
 
 module Syntax.Terms.Weakening where
 
+open import Library.Equality
 open import Syntax.Terms
+open import Syntax.Terms.Lemmas
+open import Syntax.Weakening
 
 
-genwk : {Γ Δ : Con} {A : Ty} → Tms ((Γ , A) ++ Δ) (Γ ++ Δ)
-genwk {Δ = ●} = wk
-genwk {Δ = Δ , B} = genwk ↑ B
-           
-tmgenwk : {Γ : Con} {B : Ty} (Δ : Con) → Tm (Γ ++ Δ) B →
-          (A : Ty) → Tm ((Γ , A) ++ Δ) B
-tmgenwk Δ u A = u [ genwk ]
+_+t_ : {Γ Δ : Con} {A : Ty} → Tm Δ A → Wk Γ Δ → Tm Γ A
+u +t σ = u [ ⌜ σ ⌝w ]
 
-tmsgenwk : {Γ Θ : Con} (Δ : Con) → Tms (Γ ++ Δ) Θ →
-           (A : Ty) → Tms ((Γ , A) ++ Δ) Θ
-tmsgenwk Δ σ A = σ ∘ genwk
++tid : {Γ : Con} {A : Ty} {u : Tm Γ A} → u +t idw ≡ u
++tid = ap (λ σ → _ [ σ ]) ⌜id⌝w ∙ [id]
 
-_+_ : {Γ : Con} {B : Ty} → Tm Γ B → (A : Ty) → Tm (Γ , A) B
-u + A = tmgenwk ● u A
++t∘ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
+      u +t (σ ∘w ν) ≡ (u +t σ) +t ν
++t∘ = ap (λ σ → _ [ σ ]) ⌜∘⌝w ∙ [][]
 
-_+s_ : {Γ Δ : Con} → Tms Γ Δ → (A : Ty) → Tms (Γ , A) Δ
-σ +s A = tmsgenwk ● σ A
+_+s_ : {Γ Δ Θ : Con} → Tms Δ Θ → Wk Γ Δ → Tms Γ Θ
+σ +s ν = σ ∘ ⌜ ν ⌝w
 
-_++t_ : {Γ : Con} {A : Ty} → Tm Γ A → (Δ : Con) → Tm (Γ ++ Δ) A
-u ++t ● = u
-u ++t (Δ , A) = (u ++t Δ) + A
++sid : {Γ Δ : Con} {σ : Tms Γ Δ} → σ +s idw ≡ σ
++sid = ap (λ ν → _ ∘ ν) ⌜id⌝w ∙ ∘id
 
-_++s_ : {Γ Δ : Con} → Tms Γ Δ → (Θ : Con) → Tms (Γ ++ Θ) Δ
-σ ++s ● = σ
-σ ++s (Θ , A) = (σ ++s Θ) +s A
++s∘ : {Γ Δ Θ Ψ : Con} {σ : Tms Θ Ψ} {ν : Wk Δ Θ} {δ : Wk Γ Δ} →
+      σ +s (ν ∘w δ) ≡ (σ +s ν) +s δ
++s∘ = ap (λ σ → _ ∘ σ) ⌜∘⌝w ∙ ∘∘ ⁻¹
+
+[]+ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {σ : Tms Δ Θ} {ν : Wk Γ Δ} →
+      u [ σ +s ν ] ≡ u [ σ ] +t ν
+[]+ = [][]

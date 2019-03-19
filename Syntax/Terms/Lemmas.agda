@@ -4,7 +4,7 @@ module Syntax.Terms.Lemmas where
 
 open import Library.Equality
 open import Syntax.Terms
-open import Syntax.Terms.Weakening
+--open import Syntax.Terms.Weakening
 
 -- Interaction between projections and composition.
 π₁∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ν : Tms Γ Δ} →
@@ -92,19 +92,6 @@ $[] {f = f} {u = u} {σ = σ} =
   ∙ app[]
   ∙ ap2 (λ ν x → f [ ν ] $ x) (π₁β ∙ id∘) π₂β
 
--- 'Associativity' of context extension.
-,++ : {Γ Δ : Con} {A : Ty} → (Γ , A) ++ Δ ≡ Γ ++ ((● , A) ++ Δ)
-,++ {Δ = ●} = refl
-,++ {Γ} {Δ , B} {A} = ap (λ Γ → Γ , B) ,++
-
--- Weakening the application of a substitution is the same as weakening the
--- substitution itself.
-[]++ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Δ A} {σ : Tms Γ Δ} →
-       u [ σ ++s Θ ] ≡ u [ σ ] ++t Θ
-[]++ {Θ = ●} = refl
-[]++ {Θ = Θ , B} = [][] ∙ ap (λ u → u + B) []++
-
-
 -- Applying a λ-closure (i.e. a term of the form (λ u)[ρ]) to something
 -- is the same as evaluating the body of the closure in the extended
 -- environment.
@@ -114,7 +101,7 @@ clos[] {u = u} {v = v} = ap (λ x → x [ < v > ])
                             (ap app lam[] ∙ β)
                          ∙ [][] ⁻¹
                          ∙ ap (λ σ → u [ σ ]) ↑∘<>
-
+{-
 -- The same, except the closure is weakened beforehand.
 -- This lemma is crucial for the notion of strong computability defined
 -- when proving termination.
@@ -122,7 +109,7 @@ wkclos[] : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B}
            {ρ : Tms Γ Δ} {v : Tm (Γ ++ Θ) A} →
            (((lam u) [ ρ ]) ++t Θ) $ v ≡ u [ ρ ++s Θ , v ]
 wkclos[] {v = v} = ap (λ u → u $ v) []++ ⁻¹ ∙ clos[]
-
+-}
 
 -- Classical β and η conversion rules.
 classicβ : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} {v : Tm Γ A} →
@@ -131,6 +118,6 @@ classicβ {v = v} = ap (λ x → x $ v) [id] ⁻¹
                    ∙ clos[]
 
 classicη : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} →
-           lam (f + A $ vz) ≡ f
+           lam (f [ wk ] $ vz) ≡ f
 classicη {A = A} {f = f} = ap lam (app[] ⁻¹ ∙ [id])
                            ∙ η {f = f}

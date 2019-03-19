@@ -4,36 +4,33 @@ module Normalisation.Variables.Weakening where
 
 open import Library.Equality
 open import Syntax.Terms
+open import Syntax.Weakening
 open import Syntax.Terms.Weakening
 open import Syntax.Terms.Lemmas
 open import Normalisation.Variables
 
+_+v_ : {Γ Δ : Con} {A : Ty} → Var Δ A → Wk Γ Δ → Var Γ A
+x +v (drop A σ) = s (x +v σ)
+z +v (keep A σ) = z
+(s x) +v (keep A σ) = s (x +v σ)
 
--- 's' is already the weakening of variables by a type.
--- Weakening by a context.
-_++v_ : {Γ : Con} {A : Ty} → Var Γ A → (Δ : Con) → Var (Γ ++ Δ) A
-x ++v ● = x
-x ++v (Δ , B) = s (x ++v Δ)
++vid : {Γ : Con} {A : Ty} {x : Var Γ A} → x +v idw ≡ x
++vid {x = z} = refl
++vid {x = s x} = ap s +vid
 
--- Weakening below a context.
-varwk : {Γ : Con} (Δ : Con) {B : Ty} → Var (Γ ++ Δ) B → (A : Ty) →
-          Var ((Γ , A) ++ Δ) B
-varwk ● x A = s x
-varwk (Δ , C) z A = z
-varwk (Δ , C) (s x) A = s (varwk Δ x A)
++v∘ : {Γ Δ Θ : Con} {A : Ty} {x : Var Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
+      x +v (σ ∘w ν) ≡ (x +v σ) +v ν
++v∘ {x = x} {σ} {nil} with σ   | x
+...                      | nil | ()
++v∘ {ν = drop A ν} = ap s +v∘
++v∘ {σ = drop A σ} {keep A ν} = ap s +v∘
++v∘ {x = z} {keep A σ} {keep A ν} = refl
++v∘ {x = s x} {keep A σ} {keep A ν} = ap s +v∘
 
-varwk≡ : {Γ Δ : Con} {A B : Ty} {x : Var (Γ ++ Δ) B} →
-         ⌜ varwk Δ x A ⌝v ≡ tmgenwk Δ ⌜ x ⌝v A
-varwk≡ {Δ = ●} {x = x} = refl
-varwk≡ {Δ = Δ , C} {A} {x = z} = π₂β ⁻¹ ∙ ap π₂ id∘ ⁻¹ ∙ π₂∘
-varwk≡ {Δ = Δ , C} {A} {x = s x} =
-  ap vs (varwk≡ {Δ = Δ} {A} {x = x})
-  ∙ [][] ⁻¹
-  ∙ ap (λ σ → ⌜ x ⌝v [ σ ])
-       (π₁β ⁻¹ ∙ ap π₁ id∘ ⁻¹ ∙ π₁∘)
-  ∙ [][]
-
-v+-++ : {Γ Δ : Con} {A B : Ty} {x : Var Γ A} →
-        (s x) ++v Δ ≡[ ap (λ Γ → Var Γ A) ,++ ]≡ x ++v ((● , B) ++ Δ)
-v+-++ {Δ = ●} = refl
-v+-++ {Δ = Δ , C} = apd s v+-++
+⌜⌝+v : {Γ Δ : Con} {A : Ty} {x : Var Δ A} {σ : Wk Γ Δ} →
+       ⌜ x +v σ ⌝v ≡ ⌜ x ⌝v +t σ
+⌜⌝+v {x = x} {drop A σ} = ap (λ x → vs x) (⌜⌝+v {x = x} {σ = σ})
+                          ∙ [][] ⁻¹
+⌜⌝+v {x = z} {keep A σ} = vz[,] ⁻¹
+⌜⌝+v {x = s x} {keep A σ} = ap (λ x → vs x) (⌜⌝+v {x = x} {σ = σ})
+                            ∙ [][] ⁻¹ ∙ ap (λ σ → ⌜ x ⌝v [ σ ]) wk, ⁻¹ ∙ [][]
