@@ -119,7 +119,7 @@ evalsce (lam u) {ρ = ρ} sceρ =
   λ {Θ} σ {v} scvv →
   -- However, once given an argument to the function, it suffice to evaluate
   -- the function in the appropriate environment to get the result by induction.
-  let uρv ,, evalu ,, scvuρv = evalsce u {ρ = ρ +E σ , v} (sceρ +sce σ ,, scvv)
+  let uρv ,, evalu ,, scvuρv = evalsce u (sceρ +sce σ ,, scvv)
   in uρv ,, $lam evalu ,, scvuρv
 evalsce (app f) sceρ =
   let f ,, evalf ,, scvf = evalsce f (π₁sce sceρ)
@@ -329,63 +329,134 @@ evalsce {Tms-i Δ Θ} (isSetTms p q i j) =
                   (λ k → evalsce (p k)) (λ k → evalsce (q k)) i j
 
 
-{-
-++evalsce≡ (u [ σ ]) {ρ = ρ} sceρ Ψ i =
+
++evalsce (u [ σ ]) {ρ = ρ} sceρ ν i =
   let σρ ,, evalsσ ,, sceσρ = evalsce σ sceρ
       uσρ ,, evalu ,, scvuσρ = evalsce u sceσρ
       evaluσ = eval[] evalsσ evalu
-      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ ++sce Ψ)
+      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ +sce ν)
       uσρ' ,, evalu' ,, scvuσρ' = evalsce u sceσρ'
       evaluσ' = eval[] evalsσ' evalu'
-      uσρ'≡uσρ : uσρ' ≡ uσρ ++V Ψ
-      uσρ'≡uσρ = veq (eval≡ evaluσ' ⁻¹ ∙ eval≡ (evalwks evaluσ Ψ))
-      scvuσρ'≡scvuσρ : scvuσρ' ≅⟨ scv ⟩ scvuσρ ++scv Ψ
+      uσρ'≡uσρ : uσρ' ≡ uσρ +V ν
+      uσρ'≡uσρ = veq (eval≡ evaluσ' ⁻¹ ∙ eval≡ (evaluσ +eval ν))
+      scvuσρ'≡scvuσρ : scvuσρ' ≅⟨ scv ⟩ scvuσρ +scv ν
       scvuσρ'≡scvuσρ = ≡[]-to-≅ (apd (λ x → snd (snd (evalsce u (snd (snd x)))))
-                                     (++evalssce≡ σ sceρ Ψ))
+                                     (+evalssce σ sceρ ν))
                        ∙≅ ≡[]-to-≅ (apd (λ x → snd (snd x))
-                                        (++evalsce≡ u sceσρ Ψ))
-      scvuσρ'≡scvuσρ : scvuσρ' ≡[ ap scv uσρ'≡uσρ ]≡ scvuσρ ++scv Ψ
+                                        (+evalsce u sceσρ ν))
+      scvuσρ'≡scvuσρ : scvuσρ' ≡[ ap scv uσρ'≡uσρ ]≡ scvuσρ +scv ν
       scvuσρ'≡scvuσρ = ≅-to-≡[] {B = scv} isSetVal scvuσρ'≡scvuσρ
   in
   uσρ'≡uσρ i ,,
-  isPropPath {B = λ i → eval (u [ σ ]) > (ρ ++E Ψ) ⇒ uσρ'≡uσρ i} isPropeval
-             evaluσ' (evalwks evaluσ Ψ) i ,,
+  isPropPath {B = λ i → eval (u [ σ ]) > (ρ +E ν) ⇒ uσρ'≡uσρ i} isPropeval
+             evaluσ' (evaluσ +eval ν) i ,,
   scvuσρ'≡scvuσρ i
-++evalsce≡ (π₂ σ) {ρ = ρ} sceρ Ψ i =
++evalsce (π₂ σ) {ρ = ρ} sceρ ν i =
   let σρ ,, evalsσ ,, sceσρ = evalsce σ sceρ
-      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ ++sce Ψ)
-      p = ++evalssce≡ σ sceρ Ψ
-      σρ'≡σρ : σρ' ≡ σρ ++E Ψ
+      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ +sce ν)
+      p = +evalssce σ sceρ ν
+      σρ'≡σρ : σρ' ≡ σρ +E ν
       σρ'≡σρ = ap fst p
-      πσρ'≡πσρ : π₂list σρ' ≡ (π₂list σρ) ++V Ψ
-      πσρ'≡πσρ = ap π₂list σρ'≡σρ ∙ π₂++ {Θ = Ψ} {σ = σρ}
+      πσρ'≡πσρ : π₂list σρ' ≡ (π₂list σρ) +V ν
+      πσρ'≡πσρ = ap π₂list σρ'≡σρ ∙ π₂+ {ρ = σρ} {σ = ν}
       scvπσρ' = π₂sce sceσρ'
       scvπσρ = π₂sce sceσρ
-      scvπσρ'≡scvπσρ : scvπσρ' ≅⟨ scv ⟩ scvπσρ ++scv Ψ
+      scvπσρ'≡scvπσρ : scvπσρ' ≅⟨ scv ⟩ scvπσρ +scv ν
       scvπσρ'≡scvπσρ = ≡[]-to-≅ (apd (λ x → π₂sce (snd (snd x))) p)
-                       ∙≅ ≡[]-to-≅ (π₂sce++ {sceσ = sceσρ})
-      scvπσρ'≡scvπσρ : scvπσρ' ≡[ ap scv πσρ'≡πσρ ]≡ scvπσρ ++scv Ψ
+                       ∙≅ ≡[]-to-≅ (π₂sce+ {sceρ = sceσρ})
+      scvπσρ'≡scvπσρ : scvπσρ' ≡[ ap scv πσρ'≡πσρ ]≡ scvπσρ +scv ν
       scvπσρ'≡scvπσρ = ≅-to-≡[] {B = scv} isSetVal scvπσρ'≡scvπσρ
   in πσρ'≡πσρ i ,,
-     isPropPath {B = λ i → eval π₂ σ > ρ ++E Ψ ⇒ πσρ'≡πσρ i} isPropeval
-                (evalπ₂ evalsσ') (evalwks (evalπ₂ evalsσ) Ψ) i ,,
+     isPropPath {B = λ i → eval π₂ σ > ρ +E ν ⇒ πσρ'≡πσρ i} isPropeval
+                (evalπ₂ evalsσ') ((evalπ₂ evalsσ) +eval ν) i ,,
      scvπσρ'≡scvπσρ i
-++evalsce≡ (lam u) {ρ = ρ} sceρ Ψ i =
-  let p = []++V {Θ = Ψ} {u = u} {ρ}
-  in
-  p i ,,
-  isPropPath {B = λ i → eval lam u > ρ ++E Ψ ⇒ p i} isPropeval
-             (evallam u (ρ ++E Ψ)) (evalwks (evallam u ρ) Ψ) i ,,
-  λ {Θ} {v} scvv →
-  let uρv ,, evalu ,, scvuρv = evalsce u ((sceρ ++sce Ψ) ++sce Θ ,, scvv)
-      evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu)
-  in {!!} ,, {!!} ,, {!!}
++evalsce (lam u) {ρ = ρ} sceρ σ i =
+  lam u (ρ +E σ) ,,
+  evallam u (ρ +E σ) ,,
+  λ ν {v} scvv →
+  let uρv ,, evalu ,, scvuρv = evalsce u (sceρ +sce (σ ∘w ν) ,, scvv)
+      $lamu = $lam evalu
+      $lamu = tr (λ x → x $ v ⇒ uρv) (+V∘ {v = lam u ρ} {σ} {ν}) $lamu
+      uρv' ,, evalu' ,, scvuρv' = evalsce u ((sceρ +sce σ) +sce ν ,, scvv)
+      $lamu' = $lam evalu'
+      uρv'≡uρv : uρv' ≡ uρv
+      uρv'≡uρv i =
+        fst (evalsce u {ρ = +E∘ {ρ = ρ} {σ} {ν} (1- i) , v}
+                     (+sce∘ {σ = σ} {ν} {ρ} {sceρ} (1- i) ,, scvv))
+      scvuρv'≡scvuρv : scvuρv' ≡[ ap scv uρv'≡uρv ]≡ scvuρv
+      scvuρv'≡scvuρv i =
+        snd (snd (evalsce u {ρ = +E∘ {ρ = ρ} {σ} {ν} (1- i) , v}
+                          (+sce∘ {σ = σ} {ν} {ρ} {sceρ} (1- i) ,, scvv)))
+  in uρv'≡uρv i ,,
+     isPropPath {B = λ i → lam u ((ρ +E σ) +E ν) $ v ⇒ uρv'≡uρv i} isProp$
+                $lamu' $lamu i ,,
+     scvuρv'≡scvuρv i
++evalsce (app f) {ρ = ρ} sceρ σ i =
+  let fρ ,, evalf ,, scvfρ = evalsce f (π₁sce sceρ)
+      appfρ ,, $fρ ,, scvappfρ = scvfρ idw (π₂sce sceρ)
+      $fρ = tr (λ x → x $ _ ⇒ appfρ) +Vid $fρ
+      fρ' ,, evalf' ,, scvfρ' = evalsce f (π₁sce (sceρ +sce σ))
+      appfρ' ,, $fρ' ,, scvappfρ' = scvfρ' idw (π₂sce (sceρ +sce σ))
+      $fρ' = tr (λ x → x $ _ ⇒ appfρ') +Vid $fρ'
+      appfρ'≡appfρ : appfρ' ≡ appfρ +V σ
+      appfρ'≡appfρ = {!!}
+      scvappfρ'≡scvappfρ : scvappfρ' ≡[ ap scv appfρ'≡appfρ ]≡ scvappfρ +scv σ
+      scvappfρ'≡scvappfρ = {!!}
+  in appfρ'≡appfρ i ,,
+     isPropPath {B = λ i → eval app f > ρ +E σ ⇒ appfρ'≡appfρ i} isPropeval
+                (evalapp evalf' $fρ') ((evalapp evalf $fρ) +eval σ) i ,,
+     scvappfρ'≡scvappfρ i
 
-++evalssce≡ id {ρ = ρ} sceρ Ψ i =
-  ρ ++E Ψ ,, isPropevals evalsid (evalswks evalsid Ψ) i ,, sceρ ++sce Ψ
-++evalssce≡ (σ ∘ ν) {ρ = ρ} sceρ Ψ i =
-  let νρ ,, evalsν ,, sceνρ = evalsce ν ρ
++evalssce id {ρ = ρ} sceρ σ i =
+  ρ +E σ ,, evalsid ,, sceρ +sce σ
++evalssce (σ ∘ ν) {ρ = ρ} sceρ δ i =
+  let νρ ,, evalsν ,, sceνρ = evalsce ν sceρ
+      σνρ ,, evalsσ ,, sceσνρ = evalsce σ sceνρ
+      νρ' ,, evalsν' ,, sceνρ' = evalsce ν (sceρ +sce δ)
+      σνρ' ,, evalsσ' ,, sceσνρ' = evalsce σ sceνρ'
+      νρ'≡νρ : νρ' ≡ νρ +E δ
+      νρ'≡νρ = ap fst (+evalssce ν sceρ δ)
+      sceνρ'≡sceνρ : sceνρ' ≡[ ap sce νρ'≡νρ ]≡ sceνρ +sce δ
+      sceνρ'≡sceνρ = apd (λ x → snd (snd x)) (+evalssce ν sceρ δ )
+      σνρ'≡σνρ : σνρ' ≡ σνρ +E δ
+      σνρ'≡σνρ = apd (λ x → fst (evalsce σ x)) sceνρ'≡sceνρ
+                 ∙ ap fst (+evalssce σ sceνρ δ)
+      sceσνρ'≡sceσνρ : sceσνρ' ≅⟨ sce ⟩ sceσνρ +sce δ
+      sceσνρ'≡sceσνρ = ≡[]-to-≅ (apd (λ x → snd (snd (evalsce σ x))) sceνρ'≡sceνρ)
+                       ∙≅ ≡[]-to-≅ (apd (λ x → snd (snd x)) (+evalssce σ sceνρ δ))
+      sceσνρ'≡sceσνρ : sceσνρ' ≡[ ap sce σνρ'≡σνρ ]≡ sceσνρ +sce δ
+      sceσνρ'≡sceσνρ = ≅-to-≡[] isSetEnv sceσνρ'≡sceσνρ
+  in σνρ'≡σνρ i ,,
+    isPropPath {B = λ i → evals (σ ∘ ν) > (ρ +E δ) ⇒ (σνρ'≡σνρ i)} isPropevals
+               (evals∘ evalsν' evalsσ')
+               ((evals∘ evalsν evalsσ) +evals δ) i ,,
+    sceσνρ'≡sceσνρ i
++evalssce ε sceρ σ = refl
++evalssce (σ , u) sceρ ν i =
+  let σ' ,, evalsσ' ,, sceσ' = +evalssce σ sceρ ν i
+      u' ,, evalu' ,, scvu' = +evalsce u sceρ ν i
+  in (σ' , u') ,, evals, evalsσ' evalu' ,, (sceσ' ,, scvu')
++evalssce (π₁ σ) {ρ = ρ} sceρ ν i =
+  let σρ ,, evalsσ ,, sceσρ = evalsce σ sceρ
+      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ +sce ν)
+      p = +evalssce σ sceρ ν
+      σρ'≡σρ : σρ' ≡ σρ +E ν
+      σρ'≡σρ = ap fst p
+      πσρ'≡πσρ : π₁list σρ' ≡ (π₁list σρ) +E ν
+      πσρ'≡πσρ = ap π₁list σρ'≡σρ ∙ π₁+ {ρ = σρ} {σ = ν}
+      sceπσρ' = π₁sce sceσρ'
+      sceπσρ = π₁sce sceσρ
+      sceπσρ'≡sceπσρ : sceπσρ' ≅⟨ sce ⟩ sceπσρ +sce ν
+      sceπσρ'≡sceπσρ = ≡[]-to-≅ (apd (λ x → π₁sce (snd (snd x))) p)
+                       ∙≅ ≡[]-to-≅ (π₁sce+ {sceρ = sceσρ})
+      sceπσρ'≡sceπσρ : sceπσρ' ≡[ ap sce πσρ'≡πσρ ]≡ sceπσρ +sce ν
+      sceπσρ'≡sceπσρ = ≅-to-≡[] {B = sce} isSetEnv sceπσρ'≡sceπσρ
+  in πσρ'≡πσρ i ,,
+     isPropPath {B = λ i → evals π₁ σ > ρ +E ν ⇒ πσρ'≡πσρ i} isPropevals
+                (evalsπ₁ evalsσ') ((evalsπ₁ evalsσ) +evals ν) i ,,
+     sceπσρ'≡sceπσρ i
 
+{-
 {-
 -- By stability and determinism, a value can only evaluate to itself.
 -- Thus the previous theorem applied to values implies that every value

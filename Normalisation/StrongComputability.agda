@@ -85,27 +85,50 @@ _+scv_ {Γ} {Δ} {A ⟶ B} {f} scvf σ {Θ} ν {v} scvv =
 +scvid : {Γ : Con} {A : Ty} {v : Val Γ A} {scvv : scv v} →
          scvv +scv idw ≡[ ap scv +Vid ]≡ scvv
 +scvid {A = o} {v} {n ,, qv} i =
-  +Nid {n = n} i ,,
-  isPropPath {B = λ i → q (+Vid {v = v} i) ⇒ (+Nid {n = n} i)}
-             isPropq (qv +q idw) qv i
-+scvid {A = A ⟶ B} {f} {scvf} i {Δ} σ {v} scvv =
+  let v≡ = +Vid {v = v}
+      n≡ = +Nid {n = n}
+  in n≡ i ,,
+     isPropPath {B = λ i → q (v≡ i) ⇒ (n≡ i)} isPropq
+                (qv +q idw) qv i
++scvid {A = A ⟶ B} {f} {scvf} i σ {v} scvv =
   let fv ,, $fv ,, scvfv = scvf σ scvv
       fv' ,, $fv' ,, scvfv' = scvf (idw ∘w σ) scvv
-      $fv'' = tr (λ x → x $ v ⇒ fv') (+V∘ {v = f} {σ = idw} {ν = σ}) $fv'
+      $fv' = tr (λ x → x $ v ⇒ fv') (+V∘ {v = f} {σ = idw} {ν = σ}) $fv'
       fv'≡fv : fv' ≡ fv
       fv'≡fv = apd (λ σ → fst (scvf σ scvv)) id∘w
       scvfv'≡scvfv : scvfv' ≡[ ap scv fv'≡fv ]≡ scvfv
       scvfv'≡scvfv = apd (λ σ → snd (snd (scvf σ scvv))) id∘w
-      $fv''≡$fv : $fv'' ≡[ (λ i → ((+Vid {v = f} i) +V σ) $ v ⇒ (fv'≡fv i)) ]≡ $fv
-      $fv''≡$fv = isPropPath {B = λ i → ((+Vid {v = f} i) +V σ) $ v ⇒ (fv'≡fv i)}
-                             isProp$ $fv'' $fv
-  in fv'≡fv i ,, $fv''≡$fv i ,, scvfv'≡scvfv i
+  in fv'≡fv i ,,
+     isPropPath {B = λ i → ((+Vid {v = f} i) +V σ) $ v ⇒ (fv'≡fv i)}
+                isProp$ $fv' $fv i ,,
+     scvfv'≡scvfv i
 
-{-
+
 +scv∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ}
-        {v : Val Γ A} {scvv : scv v} →
-        scvv +scv (σ ∘w ν) ≡[ ap scv +V∘ ]≡ (scvv +scv σ) +scv ν
--}
+        {v : Val Θ A} {scvv : scv v} →
+        scvv +scv (σ ∘w ν) ≡[ ap scv (+V∘ {v = v} {σ} {ν}) ]≡ (scvv +scv σ) +scv ν
++scv∘ {A = o} {σ} {ν} {v} {n ,, qv} i =
+  let v≡ = +V∘ {v = v} {σ} {ν}
+      n≡ = +N∘ {n = n} {σ} {ν}
+  in n≡ i ,,
+     isPropPath {B = λ i → q (v≡ i) ⇒ (n≡ i)} isPropq
+                (qv +q (σ ∘w ν)) ((qv +q σ) +q ν) i
++scv∘ {A = A ⟶ B} {σ} {ν} {f} {scvf} i δ {v} scvv =
+  let fv ,, $fv ,, scvfv = scvf (σ ∘w (ν ∘w δ)) scvv
+      $fv = tr (λ x → x $ v ⇒ fv) (+V∘ {v = f} {σ = σ} {ν = ν ∘w δ}) $fv
+      $fv = tr (λ x → x $ v ⇒ fv) (+V∘ {v = f +V σ} {σ = ν} {ν = δ}) $fv
+      fv' ,, $fv' ,, scvfv' = scvf ((σ ∘w ν) ∘w δ) scvv
+      $fv' = tr (λ x → x $ v ⇒ fv') (+V∘ {v = f} {σ = σ ∘w ν} {ν = δ}) $fv'
+      fv'≡fv : fv' ≡ fv
+      fv'≡fv = apd (λ σ → fst (scvf σ scvv)) (∘∘w {σ = σ} {ν} {δ})
+      scvfv'≡scvfv : scvfv' ≡[ ap scv fv'≡fv ]≡ scvfv
+      scvfv'≡scvfv = apd (λ σ → snd (snd (scvf σ scvv))) (∘∘w {σ = σ} {ν} {δ})
+  in fv'≡fv i ,,
+     isPropPath {B = λ i → ((+V∘ {v = f} {σ} {ν} i) +V δ) $ v ⇒ (fv'≡fv i)}
+                isProp$ $fv' $fv i ,,
+     scvfv'≡scvfv i
+
+
 
 -- Extension of strong computability to environments.
 sce : {Γ Δ : Con} → Env Γ Δ → Set
@@ -140,6 +163,11 @@ _+sce_ {ρ = ρ , u} (sceρ ,, scvu) σ = sceρ +sce σ ,, scvu +scv σ
          sceρ +sce idw ≡[ ap sce +Eid ]≡ sceρ
 +sceid {ρ = ε} = refl
 +sceid {ρ = ρ , v} {sceρ ,, scvv} i = +sceid {ρ = ρ} {sceρ} i ,, +scvid {v = v} {scvv} i
+
++sce∘ : {Γ Δ Θ Ψ : Con} {σ : Wk Δ Θ} {ν : Wk Γ Δ}  {ρ : Env Θ Ψ} {sceρ : sce ρ} →
+        sceρ +sce (σ ∘w ν) ≡[ ap sce (+E∘ {ρ = ρ} {σ} {ν}) ]≡ (sceρ +sce σ) +sce ν
++sce∘ {ρ = ε} = refl
++sce∘ {ρ = ρ , v} {sceρ ,, scvv} i = +sce∘ {ρ = ρ} {sceρ} i ,, +scv∘ {v = v} {scvv} i
 
 
 π₁sce+ : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
