@@ -16,6 +16,7 @@ open import Library.Sets
 open import Library.Pairs
 open import Library.Pairs.Sets
 open import Syntax.Terms
+open import Syntax.Weakening
 open import Syntax.Terms.Weakening
 open import Syntax.Terms.Lemmas
 open import Syntax.Terms.Eliminator
@@ -42,15 +43,15 @@ terminatesTms : {Γ Δ Θ : Con} (σ : Tms Δ Θ) (ρ : Env Γ Δ) → Set
 terminatesTms {Γ} {Θ = Θ} σ ρ = Σ[ σρ ∈ Env Γ Θ ] (evals σ > ρ ⇒ σρ  ×  sce σρ)
 
 -- Weakening of the result.
-_++terminatesTm_ : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} →
-                 terminatesTm u ρ → (Ψ : Con) → terminatesTm u (ρ ++E Ψ)
-(uρ ,, evalu ,, scvuρ) ++terminatesTm Ψ =
-  uρ ++V Ψ ,, evalwks evalu Ψ ,, scvuρ ++scv Ψ
+_+terminatesTm_ : {Γ Δ Θ : Con} {A : Ty} {u : Tm Θ A} {ρ : Env Δ Θ} →
+                 terminatesTm u ρ → (σ : Wk Γ Δ) → terminatesTm u (ρ +E σ)
+(uρ ,, evalu ,, scvuρ) +terminatesTm σ =
+  uρ +V σ ,, evalu +eval σ ,, scvuρ +scv σ
 
-_++terminatesTms_ : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} →
-                  terminatesTms σ ρ → (Ψ : Con) → terminatesTms σ (ρ ++E Ψ)
-(σρ ,, evalsσ ,, sceσρ) ++terminatesTms Ψ =
-  σρ ++E Ψ ,, evalswks evalsσ Ψ ,, sceσρ ++sce Ψ
+_+terminatesTms_ : {Γ Δ Θ Ψ : Con} {σ : Tms Θ Ψ} {ρ : Env Δ Θ} →
+                  terminatesTms σ ρ → (ν : Wk Γ Δ) → terminatesTms σ (ρ +E ν)
+(σρ ,, evalsσ ,, sceσρ) +terminatesTms ν =
+  σρ +E ν ,, evalsσ +evals ν ,, sceσρ +sce ν
 
 
 {-
@@ -93,12 +94,14 @@ evalsce : {i : term-index} (x : term i) → evalsce-type x
 
 
 
-++evalsce≡ : {Δ : Con} {A : Ty} (u : Tm Δ A)
-             {Γ : Con} {ρ : Env Γ Δ} (sceρ : sce ρ) (Ψ : Con) →
-            evalsce u (sceρ ++sce Ψ) ≡ (evalsce u sceρ) ++terminatesTm Ψ
-++evalssce≡ : {Δ Θ : Con} (σ : Tms Δ Θ)
-              {Γ : Con} {ρ : Env Γ Δ} (sceρ : sce ρ) (Ψ : Con) →
-              evalsce σ (sceρ ++sce Ψ) ≡ (evalsce σ sceρ) ++terminatesTms Ψ
++evalsce : {Θ : Con} {A : Ty} (u : Tm Θ A)
+           {Δ : Con} {ρ : Env Δ Θ} (sceρ : sce ρ)
+           {Γ : Con} (σ : Wk Γ Δ) →
+           evalsce u (sceρ +sce σ) ≡ (evalsce u sceρ) +terminatesTm σ
++evalssce : {Θ Ψ : Con} (σ : Tms Θ Ψ)
+            {Δ : Con} {ρ : Env Δ Θ} (sceρ : sce ρ)
+            {Γ : Con} (ν : Wk Γ Δ) →
+            evalsce σ (sceρ +sce ν) ≡ (evalsce σ sceρ) +terminatesTms ν
 
 
 -- Base constructors.
@@ -113,17 +116,16 @@ evalsce (lam u) {ρ = ρ} sceρ =
   -- Evaluation is trivial for functions.
   lam u ρ ,, evallam u ρ ,,
   -- Strong computability is not an immediate hypothesis.
-  λ {Θ} {v} scvv →
+  λ {Θ} σ {v} scvv →
   -- However, once given an argument to the function, it suffice to evaluate
-  -- the function in the appropriate environment to get the result by induction
-  -- hypothesis (with a few weakenings and transports, of course).
-  let uρv ,, evalu ,, scvuρv = evalsce u (sceρ ++sce Θ ,, scvv)
-      evallamu = tr (λ u → u $ v ⇒ uρv) ([]++V {Θ = Θ}) ($lam evalu) in
-  uρv ,, evallamu ,, scvuρv
+  -- the function in the appropriate environment to get the result by induction.
+  let uρv ,, evalu ,, scvuρv = evalsce u {ρ = ρ +E σ , v} (sceρ +sce σ ,, scvv)
+  in uρv ,, $lam evalu ,, scvuρv
 evalsce (app f) sceρ =
   let f ,, evalf ,, scvf = evalsce f (π₁sce sceρ)
-      fρ ,, $fρ ,, scvfρ = scvf (π₂sce sceρ) in
-  fρ ,, evalapp evalf $fρ ,, scvfρ
+      fρ ,, $fρ ,, scvfρ = scvf idw (π₂sce sceρ)
+      $fρ = tr (λ x → x $ _ ⇒ fρ) +Vid $fρ
+  in fρ ,, evalapp evalf $fρ ,, scvfρ
 
 evalsce id {ρ = ρ} sceρ =
   ρ ,, evalsid ,, sceρ
@@ -206,13 +208,24 @@ evalsce (,∘ {σ = σ} {ν} {u} i) {ρ = ρ} sceρ =
                            (eval[] evalsν evalu)) i ,,
   (sceσνρ ,, scvuνρ)
 evalsce (β {u = u} i) {ρ = ρ} sceρ =
-  let uρ ,, evalu ,, scvuρ = evalsce u sceρ
-      uρ' ,, evalu' ,, scvuρ' = evalsce u {ρ = π₁list ρ , π₂list ρ}
-                                        (π₁sce sceρ ,, π₂sce sceρ)
+  let ρ' = (π₁list ρ) +E idw , π₂list ρ
+      sceρ' : sce ρ'
+      sceρ' = (π₁sce sceρ) +sce idw ,, π₂sce sceρ
+      ρ'≡ρ : ρ' ≡ ρ
+      ρ'≡ρ = ap (λ x → x , π₂list ρ) (+Eid {ρ = π₁list ρ}) ∙ πηlist
+      sceρ'≡sceρ : sceρ' ≅⟨ sce ⟩ sceρ
+      sceρ'≡sceρ = ≡[]-to-≅ {P = λ i → +Eid {ρ = π₁list ρ} i , π₂list ρ}
+                            (λ i → +sceid {sceρ = π₁sce sceρ} i ,, π₂sce sceρ)
+                 ∙≅ ≡[]-to-≅ (πηsce sceρ)
+      sceρ'≡sceρ : sceρ' ≡[ ap sce ρ'≡ρ ]≡ sceρ
+      sceρ'≡sceρ = ≅-to-≡[] isSetEnv sceρ'≡sceρ
+      uρ ,, evalu ,, scvuρ = evalsce u sceρ
+      uρ' ,, evalu' ,, scvuρ' = evalsce u {ρ = π₁list ρ +E idw , π₂list ρ}
+                                        (π₁sce sceρ +sce idw ,, π₂sce sceρ)
       uρ'≡uρ : uρ' ≡ uρ
-      uρ'≡uρ i = fst (evalsce u (πηsce sceρ i))
+      uρ'≡uρ i = fst (evalsce u (sceρ'≡sceρ i))
       scvuρ'≡scvuρ : scvuρ' ≡[ ap scv uρ'≡uρ ]≡ scvuρ
-      scvuρ'≡scvuρ i = snd (snd (evalsce u (πηsce sceρ i)))
+      scvuρ'≡scvuρ i = snd (snd (evalsce u (sceρ'≡sceρ i)))
   in
   uρ'≡uρ i ,,
   isPropPath {B = λ i → eval β i > ρ ⇒ uρ'≡uρ i} isPropeval
@@ -220,8 +233,7 @@ evalsce (β {u = u} i) {ρ = ρ} sceρ =
               -- The transport does nothing, but is required to match
               -- the definition.
               (evalapp (evallam u (π₁list ρ))
-                       (tr (λ u → u $ π₂list ρ ⇒ uρ')
-                           ([]++V {Θ = ●})
+                       (tr (λ u → u $ π₂list ρ ⇒ uρ') +Vid
                            ($lam evalu')))
               evalu i ,,
   scvuρ'≡scvuρ i
@@ -235,34 +247,31 @@ evalsce (η {f = f} i) {ρ = ρ} sceρ =
   fρ'≡fρ i ,,
   isPropPath {B = λ i → eval η i > ρ ⇒ fρ'≡fρ i} isPropeval
              evalf' evalf i ,,
-  λ {Θ} {v} scvv →
-  let fρv ,, $fρv ,, scvfρv = scvfρ scvv
-      fρ+ ,, evalf+ ,, scvfρ+ = evalsce f (sceρ ++sce Θ)
-      fρv+ ,, $fρv+ ,, scvfρv+ = scvfρ+ {Δ = ●} scvv
-      evalfρv+ = evalapp {ρ = ρ ++E Θ , v} evalf+ $fρv+
-      $lamappfρv = tr (λ u → u $ v ⇒ fρv+) ([]++V {Θ = Θ}) ($lam evalfρv+)
+  λ σ {v} scvv →
+  let fρv ,, $fρv ,, scvfρv = scvfρ σ scvv
+      fρ+ ,, evalf+ ,, scvfρ+ = evalsce f (sceρ +sce σ)
+      fρv+ ,, $fρv+ ,, scvfρv+ = scvfρ+ idw scvv
+      $fρv+' = tr (λ x → x $ _ ⇒ fρv+) +Vid $fρv+
+      evalfρv+ = evalapp {ρ = ρ +E σ , v} evalf+ $fρv+'
+      $lamappfρv = $lam evalfρv+
       fρv+≡fρv : fρv+ ≡ fρv
       fρv+≡fρv = veq (eval$≡ $fρv+ ⁻¹
                      ∙ ap (λ x → x $ _)
-                          (eval≡ evalf+ ⁻¹
-                          ∙ ap (λ σ → f [ σ ]) (++E≡ {Θ = Θ} {σ = ρ})
-                          ∙ []++
-                          ∙ ap (λ x → x ++t Θ) (eval≡ evalf)
-                          ∙ ++V≡ {Θ = Θ} ⁻¹)
+                          (ap ⌜_⌝V (+Vid {v = fρ+})
+                          ∙ eval≡ evalf+ ⁻¹
+                          ∙ ap (λ ρ → f [ ρ ]) (⌜⌝+E {ρ = ρ} {σ = σ})
+                          ∙ []+
+                          ∙ ap (λ x → x +t σ) (eval≡ evalf)
+                          ∙ ⌜⌝+V {v = fρ} {σ = σ} ⁻¹)
                      ∙ eval$≡ $fρv)
-      fρ+≡fρ : fρ+ ≡ fρ ++V Θ
-      fρ+≡fρ = ap fst (++evalsce≡ f sceρ Θ)
-      scvfρ+≡scvfρ : (λ {Δ} {u} → scvfρ+ {Δ} {u})
-                     ≡[ ap scv fρ+≡fρ ]≡
-                     (λ {Δ} {u} → ((λ {Δ} → scvfρ {Δ}) ++scv Θ) {Δ} {u})
-      scvfρ+≡scvfρ = λ i {Δ} {u} →  snd (snd (++evalsce≡ f sceρ Θ i)) {Δ} {u}
       scvfρv+≡scvfρv : scvfρv+ ≅⟨ scv ⟩ scvfρv
-      scvfρv+≡scvfρv = {!!}
+      scvfρv+≡scvfρv = ≡[]-to-≅ (λ i → snd (snd ((snd (snd (+evalsce f sceρ σ i))) idw scvv)))
+                     ∙≅ ≡[]-to-≅ λ i → snd (snd (scvfρ (∘idw {σ = σ} i) scvv))
       scvfρv+≡scvfρv : scvfρv+ ≡[ ap scv fρv+≡fρv ]≡ scvfρv
       scvfρv+≡scvfρv = ≅-to-≡[] {B = scv} isSetVal scvfρv+≡scvfρv
   in
   fρv+≡fρv i ,,
-  isPropPath {B = λ i → (fρ'≡fρ i ++V Θ) $ v ⇒ (fρv+≡fρv i)} isProp$
+  isPropPath {B = λ i → (fρ'≡fρ i +V σ) $ v ⇒ (fρv+≡fρv i)} isProp$
              $lamappfρv $fρv i ,,
   scvfρv+≡scvfρv i
 evalsce (lam[] {A = A} {u = u} {σ} i) {Δ} {ρ} sceρ =
@@ -281,32 +290,32 @@ evalsce (lam[] {A = A} {u = u} {σ} i) {Δ} {ρ} sceρ =
   uσρ≡uσρ' i ,,
   isPropPath {B = λ i → eval (lam[] i) > ρ ⇒ uσρ≡uσρ' i} isPropeval
              evaluσρ evaluσρ' i ,,
-  λ {Θ} {v} scvv →
-  let uσρv ,, evalu ,, scvuσρv = evalsce u (sceσρ ++sce Θ ,, scvv)
-      evaluσρv = tr (λ u → u $ v ⇒ uσρv) ([]++V {Θ = Θ}) ($lam evalu)
-      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ ++sce Θ)
-      evalsσρ' : evals (σ ∘ wk) > (ρ ++E Θ , v) ⇒ σρ'
+  λ ν {v} scvv →
+  let uσρv ,, evalu ,, scvuσρv = evalsce u (sceσρ +sce ν ,, scvv)
+      evaluσρv = $lam evalu
+      σρ' ,, evalsσ' ,, sceσρ' = evalsce σ (sceρ +sce ν)
+      evalsσρ' : evals (σ ∘ wk) > (ρ +E ν , v) ⇒ σρ'
       evalsσρ' = evals∘ (evalsπ₁ evalsid) evalsσ'
       σρv' = σρ' , v
-      evalsσρv' : evals (σ ↑ A) > (ρ ++E Θ , v) ⇒ σρv'
+      evalsσρv' : evals (σ ↑ A) > (ρ +E ν , v) ⇒ σρv'
       evalsσρv' = evals, evalsσρ' (evalπ₂ evalsid)
       sceσρv' : sce σρv'
       sceσρv' = sceσρ' ,, scvv
       uσρv' ,, evalu' ,, scvuσρv' = evalsce u sceσρv'
-      evaluσ' : eval (u [ σ ↑ A ]) > (ρ ++E Θ , v) ⇒ uσρv'
+      evaluσ' : eval (u [ σ ↑ A ]) > (ρ +E ν , v) ⇒ uσρv'
       evaluσ' = eval[] evalsσρv' evalu'
-      evaluσρv' = tr (λ u → u $ v ⇒ uσρv') ([]++V {Θ = Θ}) ($lam evaluσ')
+      evaluσρv' = $lam evaluσ'
       uσρv≡uσρv' : uσρv ≡ uσρv'
       uσρv≡uσρv' = veq (eval$≡ evaluσρv ⁻¹
-                       ∙ ap (λ u → ⌜ u ++V Θ ⌝V $ ⌜ v ⌝V) uσρ≡uσρ'
+                       ∙ ap (λ u → ⌜ u +V ν ⌝V $ ⌜ v ⌝V) uσρ≡uσρ'
                        ∙ eval$≡ evaluσρv')
       scvuσρv≡scvuσρv' : scvuσρv ≡[ ap scv uσρv≡uσρv' ]≡ scvuσρv'
       scvuσρv≡scvuσρv' = change-underlying {B = scv} isSetVal
-        (λ i → snd (snd (evalsce u {ρ = fst (++evalssce≡ σ {ρ = ρ} sceρ Θ (1- i)) , v}
-                                 ((snd (snd (++evalssce≡ σ {ρ = ρ} sceρ Θ (1- i)))) ,, scvv))))
+        (λ i → snd (snd (evalsce u {ρ = fst (+evalssce σ {ρ = ρ} sceρ ν (1- i)) , v}
+                                 ((snd (snd (+evalssce σ {ρ = ρ} sceρ ν (1- i)))) ,, scvv))))
   in
   uσρv≡uσρv' i ,,
-  isPropPath {B = λ i → (uσρ≡uσρ' i ++V Θ) $ v ⇒ uσρv≡uσρv' i} isProp$
+  isPropPath {B = λ i → (uσρ≡uσρ' i +V ν) $ v ⇒ uσρv≡uσρv' i} isProp$
              evaluσρv evaluσρv' i ,,
   scvuσρv≡scvuσρv' i
 
@@ -320,7 +329,7 @@ evalsce {Tms-i Δ Θ} (isSetTms p q i j) =
                   (λ k → evalsce (p k)) (λ k → evalsce (q k)) i j
 
 
-
+{-
 ++evalsce≡ (u [ σ ]) {ρ = ρ} sceρ Ψ i =
   let σρ ,, evalsσ ,, sceσρ = evalsce σ sceρ
       uσρ ,, evalu ,, scvuσρ = evalsce u sceσρ
@@ -514,4 +523,5 @@ qsvar≡ = refl
 qsapp≡ : {Γ : Con} {A B : Ty} {f : Ne Val Γ (A ⟶ B)} {u : Val Γ A} →
          qs (app f u) ≡ app (qs f) (q u)
 qsapp≡ = refl
+-}
 -}

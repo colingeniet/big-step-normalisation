@@ -397,37 +397,3 @@ _∙≅_ {B = B} {x = x} {z = z} (p ,≅ q) (r ,≅ s) =
 ≡[]-to-≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b}
              {P : a ≡ b} → x ≡[ ap B P ]≡ y → x ≅⟨ B ⟩ y
 ≡[]-to-≅ {P = P} p = P ,≅ p
-
-
-{-
--- An alternative definition of dependent paths.
-_≡*_*≡_ : ∀ {l} {A B : Set l} → A → A ≡ B → B → Set l
-x ≡* P *≡ y = (P * x) ≡ y
-
--- Isomorphism between the two notions of dependent paths.
-≡[]≡to≡**≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
-                x ≡[ P ]≡ y → x ≡* P *≡ y
-≡[]≡to≡**≡ {P = P} {x} {y} p = tr (λ Q → P * x ≡[ Q ]≡ y)
-                                  (-⁻¹∙- {p = P})
-                                  ((P *fill x ⁻¹) d∙d p)
-
-≡**≡to≡[]≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
-                x ≡* P *≡ y → x ≡[ P ]≡ y
-≡**≡to≡[]≡ {P = P} {x} {y} p = tr (λ Q → x ≡[ Q ]≡ y)
-                                  ∙refl
-                                  ((P *fill x) d∙d p)
-
-≡[]≡to≡**≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
-                   {p : x ≡[ P ]≡ y} → ≡**≡to≡[]≡ (≡[]≡to≡**≡ p) ≡ p
-≡[]≡to≡**≡-iso {P = P} {x} {y} {p} =
-  let *x = P * x in
-  let x≡*x = P *fill x in
-  let p* = x≡*x ⁻¹ d∙d p in
-  let p*' = tr (λ Q → *x ≡[ Q ]≡ y) (-⁻¹∙- {p = P}) p* in -- ≡[]≡to≡**≡ p
-  let p*≡p*' = trfill (λ Q → *x ≡[ Q ]≡ y) (-⁻¹∙- {p = P}) p* in
-  {!!}
-
-≡**≡to≡[]≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
-                   {p : x ≡* P *≡ y} → ≡[]≡to≡**≡ (≡**≡to≡[]≡ {P = P} p) ≡ p
-≡**≡to≡[]≡-iso {P = P} {x} {y} {p} = {!!}
--}

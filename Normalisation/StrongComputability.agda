@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -15,6 +15,7 @@ open import Library.Pairs
 open import Library.Pairs.Sets
 open import Syntax.Terms
 open import Syntax.Terms.Lemmas
+open import Syntax.Weakening
 open import Normalisation.TermLike
 open import Normalisation.Variables
 open import Normalisation.Values
@@ -38,107 +39,73 @@ scv {Γ = Γ} {A = o} u = Σ (Nf Γ o) λ n → q u ⇒ n
 -- Furthermore, the argument may come from an extended environment, in which
 -- case the function is to be weakened.
 scv {Γ = Γ} {A = A ⟶ B} f =
-  {Δ : Con} {u : Val (Γ ++ Δ) A} → scv u →
-  Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu)
+  {Δ : Con} (σ : Wk Δ Γ) {v : Val Δ A} → scv v →
+  Σ[ fv ∈ Val Δ B ] ((f +V σ) $ v ⇒ fv  ×  scv fv)
 
 
-
-isSetscv : {Γ : Con} {A : Ty} {u : Val Γ A} → isSet (scv u)
-isSetscv {A = o} {u} =
+isSetscv : {Γ : Con} {A : Ty} {v : Val Γ A} → isSet (scv v)
+isSetscv {A = o} {v} =
   isSetΣ isSetNf (PropisSet isPropq)
-isSetscv {Γ} {A ⟶ B} {f} {x} {y} p q i j {Δ} {u} scvu =
-  isset (λ k _ _ scvu → p k scvu)
-        (λ k _ _ scvu → q k scvu)
-        i j Δ u scvu
+isSetscv {Γ} {A ⟶ B} {f} {x} {y} p q i j {Δ} σ {v} scvv =
+  isset (λ k _ σ _ scvv → p k σ scvv)
+        (λ k _ σ _ scvv → q k σ scvv)
+        i j Δ σ v scvv
   where
     -- Make all arguments explicit.
-    isset : isSet ((Δ : Con) (u : Val (Γ ++ Δ) A) → scv u →
-                   Σ[ fu ∈ Val (Γ ++ Δ) B ] ((f ++V Δ) $ u ⇒ fu  ×  scv fu))
-    isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
+    isset : isSet ((Δ : Con) (σ : Wk Δ Γ) (v : Val Δ A) → scv v →
+                   Σ[ fv ∈ Val Δ B ] ((f +V σ) $ v ⇒ fv  ×  scv fv))
+    isset = isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} → isSet⇒ λ {_} →
             isSetΣ isSetVal (isSet× (PropisSet isProp$) isSetscv)
 
 
-
 -- Strong computablility is stable by weakening.
-_+scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (A : Ty) → scv (u +V A)
-_+scv_ {B = o} (n ,, qu) A = n +N A ,, qwk qu A
-_+scv_ {B = B ⟶ C} {u = f} scvf A {Δ} {u} scvu =
-  let u' = tr (λ Γ → Val Γ B) ,++ u in
-  let u≡u' = trfill (λ Γ → Val Γ B) ,++ u in
-  let scvu' = trd scv u≡u' scvu in
-  let fu' ,, $fu' ,, scvfu' = scvf scvu' in
-  let fu = tr (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
-  let fu'≡fu = trfill (λ Γ → Val Γ C) (,++ {Δ = Δ} ⁻¹) fu' in
-  let scvfu = trd scv fu'≡fu scvfu' in
-  fu ,,
-  (λ i → (V+-++≡ {Δ = Δ} {B = A} {u = f} (1- i)) $ (u≡u' (1- i)) ⇒
-    (fu'≡fu i))
-  * $fu' ,,
-  scvfu
-  where V+-++≡ : {Γ Δ : Con} {A B : Ty} {u : Val Γ A} →
-                 (u +V B) ++V Δ ≡[ ap (λ Γ → Val Γ A) ,++ ]≡ u ++V ((● , B) ++ Δ)
-        V+-++≡ {Δ = ●} = refl
-        V+-++≡ {Δ = Δ , C} = apd (λ u → u +V C) (V+-++≡ {Δ = Δ})
+_+scv_ : {Γ Δ : Con} {A : Ty} {v : Val Δ A} →
+         scv v → (σ : Wk Γ Δ) → scv (v +V σ)
+_+scv_ {A = o} (n ,, qv) σ = n +N σ ,, qv +q σ
+_+scv_ {Γ} {Δ} {A ⟶ B} {f} scvf σ {Θ} ν {v} scvv =
+  let fv ,, $fv ,, scvfv = scvf (σ ∘w ν) scvv
+      $fv = tr (λ x → x $ v ⇒ fv) (+V∘ {v = f} {σ = σ} {ν = ν}) $fv
+  in fv ,, $fv ,, scvfv
 
-_++scv_ : {Γ : Con} {B : Ty} {u : Val Γ B} → scv u → (Δ : Con) → scv (u ++V Δ)
-u ++scv ● = u
-u ++scv (Δ , A) = (u ++scv Δ) +scv A
+-- For function types, weakening of SCV 'does nothing', that is whenever an
+-- argument is applied, the result will be the same with and without weakening.
++scv≡ : {Γ Δ Θ : Con} {A B : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ}
+        {f : Val Θ (A ⟶ B)} {scvf : scv f}
+        {v : Val Γ A} {scvv : scv v} →
+        (_+scv_ {v = f} (λ {Δ} → scvf {Δ}) σ) ν scvv
+        ≡[ ap (λ x → Σ[ fv ∈ Val Γ B ] ((x $ v ⇒ fv) × scv fv))
+              (+V∘ {v = f} {σ} {ν} ⁻¹) ]≡
+        scvf {Γ} (σ ∘w ν) {v} scvv
++scv≡ {Γ} {Δ} {Θ} {A} {B} {σ} {ν} {f} {scvf} {v} {scvv} i =
+  let fv ,, $fv ,, scvfv = scvf (σ ∘w ν) scvv
+      $fv = trfill (λ x → x $ v ⇒ fv) (+V∘ {v = f} {σ = σ} {ν = ν}) $fv
+  in fv ,, $fv (1- i) ,, scvfv
+
+
++scvid : {Γ : Con} {A : Ty} {v : Val Γ A} {scvv : scv v} →
+         scvv +scv idw ≡[ ap scv +Vid ]≡ scvv
++scvid {A = o} {v} {n ,, qv} i =
+  +Nid {n = n} i ,,
+  isPropPath {B = λ i → q (+Vid {v = v} i) ⇒ (+Nid {n = n} i)}
+             isPropq (qv +q idw) qv i
++scvid {A = A ⟶ B} {f} {scvf} i {Δ} σ {v} scvv =
+  let fv ,, $fv ,, scvfv = scvf σ scvv
+      fv' ,, $fv' ,, scvfv' = scvf (idw ∘w σ) scvv
+      $fv'' = tr (λ x → x $ v ⇒ fv') (+V∘ {v = f} {σ = idw} {ν = σ}) $fv'
+      fv'≡fv : fv' ≡ fv
+      fv'≡fv = apd (λ σ → fst (scvf σ scvv)) id∘w
+      scvfv'≡scvfv : scvfv' ≡[ ap scv fv'≡fv ]≡ scvfv
+      scvfv'≡scvfv = apd (λ σ → snd (snd (scvf σ scvv))) id∘w
+      $fv''≡$fv : $fv'' ≡[ (λ i → ((+Vid {v = f} i) +V σ) $ v ⇒ (fv'≡fv i)) ]≡ $fv
+      $fv''≡$fv = isPropPath {B = λ i → ((+Vid {v = f} i) +V σ) $ v ⇒ (fv'≡fv i)}
+                             isProp$ $fv'' $fv
+  in fv'≡fv i ,, $fv''≡$fv i ,, scvfv'≡scvfv i
 
 {-
-+scv≡ : {Γ Δ : Con} {A B C : Ty} {f : Val Γ (B ⟶ C)} {scvf : scv f}
-        {v : Val ((Γ , A) ++ Δ) B} {scvv : scv v} →
-        ((λ {Δ} → scvf {Δ}) +scv A) scvv
-        ≡ {!scvf (trd scv (trfill (λ Γ → Val Γ B) ,++ v) scvv)!}
-+scv≡ = {!!}
++scv∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ}
+        {v : Val Γ A} {scvv : scv v} →
+        scvv +scv (σ ∘w ν) ≡[ ap scv +V∘ ]≡ (scvv +scv σ) +scv ν
 -}
-postulate
-  ++scv≡ : {Γ Δ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {scvf : scv f}
-           {v : Val (Γ ++ Δ) A} {scvv : scv v} →
-           ((λ {Δ} → scvf {Δ}) ++scv Δ) {Δ = ●} scvv ≡ scvf scvv
-
-
-
-{-
-  Main lemma:
-  The fact that strong computability implies termination of quote is actually
-  not obvious. The proof requires to simultaneously prove the converse for
-  neutral values.
--}
--- Main direction: strong computability implies termination of quote.
-scv-q : {Γ : Con} {A : Ty} {u : Val Γ A} →
-        scv u → Σ (Nf Γ A) (λ n → q u ⇒ n)
--- Converse for neutral values.
-q-scv : {Γ : Con} {A : Ty} {u : Ne Val Γ A} {n : Ne Nf Γ A} →
-        qs u ⇒ n → scv (neu u)
-
--- The converse allows in particular to show that variables are sc.
-scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (neu (var x))
-scvvar = q-scv qsvar
-
-
-scv-q {A = o} scu = scu
--- For functions, we follow the definition of quote and apply
--- the function to vz. This is why sc of variables is required.
-scv-q {A = A ⟶ B} scu =
-  let uz ,, $uz ,, scuz = scu {Δ = ● , A} (scvvar {x = z}) in
-  let nfuz ,, quz = scv-q scuz in
-  lam nfuz ,, q⟶ $uz quz
-
-
-q-scv {A = o} {n = n} qu = neu n ,, qo qu
--- For functions, since we are considering neutral values, application
--- to a value is trivial. Quote simply quotes the function and the value
--- separately, hence the proof would be simple if it was not for a few
--- weakenings and transports.
-q-scv {A = A ⟶ B} {u = f} {n = nf} qf {Δ = Δ} {u = u} scu =
-  let fu = app (f ++NV Δ) u in
-  let $fu = tr (λ x → (x $ u ⇒ neu fu))
-               (++VNV {v = f} ⁻¹)
-               ($app (f ++NV Δ) u)
-  in
-  let nfu ,, qu = scv-q scu in
-  neu fu ,, $fu ,, q-scv (qsapp (qswks qf Δ) qu)
-
 
 -- Extension of strong computability to environments.
 sce : {Γ Δ : Con} → Env Γ Δ → Set
@@ -154,51 +121,76 @@ sce (ρ , u) = sce ρ  ×  scv u
         sce ρ → scv (π₂list ρ)
 π₂sce {ρ = _ , _} = snd
 
-πηsce : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} (sceσ : sce σ) →
-        (π₁sce sceσ ,, π₂sce sceσ) ≡[ ap sce πηlist ]≡ sceσ
-πηsce {σ = σ , u} (sceσ ,, scvu) = refl
+πηsce : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} (sceρ : sce ρ) →
+        (π₁sce sceρ ,, π₂sce sceρ) ≡[ ap sce πηlist ]≡ sceρ
+πηsce {ρ = ρ , u} (sceρ ,, scvu) = refl
 
 
-isSetsce : {Γ Δ : Con} {σ : Env Γ Δ} → isSet (sce σ)
+isSetsce : {Γ Δ : Con} {ρ : Env Γ Δ} → isSet (sce ρ)
 isSetsce {Δ = ●} {ε} = PropisSet isProp⊤
 isSetsce {Δ = Δ , A} {ρ , u} = isSet× isSetsce isSetscv
 
 
 -- Weakenings.
-_+sce_ : {Γ Δ : Con} {ρ : Env Γ Δ} → sce ρ → (A : Ty) → sce (ρ +E A)
-_+sce_ {ρ = ε} tt A = tt
-_+sce_ {ρ = ρ , u} (sceρ ,, scvu) A = sceρ +sce A ,, scvu +scv A
+_+sce_ : {Γ Δ Θ : Con} {ρ : Env Δ Θ} → sce ρ → (σ : Wk Γ Δ) → sce (ρ +E σ)
+_+sce_ {ρ = ε} tt σ = tt
+_+sce_ {ρ = ρ , u} (sceρ ,, scvu) σ = sceρ +sce σ ,, scvu +scv σ
 
-_++sce_ : {Γ Θ : Con} {σ : Env Γ Θ} → sce σ → (Δ : Con) → sce (σ ++E Δ)
-σ ++sce ● = σ
-σ ++sce (Δ , A) = (σ ++sce Δ) +sce A
++sceid : {Γ Δ : Con} {ρ : Env Γ Δ} {sceρ : sce ρ} →
+         sceρ +sce idw ≡[ ap sce +Eid ]≡ sceρ
++sceid {ρ = ε} = refl
++sceid {ρ = ρ , v} {sceρ ,, scvv} i = +sceid {ρ = ρ} {sceρ} i ,, +scvid {v = v} {scvv} i
 
 
-π₁sce+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
-         π₁sce (sceσ +sce B) ≡[ ap sce (π₁+ {Δ = ●} {σ = σ}) ]≡ (π₁sce sceσ) +sce B
-π₁sce+ {σ = _ , _} = refl
-π₂sce+ : {Γ Δ : Con} {A B : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
-         π₂sce (sceσ +sce B) ≡[ ap scv (π₂+ {Δ = ●} {σ = σ}) ]≡ (π₂sce sceσ) +scv B
-π₂sce+ {σ = _ , _} = refl
+π₁sce+ : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
+         π₁sce (sceρ +sce σ) ≡[ ap sce (π₁+ {ρ = ρ}) ]≡ (π₁sce sceρ) +sce σ
+π₁sce+ {ρ = _ , _} = refl
+π₂sce+ : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
+         π₂sce (sceρ +sce σ) ≡[ ap scv (π₂+ {ρ = ρ}) ]≡ (π₂sce sceρ) +scv σ
+π₂sce+ {ρ = _ , _} = refl
 
-π₁sce++ : {Γ Δ Θ : Con} {A : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
-          π₁sce (sceσ ++sce Θ) ≡[ ap sce (π₁++ {σ = σ}) ]≡ (π₁sce sceσ) ++sce Θ
-π₁sce++ {Θ = ●} = refl
-π₁sce++ {Θ = Θ , B} {sceσ = σ} =
-  ≅-to-≡[] {B = sce} isSetEnv
-           (≡[]-to-≅ {B = sce} (π₁sce+ {sceσ = σ ++sce Θ})
-           ∙≅ ≡[]-to-≅ (apd (λ σ → σ +sce B) (π₁sce++ {Θ = Θ} {sceσ = σ})))
-π₂sce++ : {Γ Δ Θ : Con} {A : Ty} {σ : Env Γ (Δ , A)} {sceσ : sce σ} →
-          π₂sce (sceσ ++sce Θ) ≡[ ap scv (π₂++ {σ = σ}) ]≡ (π₂sce sceσ) ++scv Θ
-π₂sce++ {Θ = ●} = refl
-π₂sce++ {Θ = Θ , B} {sceσ = σ} =
-  ≅-to-≡[] {B = scv} isSetVal
-           (≡[]-to-≅ {B = scv} (π₂sce+ {sceσ = σ ++sce Θ})
-           ∙≅ ≡[]-to-≅ (apd (λ u → u +scv B) (π₂sce++ {Θ = Θ} {sceσ = σ})))
+
+
+{-
+  Main lemma:
+  The fact that strong computability implies termination of quote is actually
+  not obvious. The proof requires to simultaneously prove the converse for
+  neutral values.
+-}
+-- Main direction: strong computability implies termination of quote.
+scv-q : {Γ : Con} {A : Ty} {v : Val Γ A} →
+        scv v → Σ (Nf Γ A) (λ n → q v ⇒ n)
+-- Converse for neutral values.
+q-scv : {Γ : Con} {A : Ty} {v : Ne Val Γ A} {n : Ne Nf Γ A} →
+        qs v ⇒ n → scv (neu v)
+
+-- The converse allows in particular to show that variables are sc.
+scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (neu (var x))
+scvvar = q-scv qsvar
+
+
+scv-q {A = o} scvv = scvv
+-- For functions, we follow the definition of quote and apply
+-- the function to vz. This is why sc of variables is required.
+scv-q {A = A ⟶ B} scvf =
+  let fz ,, $fz ,, scvfz = scvf (drop A idw) (scvvar {x = z}) in
+  let nfz ,, qfz = scv-q scvfz in
+  lam nfz ,, q⟶ $fz qfz
+
+
+q-scv {A = o} {n = n} qv = neu n ,, qo qv
+-- For functions, since we are considering neutral values, application
+-- to a value is trivial. Quote simply quotes the function and the value
+-- separately, hence the proof would be simple if it was not for a few
+-- weakenings and transports.
+q-scv {A = A ⟶ B} {f} {n} qf {Δ} σ {v} scvv =
+  neu (app (f +NV σ) v) ,,
+  $app (f +NV σ) v ,,
+  q-scv (qsapp (qf +qs σ) (snd (scv-q scvv)))
 
 
 
 -- The identity environment is strongly computable.
 sceid : {Γ : Con} → sce (idenv {Γ})
 sceid {●} = tt
-sceid {Γ , A} = sceid +sce A ,, scvvar
+sceid {Γ , A} = sceid +sce (drop A idw) ,, scvvar
