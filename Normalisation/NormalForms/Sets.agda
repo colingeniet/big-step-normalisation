@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 module Normalisation.NormalForms.Sets where
 
@@ -21,6 +21,11 @@ open import Normalisation.NormalForms
   as for variables (see Normalisation.Variables.Sets for more details).
 -}
 
+postulate
+  isSetNf : {Γ : Con} {A : Ty} → isSet (Nf Γ A)
+  isSetEnv : {Γ Δ : Con} → isSet (Env Γ Δ)
+
+{-
 -- Untyped normal forms.
 data untyped-Nf : Set
 data untyped-Ne : Set
@@ -140,3 +145,4 @@ discreteNf u v with discrete-untyped-Nf (untype-Nf u) (untype-Nf v)
 
 isSetNf : {Γ : Con} {A : Ty} → isSet (Nf Γ A)
 isSetNf = DiscreteisSet discreteNf
+-}

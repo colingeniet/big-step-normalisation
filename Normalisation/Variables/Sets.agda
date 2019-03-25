@@ -12,49 +12,53 @@ open import Library.Maybe
 open import Syntax.Types
 open import Syntax.Types.Sets
 open import Normalisation.Variables
-open import Agda.Builtin.Nat
-open import Library.Nat.Sets
+open import Normalisation.Variables.Eliminator
 
-{-
-  The indexing of variables by contexts and types makes deciding equality
-  suprisingly annoying: even the seemingly obvious base case
-    discreteVar z z = yes refl
-  fails because the duplicated constraints  Γ = Γ' , A  can not be unified
-  without K.
-  A way to avoid this problem is to define untyping of variables, decide
-  equality of untyped variables (i.e. natural numbers), then re-type.
--}
 
-untype-var : {Γ : Con} {A : Ty} → Var Γ A → Nat
-untype-var z = zero
-untype-var (s x) = suc (untype-var x)
+z≢s : {Γ : Con} {A : Ty} {x : Var Γ A} → ¬ (z ≡ s x)
+z≢s {Γ} {A} p =
+  ⊤≢⊥ (ap f p)
+  where f : Var (Γ , A) A → Set
+        f = elimVar (λ _ → Set) ⊤ (λ _ → ⊥)
 
--- Note that typing of variables is only a partial function.
-type-var : (Γ : Con) → Nat → Maybe (Σ[ A ∈ Ty ] Var Γ A)
-type-var ● n = no
-type-var (Γ , B) zero = yes (B ,, z)
-type-var (Γ , B) (suc n) =
-  maybe-lift (λ {(A ,, x) → A ,, s x}) (type-var Γ n)
+s-injective : {Γ : Con} {A B : Ty} {x y : Var Γ A} →
+              s {B = B} x ≡ s y → x ≡ y
+s-injective p = yes-injective (ap (λ {(s x) → yes x; z → no}) p)
 
--- However, type-var is a left inverse of untype-var.
-type-var-inverse : {Γ : Con} {A : Ty} {x : Var Γ A} →
-                   type-var Γ (untype-var x) ≡ yes (A ,, x)
-type-var-inverse {x = z} = refl
-type-var-inverse {Γ , _} {x = s x} =
-  ap (maybe-lift (λ {(A ,, x) → A ,, s x}))
-     (type-var-inverse {Γ = Γ} {x = x})
 
--- Thus untype-var is injective.
-untype-var-injective : {Γ : Con} {A : Ty} {x y : Var Γ A} →
-                       untype-var x ≡ untype-var y → x ≡ y
-untype-var-injective {Γ} p =
-  let p' = yes-injective (type-var-inverse ⁻¹
-                         ∙ ap (type-var Γ) p
-                         ∙ type-var-inverse)
-  in make-non-dependent {B = λ A → Var Γ A} isSetTy (apd snd p')
-
--- Using injectivity, it suffice to decide equality of untyped variables.
 discreteVar : {Γ : Con} {A : Ty} → Discrete (Var Γ A)
-discreteVar x y with discreteNat (untype-var x) (untype-var y)
-...                | yes p = yes (untype-var-injective p)
-...                | no n = no λ p → n (ap untype-var p)
+discreteVar z = elimVar (λ y → Decidable (z ≡ y))
+                        (yes refl) (λ _ → no z≢s)
+discreteVar (s x) z = no λ p → z≢s (p ⁻¹)
+discreteVar (s x) (s y)
+  with discreteVar x y
+...  | yes p = yes (ap s p)
+...  | no n = no λ p → n (s-injective p)
+
+
+
+z≇s : {Γ : Con} {A B : Ty} {x : Var Γ B} →
+      ¬ (z {A = A} ≅⟨ Var (Γ , A) ⟩ (s {B = A} x))
+z≇s {Γ} {A} {B} p =
+  ⊤≢⊥ (apd f (snd p))
+  where f : {C : Ty} → Var (Γ , A) C → Set
+        f z = ⊤
+        f (s _) = ⊥
+
+s-heterogeneousInjective : {Γ : Con} {A B C : Ty} {x : Var Γ A} {y : Var Γ B} →
+                           s x ≅⟨ Var (Γ , C) ⟩ s y → x ≅⟨ Var Γ ⟩ y
+s-heterogeneousInjective p =
+  ≡[]-to-≅ (yes-injective (apd f (snd p)))
+  where f : {Γ : Con} {A B : Ty} → Var (Γ , B) A → Maybe (Var Γ A)
+        f (s x) = yes x
+        f z = no
+
+discreteHeterogeneousVar : {Γ : Con} {A B : Ty} (x : Var Γ A) (y : Var Γ B) →
+                           Decidable (x ≅⟨ Var Γ ⟩ y)
+discreteHeterogeneousVar z z = yes (≡-to-≅ refl)
+discreteHeterogeneousVar z (s x) = no z≇s
+discreteHeterogeneousVar (s x) z = no λ p → z≇s (p ≅⁻¹)
+discreteHeterogeneousVar (s x) (s y)
+  with discreteHeterogeneousVar x y
+...  | yes p = yes (≡[]-to-≅ (apd s (snd p)))
+...  | no n = no λ p → n (s-heterogeneousInjective p)

@@ -24,11 +24,12 @@ maybe-bind _ no = no
 maybe-bind f (yes x) = f x
 
 
-yes-injective : ∀ {l} {A : Set l} {x y : A} → yes x ≡ yes y → x ≡ y
+yes-injective : ∀ {l} {A : I → Set l} {x : A i0} {y : A i1} →
+                  PathP (λ i → Maybe (A i)) (yes x) (yes y) → PathP A x y
 yes-injective {A = A} {x} p i =
   yes-elim (p i) partial
-  where partial : yes x ≡ p i
+  where partial : PathP (λ j → Maybe (A (i ∧ j))) (yes x) (p i)
         partial j = p (i ∧ j)
-        yes-elim : (z : Maybe A) → yes x ≡ z → A
+        yes-elim : ∀ {i} (z : Maybe (A i)) → PathP (λ j → Maybe (A (i ∧ j))) (yes x) z → (A i)
         yes-elim (yes z) _ = z
-        yes-elim no p = ⊥-elim (⊤≢⊥ (ap (λ {(yes _) → ⊤; no → ⊥}) p))
+        yes-elim no p = ⊥-elim (⊤≢⊥ (apd (λ {(yes _) → ⊤; no → ⊥}) p))

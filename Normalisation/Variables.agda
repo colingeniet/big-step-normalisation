@@ -7,9 +7,9 @@
 module Normalisation.Variables where
 
 open import Syntax.Terms
-open import Normalisation.TermLike
 
-data Var : Tm-like where
+
+data Var : Con → Ty → Set where
   z : {Γ : Con} {A : Ty} → Var (Γ , A) A
   s : {Γ : Con} {A B : Ty} → Var Γ A → Var (Γ , B) A
 

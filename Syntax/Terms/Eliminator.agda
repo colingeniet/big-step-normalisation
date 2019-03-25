@@ -90,8 +90,7 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
 
   termᴹ (id∘ {σ = σ} i) = id∘ᴹ (termᴹ σ) i
   termᴹ (∘id {σ = σ} i) = ∘idᴹ (termᴹ σ) i
-  termᴹ (∘∘ {σ = σ} {ν = ν} {δ = δ} i) =
-    ∘∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ δ) i
+  termᴹ (∘∘ {σ = σ} {ν = ν} {δ = δ} i) = ∘∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ δ) i
   termᴹ (εη {σ = σ} i) = εηᴹ (termᴹ σ) i
   termᴹ (π₁β {σ = σ} {u = u} i) = π₁βᴹ (termᴹ σ) (termᴹ u) i
   termᴹ (π₂β {σ = σ} {u = u} i) = π₂βᴹ (termᴹ σ) (termᴹ u) i
@@ -99,8 +98,7 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
   termᴹ (β {u = u} i) = βᴹ (termᴹ u) i
   termᴹ (η {f = f} i) = ηᴹ (termᴹ f) i
   termᴹ (lam[] {u = u} {σ = σ} i) = lam[]ᴹ (termᴹ u) (termᴹ σ) i
-  termᴹ (,∘ {σ = σ} {ν = ν} {u = u} i) =
-    ,∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ u) i
+  termᴹ (,∘ {σ = σ} {ν = ν} {u = u} i) = ,∘ᴹ (termᴹ σ) (termᴹ ν) (termᴹ u) i
 
   termᴹ (isSetTm p q i j) =
     isSetDependent2 {B = Tmᴹ} isSetTm isSetTmᴹ

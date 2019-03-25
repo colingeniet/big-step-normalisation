@@ -26,6 +26,12 @@ isSet : ∀ {l} → Set l → Set l
 isSet A = {x y : A} → isProp (x ≡ y)
 
 
+K : ∀ {l m} {A : Set l} {x : A} {B : x ≡ x → Set m} →
+      isSet A → B refl → (p : x ≡ x) → B p
+K {B = B} isSetA y p = tr B (isSetA refl p) y
+      
+
+
 -- In a mere proposition, any two points can be joined by a path
 -- which furthermore coincides with an arbitrary partial path.
 isPropPartial : ∀ {l} {A : Set l} → isProp A →
