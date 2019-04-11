@@ -2,7 +2,7 @@
 
 -- Definition of generalised weakening.
 
-module Syntax.Weakening where
+module Weakening.Weakening where
 
 open import Library.Equality
 open import Syntax.Types
@@ -43,6 +43,7 @@ id∘w {σ = keep A σ} = ap (keep A) id∘w
 ∘∘w {ν = drop A ν} {keep A δ} = ap (drop A) (∘∘w {δ = δ})
 ∘∘w {σ = drop A σ} {keep A ν} {keep A δ} = ap (drop A) (∘∘w {δ = δ})
 ∘∘w {σ = keep A σ} {keep A ν} {keep A δ} = ap (keep A) (∘∘w {δ = δ})
+
 
 -- Embedding into substitutions
 ⌜_⌝w : {Γ Δ : Con} → Wk Γ Δ → Tms Γ Δ

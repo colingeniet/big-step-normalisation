@@ -4,7 +4,6 @@ module Syntax.Terms.Lemmas where
 
 open import Library.Equality
 open import Syntax.Terms
---open import Syntax.Terms.Weakening
 
 -- Interaction between projections and composition.
 π₁∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ν : Tms Γ Δ} →
