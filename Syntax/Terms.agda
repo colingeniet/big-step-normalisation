@@ -56,12 +56,12 @@ data term where
   π₁β : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} → π₁ (σ , u) ≡ σ
   π₂β : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} → π₂ (σ , u) ≡ u
   πη : {Γ Δ : Con} {A : Ty} {σ : Tms Γ (Δ , A)} → (π₁ σ , π₂ σ) ≡ σ
+  ,∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ Θ} {ν : Tms Γ Δ} {u : Tm Δ A} →
+        (σ , u) ∘ ν ≡ σ ∘ ν , u [ ν ]
   β : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} → app (lam u) ≡ u
   η : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} → lam (app f) ≡ f
   lam[] : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {σ : Tms Γ Δ} →
            (lam u) [ σ ] ≡ lam (u [ σ ∘ (π₁ id) , π₂ id ])
-  ,∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ Θ} {ν : Tms Γ Δ} {u : Tm Δ A} →
-        (σ , u) ∘ ν ≡ σ ∘ ν , u [ ν ]
   isSetTm : {Γ : Con} {A : Ty} → isSet (Tm Γ A)
   isSetTms : {Γ Δ : Con} → isSet (Tms Γ Δ)
 

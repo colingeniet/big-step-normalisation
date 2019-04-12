@@ -68,13 +68,15 @@ isSetapply (F ×p G) = isSet× (isSetapply F) (isSetapply G)
   +∘ F {x = x} {σ} {ν} i ,, +∘ G {x = y} {σ} {ν} i
 
 -- Projections
-π₁n : (F : Pshw {l}) (G : Pshw {m}) → Natw (F ×p G) F
-act (π₁n F G) Γ (x ,, _) = x
-nat (π₁n F G) = refl
+-- Note that the two presheaves whose product is used must can not be
+-- inferred in general.
+π₁n : {F : Pshw {l}} (G : Pshw {m}) (H : Pshw {n}) → Natw F (G ×p H) → Natw F G
+act (π₁n G H θ) Γ x = fst (act θ Γ x)
+nat (π₁n G H θ) = ap fst (nat θ)
 
-π₂n : (F : Pshw {l}) (G : Pshw {m}) → Natw (F ×p G) G
-act (π₂n F G) Γ (_ ,, y) = y
-nat (π₂n F G) = refl
+π₂n : {F : Pshw {l}} (G : Pshw {m}) (H : Pshw {n}) → Natw F (G ×p H) → Natw F H
+act (π₂n G H θ) Γ x = snd (act θ Γ x)
+nat (π₂n G H θ) = ap snd (nat θ)
 
 <_,_> : Natw F G → Natw F H → Natw F (G ×p H)
 act < θ , η > Γ x = act θ Γ x ,, act η Γ x
@@ -82,16 +84,21 @@ nat < θ , η > = ap2 _,,_ (nat θ) (nat η)
 
 -- Laws
 π₁nβ : {F : Pshw {l}} {G : Pshw {m}} {H : Pshw {n}} {θ : Natw F G} {η : Natw F H} →
-       (π₁n G H) ∘n < θ , η > ≡ θ
+       π₁n G H < θ , η > ≡ θ
 π₁nβ = nat≡ refl
 
 π₂nβ : {F : Pshw {l}} {G : Pshw {m}} {H : Pshw {n}} {θ : Natw F G} {η : Natw F H} →
-       (π₂n G H) ∘n < θ , η > ≡ η
+       π₂n G H < θ , η > ≡ η
 π₂nβ = nat≡ refl
 
 πnη : {F : Pshw {l}} {G : Pshw {m}} {H : Pshw {n}} {θ : Natw F (G ×p H)} →
-      < (π₁n G H) ∘n θ , (π₂n G H) ∘n θ > ≡ θ
+      < π₁n G H θ , π₂n G H θ > ≡ θ
 πnη {θ = θ} = nat≡ (λ i Γ x → act θ Γ x)
+
+,∘n : {F : Pshw {l}} {G : Pshw {m}} {H : Pshw {n}} {K : Pshw {k}}
+      {θ : Natw F G} {η : Natw F H} {α : Natw K F} →
+      < θ , η > ∘n α ≡ < θ ∘n α , η ∘n α >
+,∘n = nat≡ refl
 
 
 -- Exponential
@@ -153,10 +160,10 @@ nat (appp {G = G} θ) {Γ} {Δ} {σ} {x ,, y} =
 natlam : {F : Pshw {l}} {G : Pshw {m}} {H : Pshw {n}} {K : Pshw {k}}
          {θ : Natw (F ×p G) H} {η : Natw K F} →
          lamp {F = F} {G = G} {H = H} θ ∘n η ≡
-         lamp {F = K} {G = G} {H = H} (θ ∘n < η ∘n (π₁n K G) , idn ∘n (π₂n K G) >)
+         lamp {F = K} {G = G} {H = H} (θ ∘n < η ∘n (π₁n K G idn) , (π₂n K G idn) >)
 natlam {F = F} {G} {H} {K} {θ} {η} =
   let lθ = lamp {F = F} {G = G} {H = H} θ
-      η↑ = < η ∘n (π₁n K G) , idn ∘n (π₂n K G) >
+      η↑ = < η ∘n (π₁n K G idn) , (π₂n K G idn) >
       lθη↑ = lamp {F = K} {G = G} {H = H} (θ ∘n η↑)
   in nat≡ λ {i Δ x →
               let p : act lθ Δ (act η Δ x)
@@ -167,3 +174,4 @@ natlam {F = F} {G} {H} {K} {θ} {η} =
                                    p = ap (λ x → act θ Γ (x ,, y)) (nat η ⁻¹)
                                in p i}
               in p i}
+

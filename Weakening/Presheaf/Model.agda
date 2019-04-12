@@ -27,7 +27,7 @@ record PshModel : Set₁ where
   ⟦_⟧ : {i : term-index} → term i → ⟦ i ⟧type
 
   ⟦ u [ σ ] ⟧ = ⟦ u ⟧ ∘n ⟦ σ ⟧
-  ⟦ π₂ {Δ = Δ} {A} σ ⟧ = π₂n ⟦ Δ ⟧C ⟦ A ⟧T ∘n ⟦ σ ⟧
+  ⟦ π₂ {Δ = Δ} {A} σ ⟧ = π₂n ⟦ Δ ⟧C ⟦ A ⟧T ⟦ σ ⟧
   ⟦ lam {Γ = Γ} {A} {B} u ⟧ =
     lamp {F = ⟦ Γ ⟧C} {G = ⟦ A ⟧T} {H = ⟦ B ⟧T} ⟦ u ⟧
   ⟦ app {Γ = Γ} {A} {B} f ⟧ =
@@ -37,15 +37,15 @@ record PshModel : Set₁ where
   ⟦ σ ∘ ν ⟧ = ⟦ σ ⟧ ∘n ⟦ ν ⟧ 
   ⟦ ε ⟧ = !p
   ⟦ σ , u ⟧ = <_,_> ⟦ σ ⟧ ⟦ u ⟧
-  ⟦ π₁ {Δ = Δ} {A} σ ⟧ = (π₁n ⟦ Δ ⟧C ⟦ A ⟧T) ∘n ⟦ σ ⟧
+  ⟦ π₁ {Δ = Δ} {A} σ ⟧ = (π₁n ⟦ Δ ⟧C ⟦ A ⟧T) ⟦ σ ⟧
 
   ⟦ π₂β {σ = σ} {u = u} i ⟧ = π₂nβ {θ = ⟦ σ ⟧} {η = ⟦ u ⟧} i
   ⟦ β {Γ = Γ} {A} {B} {u} i ⟧ =
     βp {F = ⟦ Γ ⟧C} {G = ⟦ A ⟧T} {H = ⟦ B ⟧T} {θ = ⟦ u ⟧} i
   ⟦ η {Γ = Γ} {A} {B} {f} i ⟧ =
     ηp {F = ⟦ Γ ⟧C} {G = ⟦ A ⟧T} {H = ⟦ B ⟧T} {θ = ⟦ f ⟧} i
-  ⟦ lam[] {Γ = Γ} {Δ} {A} {B} {u} {σ} i ⟧ = {!!}
-    --natlam {F = ⟦ Δ ⟧C} {G = ⟦ A ⟧T} {H = ⟦ B ⟧T} {K = ⟦ Γ ⟧C} {θ = ⟦ u ⟧} {η = ⟦ σ ⟧} i
+  ⟦ lam[] {Γ = Γ} {Δ} {A} {B} {u} {σ} i ⟧ =
+    natlam {F = ⟦ Δ ⟧C} {G = ⟦ A ⟧T} {H = ⟦ B ⟧T} {K = ⟦ Γ ⟧C} {θ = ⟦ u ⟧} {η = ⟦ σ ⟧} i
   
   ⟦ id∘ {σ = σ} i ⟧ = id∘n {θ = ⟦ σ ⟧} i
   ⟦ ∘id {σ = σ} i ⟧ = ∘idn {θ = ⟦ σ ⟧} i
@@ -53,7 +53,7 @@ record PshModel : Set₁ where
   ⟦ εη {σ = σ} i ⟧ = !pη {θ = ⟦ σ ⟧} i
   ⟦ π₁β {σ = σ} {u} i ⟧ = π₁nβ {θ = ⟦ σ ⟧} {η = ⟦ u ⟧} i
   ⟦ πη {Γ} {Δ} {A} {σ = σ} i ⟧ = πnη {F = ⟦ Γ ⟧C} {G = ⟦ Δ ⟧C} {H = ⟦ A ⟧T} {θ = ⟦ σ ⟧} i
-  ⟦ ,∘ {σ = σ} {ν} {u} i ⟧ = {!!}
+  ⟦ ,∘ {σ = σ} {ν} {u} i ⟧ = ,∘n {θ = ⟦ σ ⟧} {⟦ u ⟧} {⟦ ν ⟧} i
 
   ⟦ isSetTm p q i j ⟧ = isSetnat (λ j → ⟦ p j ⟧) (λ j → ⟦ q j ⟧) i j
   ⟦ isSetTms p q i j ⟧ = isSetnat (λ j → ⟦ p j ⟧) (λ j → ⟦ q j ⟧) i j
