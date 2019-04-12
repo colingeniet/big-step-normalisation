@@ -11,7 +11,7 @@ data Ty : Set where
   o : Ty
   _⟶_ : Ty → Ty → Ty
 
-infixr 10 _,_
+infixl 10 _,_
 data Con : Set where
   ● : Con
   _,_ : Con → Ty → Con

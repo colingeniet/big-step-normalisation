@@ -9,7 +9,7 @@ open import Library.Sets
 
 
 isProp⊤ : isProp ⊤
-isProp⊤ ⊤ ⊤ = refl
+isProp⊤ _ _ = refl
 
 
 isProp× : ∀ {l m} {A : Set l} {B : Set m} →

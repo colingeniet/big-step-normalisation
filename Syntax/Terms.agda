@@ -31,7 +31,7 @@ Tm Γ A = term (Tm-i Γ A)
 Tms : Con → Con → Set
 Tms Γ Δ = term (Tms-i Γ Δ)
 
-infixr 10 _,_
+infixl 10 _,_
 infixr 20 _∘_
 infixl 30 _[_]
 

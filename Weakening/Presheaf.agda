@@ -5,10 +5,8 @@ module Weakening.Presheaf where
 open import Agda.Primitive
 open import Library.Equality
 open import Library.Sets
-open import Library.Pairs
-open import Library.Pairs.Sets
 open import Syntax.Types
-open import Weakening.Weakening
+open import Weakening.Variable
 
 {-
   Only presheaves over the category of weakenings are really required here,
@@ -16,7 +14,7 @@ open import Weakening.Weakening
   It is important to require the codomain of presheaves to be actual sets and
   not arbitrary types, to ensure e.g. the categorical laws for natural transformations.
 -}
-record Pshw (l : Level) : Set (lsuc l) where
+record Pshw {l : Level} : Set (lsuc l) where
   field
     apply : Con → Set l
     isSetapply : {Γ : Con} → isSet (apply Γ)
@@ -32,7 +30,7 @@ open Pshw public
 
 
 -- Natural transformation between presheaves on weakenings.
-record Natw {l m} (F : Pshw l) (G : Pshw m) : Set (l ⊔ m) where
+record Natw {l m} (F : Pshw {l}) (G : Pshw {m}) : Set (l ⊔ m) where
   field
     act : (Γ : Con) → F $o Γ → G $o Γ
     nat : {Γ Δ : Con} {σ : Wk Γ Δ} {x : F $o Δ} →
@@ -43,10 +41,8 @@ open Natw public
 private
   variable
     l m n k : Level
-    F : Pshw l
-    G : Pshw m
-    H : Pshw n
-    K : Pshw k
+    F : Pshw {l}
+    G : Pshw {m}
 
 
 -- Because the codomain of presheaves are sets, it is never necessary to
@@ -74,71 +70,3 @@ nat (isSetnat {F = F} {G = G} p q i j) {Γ} {Δ} {σ} {x} k =
           (isSetapply G (λ j → act (p j) Δ x) (λ j → act (q j) Δ x) i j)
            +⟨ G ⟩ σ})
       i j
-
-
--- Category of presheaves and natural transformations.
--- Morphisms
-idn : Natw F F
-act idn _ x = x
-nat idn = refl
-
-_∘n_ : Natw G H → Natw F G → Natw F H
-act (θ ∘n η) Γ x = act θ Γ (act η Γ x)
-nat (θ ∘n η) = ap (act θ _) (nat η) ∙ nat θ
-
--- Laws
-id∘n : {θ : Natw F G} → idn ∘n θ ≡ θ
-id∘n = nat≡ refl
-
-∘idn : {θ : Natw F G} → θ ∘n idn ≡ θ
-∘idn = nat≡ refl
-
-∘∘n : {θ : Natw H K} {η : Natw G H} {α : Natw F G} →
-      (θ ∘n η) ∘n α ≡ θ ∘n (η ∘n α)
-∘∘n = nat≡ refl
-
-
--- Products
-_×p_ : ∀ {l m} → Pshw l → Pshw m → Pshw (l ⊔ m)
-apply (F ×p G) Γ = apply F Γ × apply G Γ
-isSetapply (F ×p G) = isSet× (isSetapply F) (isSetapply G)
-map (F ×p G) σ (x ,, y) = map F σ x ,, map G σ y
-+id (F ×p G) {x = x ,, y} i = +id F {x = x} i ,, +id G {x = y} i
-+∘ (F ×p G) {x = x ,, y} {σ} {ν} i =
-  +∘ F {x = x} {σ} {ν} i ,, +∘ G {x = y} {σ} {ν} i
-
--- Projections
-π₁n : (F : Pshw l) (G : Pshw m) → Natw (F ×p G) F
-act (π₁n F G) Γ (x ,, _) = x
-nat (π₁n F G) = refl
-
-π₂n : (F : Pshw l) (G : Pshw m) → Natw (F ×p G) G
-act (π₂n F G) Γ (_ ,, y) = y
-nat (π₂n F G) = refl
-
-<_,_> : Natw F G → Natw F H → Natw F (G ×p H)
-act < θ , η > Γ x = act θ Γ x ,, act η Γ x
-nat < θ , η > = ap2 _,,_ (nat θ) (nat η)
-
--- Laws
-π₁nβ : {F : Pshw l} {G : Pshw m} {H : Pshw n} {θ : Natw F G} {η : Natw F H} →
-       (π₁n G H) ∘n < θ , η > ≡ θ
-π₁nβ = nat≡ refl
-
-π₂nβ : {F : Pshw l} {G : Pshw m} {H : Pshw n} {θ : Natw F G} {η : Natw F H} →
-       (π₂n G H) ∘n < θ , η > ≡ η
-π₂nβ = nat≡ refl
-
-πnη : {F : Pshw l} {G : Pshw m} {H : Pshw n} {θ : Natw F (G ×p H)} →
-      < (π₁n G H) ∘n θ , (π₂n G H) ∘n θ > ≡ θ
-πnη {θ = θ} = nat≡ (λ i Γ x → act θ Γ x)
-
-{-
--- Exponential
-_⇒p_ : ∀ {l m} → Pshw l → Pshw m → Pshw (l ⊔ m)
-apply (F ⇒p G) Γ = {!!}
-isSetapply (F ⇒p G) = {!!}
-map (F ⇒p G) = {!!}
-+id (F ⇒p G) = {!!}
-+∘ (F ⇒p G) = {!!}
--}

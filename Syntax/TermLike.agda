@@ -5,7 +5,7 @@
   e.g. values, normal forms...
 -}
 
-module Normalisation.TermLike where
+module Syntax.TermLike where
 
 open import Library.Equality
 open import Syntax.Terms
@@ -19,7 +19,7 @@ Tms-like = (Γ Δ : Con) → Set
 
 -- Lifting from Tm-like to Tms-like (it's just a list).
 infix 60 list
-infixr 10 _,_
+infixl 10 _,_
 data list (X : Tm-like) : Tms-like where
   ε : {Γ : Con} → list X Γ ●
   _,_ : {Γ Δ : Con} {A : Ty} → list X Γ Δ → X Γ A → list X Γ (Δ , A)
