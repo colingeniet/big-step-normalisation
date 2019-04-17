@@ -75,6 +75,14 @@ _∙_ : ∀ {l} {A : Set l} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 _∙_ {x = x} p q i = hcomp (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p i)
 
 
+-- Equality proofs syntactic sugar
+_≡⟨_⟩_ : ∀ {l} {A : Set l} (x : A) {y z : A} → x ≡ y → y ≡ z → x ≡ z
+x ≡⟨ p ⟩ q = p ∙ q
+
+_∎ : ∀ {l} {A : Set l} (x : A) → x ≡ x
+x ∎ = refl
+
+
 -- Transitivity laws.
 
 {-
@@ -369,20 +377,20 @@ open _≅_ public
 -- The downside is that most of the time, B needs to be specified.
 ≅-syntax = _≅_
 infix 5 ≅-syntax
-syntax ≅-syntax {B = B} x y = x ≅⟨ B ⟩ y
+syntax ≅-syntax {B = B} x y = x ≅[ B ] y
 
 
-refl≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} {x : B a} → x ≅⟨ B ⟩ x
+refl≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} {x : B a} → x ≅[ B ] x
 refl≅ = refl ,≅ refl
 
 _≅⁻¹ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b} →
-       x ≅⟨ B ⟩ y → y ≅⟨ B ⟩ x
+       x ≅[ B ] y → y ≅[ B ] x
 (p ,≅ q) ≅⁻¹ = p ⁻¹ ,≅ q ⁻¹
 
 infixr 6 _∙≅_
 _∙≅_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
          {x : B a} {y : B b} {z : B c} →
-         x ≅⟨ B ⟩ y → y ≅⟨ B ⟩ z → x ≅⟨ B ⟩ z
+         x ≅[ B ] y → y ≅[ B ] z → x ≅[ B ] z
 _∙≅_ {B = B} {x = x} {z = z} (p ,≅ q) (r ,≅ s) =
   p ∙ r ,≅
   tr (λ P → x ≡[ P ]≡ z)
@@ -391,43 +399,19 @@ _∙≅_ {B = B} {x = x} {z = z} (p ,≅ q) (r ,≅ s) =
 
 
 ≡-to-≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} {x y : B a} →
-           x ≡ y → x ≅⟨ B ⟩ y
+           x ≡ y → x ≅[ B ] y
 ≡-to-≅ p = refl ,≅ p
 
 ≡[]-to-≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b}
-             {P : a ≡ b} → x ≡[ ap B P ]≡ y → x ≅⟨ B ⟩ y
+             {P : a ≡ b} → x ≡[ ap B P ]≡ y → x ≅[ B ] y
 ≡[]-to-≅ {P = P} p = P ,≅ p
 
 
-{-
--- An alternative definition of dependent paths.
-_≡*_*≡_ : ∀ {l} {A B : Set l} → A → A ≡ B → B → Set l
-x ≡* P *≡ y = (P * x) ≡ y
+-- Syntactic sugar
+_≅⟨_⟩_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
+           (x : B a) {y : B b} {z : B c} →
+           {P : a ≡ b} → x ≡[ ap B P ]≡ y → y ≅[ B ] z → x ≅[ B ] z
+x ≅⟨ p ⟩ q = (≡[]-to-≅ p) ∙≅ q
 
--- Isomorphism between the two notions of dependent paths.
-≡[]≡to≡**≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
-                x ≡[ P ]≡ y → x ≡* P *≡ y
-≡[]≡to≡**≡ {P = P} {x} {y} p = tr (λ Q → P * x ≡[ Q ]≡ y)
-                                  (-⁻¹∙- {p = P})
-                                  ((P *fill x ⁻¹) d∙d p)
-
-≡**≡to≡[]≡ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} →
-                x ≡* P *≡ y → x ≡[ P ]≡ y
-≡**≡to≡[]≡ {P = P} {x} {y} p = tr (λ Q → x ≡[ Q ]≡ y)
-                                  ∙refl
-                                  ((P *fill x) d∙d p)
-
-≡[]≡to≡**≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
-                   {p : x ≡[ P ]≡ y} → ≡**≡to≡[]≡ (≡[]≡to≡**≡ p) ≡ p
-≡[]≡to≡**≡-iso {P = P} {x} {y} {p} =
-  let *x = P * x in
-  let x≡*x = P *fill x in
-  let p* = x≡*x ⁻¹ d∙d p in
-  let p*' = tr (λ Q → *x ≡[ Q ]≡ y) (-⁻¹∙- {p = P}) p* in -- ≡[]≡to≡**≡ p
-  let p*≡p*' = trfill (λ Q → *x ≡[ Q ]≡ y) (-⁻¹∙- {p = P}) p* in
-  {!!}
-
-≡**≡to≡[]≡-iso : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B}
-                   {p : x ≡* P *≡ y} → ≡[]≡to≡**≡ (≡**≡to≡[]≡ {P = P} p) ≡ p
-≡**≡to≡[]≡-iso {P = P} {x} {y} {p} = {!!}
--}
+_≅∎ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} (x : B a) → x ≅[ B ] x
+x ≅∎ = refl≅
