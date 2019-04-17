@@ -4,11 +4,11 @@
   Definition of neutral forms, used to define both values and normal forms.
 -}
 
-module Normalisation.NeutralForms where
+module NormalForm.NeutralForm where
 
 open import Syntax.Terms
-open import Normalisation.TermLike
-open import Normalisation.Variables
+open import Syntax.TermLike
+open import Weakening.Variable
 
 
 -- Neutral forms : a variable applied to terms satisfying P.

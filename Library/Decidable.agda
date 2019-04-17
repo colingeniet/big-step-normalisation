@@ -50,7 +50,7 @@ private
 
 DiscreteisSet : ∀ {l} {A : Set l} → Discrete A → isSet A
 DiscreteisSet discrete {x} {y} =
-  let c = λ {x} {y} → const (discrete x y) in
-  let invc = ≡map-inv c in
-  let isinvc = ≡map-isinv c in
-  constinv⇒isProp (discrete x y) invc isinvc
+  let c = λ {x} {y} → const (discrete x y)
+      invc = ≡map-inv c
+      isinvc = ≡map-isinv c
+  in constinv⇒isProp (discrete x y) invc isinvc

@@ -5,7 +5,7 @@ module Syntax.Terms.Weakening where
 open import Library.Equality
 open import Syntax.Terms
 open import Syntax.Terms.Lemmas
-open import Weakening.Variable
+open import Weakening.Variable.Base
 
 
 _+t_ : {Γ Δ : Con} {A : Ty} → Tm Δ A → Wk Γ Δ → Tm Γ A

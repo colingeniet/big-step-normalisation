@@ -10,7 +10,7 @@ open import Library.Pairs.Sets
 open import Syntax.Types
 open import Weakening.Presheaf
 open import Weakening.Variable
-open import Weakening.Variable.Presheaf
+
 
 private
   variable

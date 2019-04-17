@@ -11,8 +11,8 @@ open import Library.Pairs
 open import Library.Maybe
 open import Syntax.Types
 open import Syntax.Types.Sets
-open import Syntax.TermLike
-open import Weakening.Variable
+open import Syntax.List
+open import Weakening.Variable.Base
 open import Agda.Builtin.Nat
 open import Library.Nat.Sets
 
@@ -65,12 +65,7 @@ isSetVar = DiscreteisSet discreteVar
 
 
 discreteWk : {Γ Δ : Con} → Discrete (Wk Γ Δ)
-discreteWk ε ε = yes refl
-discreteWk (σ , x) (ν , y)
-  with discreteWk σ ν | discreteVar x y
-...  | no n  | _     = no λ p → n (ap π₁list p)
-...  | yes _ | no n  = no λ p → n (ap π₂list p)
-...  | yes p | yes q = yes (ap2 _,_ p q)
+discreteWk = discreteList discreteVar
 
 isSetWk : {Γ Δ : Con} → isSet (Wk Γ Δ)
 isSetWk = DiscreteisSet discreteWk

@@ -6,7 +6,7 @@ open import Agda.Primitive
 open import Library.Equality
 open import Library.Sets
 open import Syntax.Types
-open import Weakening.Variable
+open import Weakening.Variable.Base
 
 {-
   Only presheaves over the category of weakenings are really required here,

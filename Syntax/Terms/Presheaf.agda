@@ -5,7 +5,6 @@ module Syntax.Terms.Presheaf where
 open import Library.Equality
 open import Syntax.Terms
 open import Syntax.Terms.Weakening
-open import Weakening.Variable
 open import Weakening.Presheaf
 
 
