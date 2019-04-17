@@ -22,6 +22,16 @@ open import Agda.Builtin.Cubical.Sub public
 
 
 
+infix 5 _≡[_]≡_
+infix 8 _⁻¹
+infixr 6 _∙_ _d∙_ _∙d_ _d∙d_ _∙≅_
+infixr 20 _*_
+infix 5 _≅_ ≅-syntax
+infix 4 _,≅_
+infixr 0 _≡⟨_⟩_ _≅⟨_⟩_
+infix 1 _∎ _≅∎
+
+
 hfill : ∀ {l} {A : Set l} {φ : I} (u : ∀ i → Partial φ A)
           (u0 : A [ φ ↦ u i0 ]) → I → A
 hfill {φ = φ} u u0 i = hcomp (λ j → λ {(φ = i1) → u (i ∧ j) 1=1;
@@ -52,12 +62,10 @@ J≡ P c i = transp (λ _ → P refl) i c
 
 
 -- Dependent paths
-infix 5 _≡[_]≡_
 _≡[_]≡_ : ∀ {l} {A B : Set l} → A → A ≡ B → B → Set l
 _≡[_]≡_ {l} {A} x P y = PathP (λ i → P i) x y
 
 -- Symmetry
-infix 8 _⁻¹
 _⁻¹ : ∀ {l} {A : I → Set l} {x : A i0} {y : A i1} →
         PathP A x y → PathP (λ i → A (1- i)) y x
 (p ⁻¹) i = p (1- i)
@@ -70,7 +78,6 @@ refl⁻¹ : ∀ {l} {A : Set l} {x : A} → refl {x = x} ⁻¹ ≡ refl
 refl⁻¹ = refl
 
 -- Transitivity
-infixr 6 _∙_ _d∙_ _∙d_ _d∙d_
 _∙_ : ∀ {l} {A : Set l} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 _∙_ {x = x} p q i = hcomp (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p i)
 
@@ -222,7 +229,6 @@ ap∙ {f = f} {x} {y} {z} {p} {q} j i =
 
 
 -- Transport
-infixr 20 _*_
 _*_ : ∀ {l} {A B : Set l} → A ≡ B → A → B
 p * x = transp (λ i → p i) i0 x
 
@@ -363,8 +369,6 @@ private
 -- It is important that the dependent path lies over a path in the indexing
 -- family A, and not just over a path in the universe, because this allows
 -- to forget the underlying path whenever A is a set.
-infix 5 _≅_
-infix 4 _,≅_
 record _≅_ {l m} {A : Set l} {B : A → Set m} {a b : A} (x : B a) (y : B b) : Set (l ⊔ m) where
   constructor _,≅_
   field
@@ -376,7 +380,6 @@ open _≅_ public
 
 -- The downside is that most of the time, B needs to be specified.
 ≅-syntax = _≅_
-infix 5 ≅-syntax
 syntax ≅-syntax {B = B} x y = x ≅[ B ] y
 
 
@@ -387,7 +390,6 @@ _≅⁻¹ : ∀ {l m} {A : Set l} {B : A → Set m} {a b : A} {x : B a} {y : B b
        x ≅[ B ] y → y ≅[ B ] x
 (p ,≅ q) ≅⁻¹ = p ⁻¹ ,≅ q ⁻¹
 
-infixr 6 _∙≅_
 _∙≅_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
          {x : B a} {y : B b} {z : B c} →
          x ≅[ B ] y → y ≅[ B ] z → x ≅[ B ] z

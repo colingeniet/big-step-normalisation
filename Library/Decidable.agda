@@ -35,16 +35,19 @@ private
   constinv⇒isProp : ∀ {l} {A : Set l} (H : Decidable A)
                       (g : A → A) → ((x : A) → g (const H x) ≡ x) →
                       isProp A
-  constinv⇒isProp (yes a) g ginv x y = ginv x ⁻¹ ∙ ginv y
+  constinv⇒isProp (yes a) g ginv x y =
+    x   ≡⟨ ginv x ⁻¹ ⟩
+    g a ≡⟨ ginv y ⟩ y ∎
   constinv⇒isProp (no n) g ginv x = ⊥-elim (n x)
 
 
   -- And any map x≡y → x≡y has a left inverse.
   ≡map-inv : ∀ {l} {A : Set l} (f : {x y : A} → x ≡ y → x ≡ y) →
                {x y : A} → x ≡ y → x ≡ y
+  ≡map-inv f {x} p = f (refl {x = x}) ⁻¹  ∙ p
+
   ≡map-isinv : ∀ {l} {A : Set l} (f : {x y : A} → x ≡ y → x ≡ y) →
                  {x y : A} (p : x ≡ y) → ≡map-inv f (f p) ≡ p
-  ≡map-inv f {x} p = f (refl {x = x}) ⁻¹ ∙ p
   ≡map-isinv f {x} = J (λ p → ≡map-inv f (f p) ≡ p) -⁻¹∙-
 
 

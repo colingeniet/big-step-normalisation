@@ -43,5 +43,4 @@ mapnt : ({A : Ty} → Natw (F A) (Tm' A)) →
 act (mapnt θ) _ = mapt (act θ _)
 nat (mapnt θ {●}) {x = ε} = εη ⁻¹
 nat (mapnt θ {Δ , A}) {x = ρ , x} =
-  ap2 _,_ (nat (mapnt θ {Δ})) (nat θ)
-  ∙ ,∘ ⁻¹
+  ap2 _,_ (nat (mapnt θ {Δ})) (nat θ) ∙ ,∘ ⁻¹

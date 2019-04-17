@@ -83,12 +83,12 @@ make-non-dependent {B = B} H r = change-underlying {B = B} H r
 ≅-to-≡[] : ∀ {l m} {A : Set l} {B : A → Set m} →
              isSet A →
              {a b : A} {x : B a} {y : B b} →
-             x ≅⟨ B ⟩ y → {P : a ≡ b} → x ≡[ ap B P ]≡ y
+             x ≅[ B ] y → {P : a ≡ b} → x ≡[ ap B P ]≡ y
 ≅-to-≡[] {B = B} H p = change-underlying {B = B} H (snd p)
 
 ≅-to-≡ : ∀ {l m} {A : Set l} {B : A → Set m} →
            isSet A →
-           {a : A} {x y : B a} → x ≅⟨ B ⟩ y → x ≡ y
+           {a : A} {x y : B a} → x ≅[ B ] y → x ≡ y
 ≅-to-≡ {B = B} H p = make-non-dependent {B = B} H (snd p)
 
 

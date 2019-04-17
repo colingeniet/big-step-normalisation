@@ -56,24 +56,44 @@ idw {Γ , A} = wk↑ A idw
 ⌜_⌝w : {Γ Δ : Con} → Wk Γ Δ → Tms Γ Δ
 ⌜_⌝w = mapt ⌜_⌝v
 
+-- Embedding equations.
 ⌜wkwk⌝w : {Γ Δ : Con} {A : Ty} {σ : Wk Γ Δ} →
           ⌜ wkwk A σ ⌝w ≡ ⌜ σ ⌝w ∘ wk
-⌜wkwk⌝w {σ = ε} = εη ⁻¹
-⌜wkwk⌝w {σ = σ , x} = ap (λ x → x , _) ⌜wkwk⌝w ∙ ,∘ ⁻¹
+⌜wkwk⌝w {σ = ε} =
+  ε          ≡⟨ εη ⁻¹ ⟩
+  ⌜ ε ⌝w ∘ wk ∎
+⌜wkwk⌝w {A = A} {σ = σ , x} =
+  ⌜ wkwk A σ ⌝w , ⌜ x ⌝v [ wk ] ≡⟨ ap (λ x → x , _) ⌜wkwk⌝w ⟩
+  ⌜ σ ⌝w ∘ wk , ⌜ x ⌝v [ wk ]   ≡⟨ ,∘ ⁻¹ ⟩
+  (⌜ σ ⌝w , ⌜ x ⌝v) ∘ wk        ∎
 
 ⌜id⌝w : {Γ : Con} → ⌜ idw {Γ} ⌝w ≡ id
-⌜id⌝w {Γ = ●} = εη ⁻¹
-⌜id⌝w {Γ = Γ , A} = ap (λ x → x , vz)
-                       (⌜wkwk⌝w ∙ ap (λ x → x ∘ wk) ⌜id⌝w)
-                    ∙ ↑id
+⌜id⌝w {Γ = ●} =
+  ε  ≡⟨ εη ⁻¹ ⟩
+  id ∎
+⌜id⌝w {Γ = Γ , A} =
+  ⌜ wkwk A idw ⌝w , vz ≡⟨ ap (λ x → x , vz) ⌜wkwk⌝w ⟩
+  ⌜ idw ⌝w ∘ wk , vz   ≡⟨ ap (λ σ → σ ↑ A) ⌜id⌝w ⟩
+  (id ↑ A)             ≡⟨ ↑id ⟩
+  id                   ∎
 
 ⌜⌝+v : {Γ Δ : Con} {A : Ty} {x : Var Δ A} {σ : Wk Γ Δ} →
        ⌜ x +v σ ⌝v ≡ ⌜ x ⌝v [ ⌜ σ ⌝w ]
-⌜⌝+v {x = z} {σ = _ , _} = vz[,] ⁻¹
-⌜⌝+v {x = s x} {σ = σ , _} = ⌜⌝+v {x = x} {σ = σ}
-                             ∙ ap (λ x → _ [ x ]) (wk, ⁻¹) ∙ [][]
+⌜⌝+v {x = z} {σ = σ , y} =
+  ⌜ y ⌝v                ≡⟨ vz[,] ⁻¹ ⟩
+  vz [ ⌜ σ ⌝w , ⌜ y ⌝v ] ∎
+⌜⌝+v {A = A} {x = s x} {σ = σ , y} =
+  ⌜ x +v σ ⌝v                     ≡⟨ ⌜⌝+v ⟩
+  ⌜ x ⌝v [ ⌜ σ ⌝w ]                ≡⟨ ap (λ x → _ [ x ]) wk, ⁻¹ ⟩
+  ⌜ x ⌝v [ wk ∘ (⌜ σ ⌝w , ⌜ y ⌝v) ] ≡⟨ [][] ⟩
+  ⌜ x ⌝v [ wk ] [ ⌜ σ ⌝w , ⌜ y ⌝v ] ∎
 
 ⌜∘⌝w : {Γ Δ Θ : Con} {σ : Wk Δ Θ} {ν : Wk Γ Δ} → 
        ⌜ σ ∘w ν ⌝w ≡ ⌜ σ ⌝w ∘ ⌜ ν ⌝w
-⌜∘⌝w {σ = ε} = εη ⁻¹
-⌜∘⌝w {σ = σ , x} = ap2 _,_ ⌜∘⌝w ⌜⌝+v ∙ ,∘ ⁻¹
+⌜∘⌝w {σ = ε} {ν} =
+  ε              ≡⟨ εη ⁻¹ ⟩
+  ⌜ ε ⌝w ∘ ⌜ ν ⌝w ∎
+⌜∘⌝w {σ = σ , x} {ν} =
+  ⌜ σ ∘w ν ⌝w , ⌜ x +v ν ⌝v          ≡⟨ ap2 _,_ ⌜∘⌝w ⌜⌝+v ⟩
+  ⌜ σ ⌝w ∘ ⌜ ν ⌝w , ⌜ x ⌝v [ ⌜ ν ⌝w ] ≡⟨ ,∘ ⁻¹ ⟩
+  (⌜ σ ⌝w , ⌜ x ⌝v) ∘ ⌜ ν ⌝w          ∎

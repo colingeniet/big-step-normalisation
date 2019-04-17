@@ -8,39 +8,57 @@ open import Syntax.Terms
 -- Interaction between projections and composition.
 π₁∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ν : Tms Γ Δ} →
       π₁ (σ ∘ ν) ≡ (π₁ σ) ∘ ν
-π₁∘ {ν = ν} = ap π₁
-                 (ap (λ σ → σ ∘ ν) πη ⁻¹
-                 ∙ ,∘)
-              ∙ π₁β
+π₁∘ {σ = σ} {ν} =
+  π₁ (σ ∘ ν)                    ≡⟨ ap (λ σ → π₁ (σ ∘ ν)) πη ⁻¹ ⟩
+  π₁ ((π₁ σ , π₂ σ) ∘ ν)         ≡⟨ ap π₁ ,∘ ⟩
+  π₁ ((π₁ σ) ∘ ν , (π₂ σ) [ ν ]) ≡⟨ π₁β ⟩
+  (π₁ σ) ∘ ν                    ∎
 
 π₂∘ : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ (Θ , A)} {ν : Tms Γ Δ} →
       π₂ (σ ∘ ν) ≡ (π₂ σ) [ ν ]
-π₂∘ {ν = ν} = ap π₂ (ap (λ σ → σ ∘ ν) πη ⁻¹
-                    ∙ ,∘)
-              ∙ π₂β
+π₂∘ {σ = σ} {ν} =
+  π₂ (σ ∘ ν)                    ≡⟨ ap (λ σ → π₂ (σ ∘ ν)) πη ⁻¹ ⟩
+  π₂ ((π₁ σ , π₂ σ) ∘ ν)         ≡⟨ ap π₂ ,∘ ⟩
+  π₂ ((π₁ σ) ∘ ν , (π₂ σ) [ ν ]) ≡⟨ π₂β ⟩
+  (π₂ σ) [ ν ]                  ∎
+
 
 -- Applying id or ∘ to a term behaves as expected.
 [id] : {Γ : Con} {A : Ty} {u : Tm Γ A} → u [ id ] ≡ u
-[id] {u = u} = π₂β {σ = id} ⁻¹
-               ∙ ap π₂ (ap (λ ν → ν , u [ id ]) id∘ ⁻¹
-                       ∙ ,∘ ⁻¹ ∙ ∘id)
-               ∙ π₂β
+[id] {u = u} =
+  u [ id ]                ≡⟨ π₂β {σ = id} ⁻¹ ⟩
+  π₂ (id , u [ id ])      ≡⟨ ap (λ ν → π₂ (ν , u [ id ])) id∘ ⁻¹ ⟩
+  π₂ (id ∘ id , u [ id ]) ≡⟨ ap π₂ ,∘ ⁻¹ ⟩
+  π₂ ((id , u) ∘ id)      ≡⟨ ap π₂ ∘id ⟩
+  π₂ (id , u)             ≡⟨ π₂β ⟩
+  u                      ∎
 
 [][] : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ Θ} {ν : Tms Γ Δ} {u : Tm Θ A} →
        u [ σ ∘ ν ] ≡ u [ σ ] [ ν ]
-[][] {σ = σ} {ν = ν} {u = u} = π₂β {σ = σ ∘ ν} ⁻¹
-                               ∙ ap π₂ (ap (λ ρ → ρ , u [ σ ∘ ν ]) id∘ ⁻¹
-                                       ∙ ,∘ ⁻¹ ∙ ∘∘ ⁻¹)
-                               ∙ π₂∘ ∙ ap (λ u → u [ ν ]) π₂∘
-                               ∙ ap (λ u → u [ σ ] [ ν ]) π₂β
+[][] {σ = σ} {ν} {u} =
+  u [ σ ∘ ν ]                     ≡⟨ π₂β {σ = σ ∘ ν} ⁻¹ ⟩
+  π₂ (σ ∘ ν , u [ σ ∘ ν ])        ≡⟨ ap (λ ρ → π₂ (ρ , u [ σ ∘ ν ])) id∘ ⁻¹ ⟩
+  π₂ (id ∘ (σ ∘ ν) , u [ σ ∘ ν ]) ≡⟨ ap π₂ ,∘ ⁻¹ ⟩
+  π₂ ((id , u) ∘ (σ ∘ ν))         ≡⟨ ap π₂ ∘∘ ⁻¹ ⟩
+  π₂ (((id , u) ∘ σ) ∘ ν)         ≡⟨ π₂∘ ⟩
+  (π₂ ((id , u) ∘ σ)) [ ν ]       ≡⟨ ap (λ x → x [ ν ]) π₂∘ ⟩
+  (π₂ (id , u)) [ σ ] [ ν ]       ≡⟨ ap (λ u → u [ σ ] [ ν ]) π₂β ⟩
+  u [ σ ] [ ν ]                  ∎
 
 -- Lifting the identity yields the identity.
 ↑id : {Γ : Con} {A : Ty} → _↑_ {Γ = Γ} id A ≡ id
-↑id = ap (λ σ → σ , vz) id∘ ∙ πη
+↑id =
+  id ∘ wk , vz ≡⟨ ap (λ σ → σ , vz) id∘ ⟩
+  wk , vz      ≡⟨ πη ⟩
+  id           ∎
 
 -- Applying a substitution to the variable 0 gives the last element of thereof.
 vz[,] : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} → vz [ σ , u ] ≡ u
-vz[,] = π₂∘ ⁻¹ ∙ ap π₂ id∘ ∙ π₂β
+vz[,] {σ = σ} {u} =
+  (π₂ id) [ σ , u ] ≡⟨ π₂∘ ⁻¹ ⟩
+  π₂ (id ∘ (σ , u)) ≡⟨ ap π₂ id∘ ⟩
+  π₂ (σ , u)        ≡⟨ π₂β ⟩
+  u                ∎
 
 -- Particular case.
 vz[<>] : {Γ : Con} {A : Ty} {u : Tm Γ A} → vz [ < u > ] ≡ u
@@ -48,75 +66,86 @@ vz[<>] = vz[,]
 
 -- Postcomposing with a weakening simply forgets the last element.
 wk, : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} → wk ∘ (σ , u) ≡ σ
-wk, = π₁∘ ⁻¹ ∙ ap π₁ id∘ ∙ π₁β
+wk, {σ = σ} {u} =
+  (π₁ id) ∘ (σ , u) ≡⟨ π₁∘ ⁻¹ ⟩
+  π₁ (id ∘ (σ , u)) ≡⟨ ap π₁ id∘ ⟩
+  π₁ (σ , u)        ≡⟨ π₁β ⟩
+  σ                ∎
 
 -- Composition followed by extension is the same as extension followed
 -- by composition up to a lifting.
 ↑∘, : {Γ Δ Θ : Con} {A : Ty} {σ : Tms Δ Θ} {ν : Tms Γ Δ} {u : Tm Γ A} →
       (σ ↑ A) ∘ (ν , u) ≡ (σ ∘ ν) , u
-↑∘, {σ = σ} {ν = ν} {u = u} =
-  ,∘
-  ∙ ap2 _,_ (∘∘ ∙ ap (λ ρ → σ ∘ ρ) wk,) vz[,]
+↑∘, {σ = σ} {ν} {u} =
+  (σ ∘ wk , vz) ∘ (ν , u)           ≡⟨ ,∘ ⟩
+  (σ ∘ wk) ∘ (ν , u) , vz [ ν , u ] ≡⟨ ap (λ x → (σ ∘ wk) ∘ (ν , u) , x) vz[,] ⟩
+  (σ ∘ wk) ∘ (ν , u) , u            ≡⟨ ap (λ ρ → ρ , u) ∘∘ ⟩
+  σ ∘ (wk ∘ (ν , u)) , u            ≡⟨ ap (λ ρ → σ ∘ ρ , u) wk, ⟩
+  σ ∘ ν , u                         ∎
+
 
 -- This version of the previous lemma proves to be particularly usefull.
 ↑∘<> : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} →
       (σ ↑ A) ∘ < u > ≡ σ , u
-↑∘<> {u = u} = ↑∘, ∙ ap (λ σ → σ , u) ∘id
+↑∘<> {A = A} {σ} {u} =
+  (σ ↑ A) ∘ (id , u) ≡⟨ ↑∘, ⟩
+  (σ ∘ id) , u       ≡⟨ ap (λ σ → σ , u) ∘id ⟩
+  σ , u              ∎
+
 
 -- Interaction between application and substitution.
--- You may be more interested in app[] just below.
 []app : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {σ : Tms Γ Δ} →
         app (f [ σ ]) ≡ (app f) [ σ ↑ A ]
-[]app {f = f} {σ = σ} =
-  (ap (λ x → app x)
-      ((ap (λ x → x [ σ ]) η) ⁻¹
-      ∙ (lam[] {u = app f} {σ = σ})))
-  ∙ β
+[]app {A = A} {f = f} {σ} =
+  app (f [ σ ])                 ≡⟨ ap (λ x → app (x [ σ ])) η ⁻¹ ⟩
+  app ((lam (app f)) [ σ ])     ≡⟨ ap app lam[] ⟩
+  app (lam ((app f) [ σ ↑ A ])) ≡⟨ β ⟩
+  (app f) [ σ ↑ A ]             ∎
 
--- Behaviour of app through substitution.
 app[] : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {σ : Tms Γ (Δ , A)} →
         (app f) [ σ ] ≡ f [ π₁ σ ] $ π₂ σ
-app[] {f = f} {σ = σ} =
-  ap (λ σ → (app f) [ σ ])
-    (πη ⁻¹ ∙ ↑∘<> ⁻¹)
-  ∙ [][]
-  ∙ ap (λ u → u [ < π₂ σ > ]) []app ⁻¹
+app[] {A = A} {f = f} {σ} =
+  app f [ σ ]                      ≡⟨ ap (λ σ → (app f) [ σ ]) πη ⁻¹ ⟩
+  app f [ π₁ σ , π₂ σ ]             ≡⟨ ap (λ σ → (app f) [ σ ]) ↑∘<> ⁻¹ ⟩
+  app f [ ((π₁ σ) ↑ A) ∘ < π₂ σ > ] ≡⟨ [][] ⟩
+  app f [ (π₁ σ) ↑ A ] [ < π₂ σ > ] ≡⟨ ap (λ u → u [ < π₂ σ > ]) []app ⁻¹ ⟩
+  app (f [ π₁ σ ]) [ < π₂ σ > ]     ∎
 
 -- Behaviour of classical application through substitution.
 $[] : {Γ Δ : Con} {A B : Ty} {f : Tm Δ (A ⟶ B)} {u : Tm Δ A} {σ : Tms Γ Δ} →
       (f $ u) [ σ ] ≡ (f [ σ ]) $ (u [ σ ])
-$[] {f = f} {u = u} {σ = σ} =
-  [][] {σ = < u >} {ν = σ} {u = app f} ⁻¹
-  ∙ ap (λ σ → app f [ σ ]) ,∘
-  ∙ app[]
-  ∙ ap2 (λ ν x → f [ ν ] $ x) (π₁β ∙ id∘) π₂β
+$[] {f = f} {u} {σ} =
+  app f [ id , u ] [ σ ]                   ≡⟨ [][] ⁻¹ ⟩
+  app f [ (id , u) ∘ σ ]                   ≡⟨ ap (λ σ → app f [ σ ]) ,∘ ⟩
+  app f [ id ∘ σ , u [ σ ] ]               ≡⟨ ap (λ ν → app f [ ν , u [ σ ] ]) id∘ ⟩
+  app f [ σ , u [ σ ] ]                    ≡⟨ app[] ⟩
+  f [ π₁ (σ , u [ σ ]) ] $ π₂ (σ , u [ σ ]) ≡⟨ ap2 (λ ν v → f [ ν ] $ v) π₁β π₂β ⟩
+  f [ σ ] $ u [ σ ]                        ∎
 
 -- Applying a λ-closure (i.e. a term of the form (λ u)[ρ]) to something
 -- is the same as evaluating the body of the closure in the extended
 -- environment.
 clos[] : {Γ Δ : Con} {A B : Ty} {u : Tm (Δ , A) B} {ρ : Tms Γ Δ} {v : Tm Γ A} →
          (lam u) [ ρ ] $ v ≡ u [ ρ , v ]
-clos[] {u = u} {v = v} = ap (λ x → x [ < v > ])
-                            (ap app lam[] ∙ β)
-                         ∙ [][] ⁻¹
-                         ∙ ap (λ σ → u [ σ ]) ↑∘<>
-{-
--- The same, except the closure is weakened beforehand.
--- This lemma is crucial for the notion of strong computability defined
--- when proving termination.
-wkclos[] : {Γ Δ Θ : Con} {A B : Ty} {u : Tm (Δ , A) B}
-           {ρ : Tms Γ Δ} {v : Tm (Γ ++ Θ) A} →
-           (((lam u) [ ρ ]) ++t Θ) $ v ≡ u [ ρ ++s Θ , v ]
-wkclos[] {v = v} = ap (λ u → u $ v) []++ ⁻¹ ∙ clos[]
--}
-
+clos[] {A = A} {u = u} {ρ} {v} =
+  lam u [ ρ ] $ v       ≡⟨ ap (λ x → x $ v) lam[]  ⟩
+  lam (u [ ρ ↑ A ]) $ v ≡⟨ ap (λ x → x [ < v > ]) β ⟩
+  u [ ρ ↑ A ] [ < v > ] ≡⟨ [][] ⁻¹ ⟩
+  u [ (ρ ↑ A) ∘ < v > ] ≡⟨ ap (λ σ → u [ σ ]) ↑∘<> ⟩
+  u [ ρ , v ]           ∎
+ 
 -- Classical β and η conversion rules.
 classicβ : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} {v : Tm Γ A} →
            lam u $ v ≡ u [ < v > ]
-classicβ {v = v} = ap (λ x → x $ v) [id] ⁻¹
-                   ∙ clos[]
+classicβ {u = u} {v} =
+  lam u $ v          ≡⟨ ap (λ x → x $ v) [id] ⁻¹ ⟩
+  (lam u) [ id ] $ v ≡⟨ clos[] ⟩
+  u [ < v > ]        ∎
 
 classicη : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} →
            lam (f [ wk ] $ vz) ≡ f
-classicη {A = A} {f = f} = ap lam (app[] ⁻¹ ∙ [id])
-                           ∙ η {f = f}
+classicη {A = A} {f = f} =
+  lam (f [ wk ] $ vz)  ≡⟨ ap lam app[] ⁻¹ ⟩
+  lam ((app f) [ id ]) ≡⟨ ap lam [id] ⟩
+  lam (app f)          ≡⟨ η ⟩
+  f                    ∎

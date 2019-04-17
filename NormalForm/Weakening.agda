@@ -30,7 +30,10 @@ _+NN_ : {Γ Δ : Con} {A : Ty} → NN Δ A → Wk Γ Δ → NN Γ A
       n +N (σ ∘w ν) ≡ (n +N σ) +N ν
 +NN∘ : {Γ Δ Θ : Con} {A : Ty} {n : NN Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
        n +NN (σ ∘w ν) ≡ (n +NN σ) +NN ν
-+N∘ {n = lam n} = ap lam (ap (λ x → n +N (x , z)) wk∘↑w ∙ +N∘ {n = n})
++N∘ {n = lam {A = A} n} {σ} {ν} =
+  lam (n +N (wk↑ A (σ ∘w ν)))     ≡⟨ ap (λ ρ → lam (n +N (ρ , z))) wk∘↑w ⟩
+  lam (n +N (wk↑ A σ ∘w wk↑ A ν)) ≡⟨ ap lam +N∘ ⟩
+  (lam n +N σ) +N ν               ∎
 +N∘ {n = neu n} = ap neu +NN∘
 +NN∘ {n = var x} = ap var (+v∘ {x = x})
 +NN∘ {n = app f n} = ap2 app +NN∘ +N∘
@@ -40,10 +43,14 @@ _+NN_ : {Γ Δ : Con} {A : Ty} → NN Δ A → Wk Γ Δ → NN Γ A
        ⌜ n +N σ ⌝N ≡ ⌜ n ⌝N +t σ
 ⌜⌝+NN : {Γ Δ : Con} {A : Ty} {n : NN Δ A} {σ : Wk Γ Δ} →
         ⌜ n +NN σ ⌝NN ≡ ⌜ n ⌝NN +t σ
-⌜⌝+N {n = lam n} =
-  ap lam (⌜⌝+N {n = n}
-         ∙ ap (λ σ → _ [ σ , vz ]) ⌜wkwk⌝w)
-  ∙ lam[] ⁻¹
+⌜⌝+N {n = lam {A = A} n} {σ} =
+  lam ⌜ n +N wk↑ A σ ⌝N        ≡⟨ ap lam (⌜⌝+N {n = n}) ⟩
+  lam (⌜ n ⌝N [ ⌜ wk↑ A σ ⌝w ]) ≡⟨ ap (λ σ → lam (_ [ σ , vz ])) ⌜wkwk⌝w ⟩
+  lam (⌜ n ⌝N [ ⌜ σ ⌝w ↑ A ])   ≡⟨ lam[] ⁻¹ ⟩
+  lam ⌜ n ⌝N [ ⌜ σ ⌝w ]         ∎
 ⌜⌝+N {n = neu n} = ⌜⌝+NN {n = n}
 ⌜⌝+NN {n = var x} = ⌜⌝+v 
-⌜⌝+NN {n = app f n} = ap2 _$_ (⌜⌝+NN {n = f}) (⌜⌝+N {n = n}) ∙ $[] ⁻¹
+⌜⌝+NN {n = app f n} {σ} =
+  ⌜ f +NN σ ⌝NN $ ⌜ n +N σ ⌝N           ≡⟨ ap2 _$_ (⌜⌝+NN {n = f}) (⌜⌝+N {n = n}) ⟩
+  ⌜ f ⌝NN [ ⌜ σ ⌝w ] $ ⌜ n ⌝N [ ⌜ σ ⌝w ] ≡⟨ $[] ⁻¹ ⟩
+  (⌜ f ⌝NN $ ⌜ n ⌝N) [ ⌜ σ ⌝w ]         ∎
