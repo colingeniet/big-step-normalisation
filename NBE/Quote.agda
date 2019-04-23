@@ -5,9 +5,11 @@ module NBE.Quote where
 open import Library.Equality
 open import Library.Pairs
 open import Syntax.Terms
+open import Syntax.List
 open import Weakening.Presheaf
 open import Weakening.Presheaf.Category
 open import Weakening.Presheaf.Model
+open import Weakening.Presheaf.List
 open import Weakening.Variable
 open import Syntax.Terms.Presheaf
 open import NormalForm.NormalForm
@@ -21,6 +23,7 @@ NfPshModel = record { ⟦o⟧ = Nf' o }
 open PshModel NfPshModel
 
 
+-- Definition of quote and unquote.
 q : (A : Ty) → Natw ⟦ A ⟧T (Nf' A)
 u : (A : Ty) → Natw (NN' A) ⟦ A ⟧T
 
@@ -65,10 +68,14 @@ act (act (u (A ⟶ B)) Γ n) Δ (σ ,, x) =
 nat (act (u (A ⟶ B)) Θ n) {Γ} {Δ} {σ} {ν ,, x} =
   let aβ = λ {Γ} → act (u B) Γ
       aα = λ {Γ} → act (q A) Γ
-  in aβ (app (n +NN (ν ∘w σ)) (aα (x +⟨ ⟦ A ⟧T ⟩ σ)))  ≡⟨ ap (λ x → aβ (app x (aα _))) +NN∘ ⟩
-     aβ (app ((n +NN ν) +NN σ) (aα (x +⟨ ⟦ A ⟧T ⟩ σ))) ≡⟨ ap (λ x → aβ (app _ x)) (nat (q A)) ⟩
-     aβ ((app (n +NN ν) (aα x)) +⟨ NN' B ⟩ σ)          ≡⟨ nat (u B) ⟩
-     (aβ (app (n +NN ν) (aα x))) +⟨ ⟦ B ⟧T ⟩ σ         ∎
+  in aβ (app (n +NN (ν ∘w σ)) (aα (x +⟨ ⟦ A ⟧T ⟩ σ)))
+        ≡⟨ ap (λ x → aβ (app x (aα _))) +NN∘ ⟩
+     aβ (app ((n +NN ν) +NN σ) (aα (x +⟨ ⟦ A ⟧T ⟩ σ)))
+        ≡⟨ ap (λ x → aβ (app _ x)) (nat (q A)) ⟩
+     aβ ((app (n +NN ν) (aα x)) +⟨ NN' B ⟩ σ)
+        ≡⟨ nat (u B) ⟩
+     (aβ (app (n +NN ν) (aα x))) +⟨ ⟦ B ⟧T ⟩ σ
+        ∎
 nat (u (A ⟶ B)) {Δ} {Θ} {σ} {n} =
   nat≡ λ {i Γ (ν ,, x) →
           let aβ = λ {Γ} → act (u B) Γ
@@ -79,3 +86,14 @@ nat (u (A ⟶ B)) {Δ} {Θ} {σ} {n} =
               p = aβ (app ((n +NN σ) +NN ν) (aα x)) ≡⟨ ap (λ n → aβ (app n (aα x))) (+NN∘ ⁻¹) ⟩
                   aβ (app (n +NN (σ ∘w ν)) (aα x)) ∎
           in p i}
+
+
+-- Normalising requires to unquote the identity substitution.
+us : (Γ : Con) → Natw (NNs' Γ) ⟦ Γ ⟧C
+us Γ = mapn (λ {A} → u A)
+
+us-wk : (Γ : Con) → Natw (Wk' Γ) ⟦ Γ ⟧C
+us-wk Γ = us Γ ∘n varsp
+
+uid : {Γ : Con} → ⟦ Γ ⟧C $o Γ
+uid {Γ} = act (us-wk Γ) Γ idw
