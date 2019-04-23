@@ -31,7 +31,7 @@ _+NN_ : {Γ Δ : Con} {A : Ty} → NN Δ A → Wk Γ Δ → NN Γ A
 +NN∘ : {Γ Δ Θ : Con} {A : Ty} {n : NN Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
        n +NN (σ ∘w ν) ≡ (n +NN σ) +NN ν
 +N∘ {n = lam {A = A} n} {σ} {ν} =
-  lam (n +N (wk↑ A (σ ∘w ν)))     ≡⟨ ap (λ ρ → lam (n +N (ρ , z))) wk∘↑w ⟩
+  lam (n +N (wk↑ A (σ ∘w ν)))     ≡⟨ ap (λ ρ → lam (n +N (ρ ,, z))) wk∘↑w ⟩
   lam (n +N (wk↑ A σ ∘w wk↑ A ν)) ≡⟨ ap lam +N∘ ⟩
   (lam n +N σ) +N ν               ∎
 +N∘ {n = neu n} = ap neu +NN∘

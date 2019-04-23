@@ -40,12 +40,8 @@ isPropPartial H x y {φ} p = inc λ i →
 isSetPartial : ∀ {l} {A : Set l} → isSet A →
                  {x y : A} (p q : x ≡ y) {φ : I} (α : Partial φ (p ≡ q)) →
                  (p ≡ q) [ φ ↦ α ]
-isSetPartial H {x} {y} p q {φ} α = inc λ j i →
-  hcomp (λ k → λ {(i = i0) → x; (i = i1) → y;
-                  (j = i0) → H p p k i; (j = i1) → H q q k i;
-                  (φ = i1) → H (λ i → H p q j i)
-                               (λ i → α 1=1 j i) k i})
-        (H p q j i)
+isSetPartial H = isPropPartial H
+
 
 -- A proposition is a set.
 PropisSet : ∀ {l} {A : Set l} → isProp A → isSet A
@@ -79,7 +75,7 @@ make-non-dependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                       x ≡[ ap B p ]≡ y → x ≡ y
 make-non-dependent {B = B} H r = change-underlying {B = B} H r
 
--- Those two lemmas are work well together with heterogeneous equality.
+-- Those two lemmas work well together with heterogeneous equality.
 ≅-to-≡[] : ∀ {l m} {A : Set l} {B : A → Set m} →
              isSet A →
              {a b : A} {x : B a} {y : B b} →
@@ -111,7 +107,7 @@ isPropPath {B = B} H x y = (λ k → B k) *fill x d∙ H _ y
 
 
 -- Similar result for sets.
--- This version assumes a unique underlying path.
+-- This version assumes a common underlying path.
 isSetDependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                     ({x : A} → isSet (B x)) →
                     {a b : A} {p : a ≡ b} {x : B a} {y : B b} →

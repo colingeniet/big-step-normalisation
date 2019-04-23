@@ -28,8 +28,8 @@ Wk Γ = list (Var Γ)
 infixl 15 _+v_
 -- Composition
 _+v_ : {Γ Δ : Con} {A : Ty} → Var Δ A → Wk Γ Δ → Var Γ A
-z +v (_ , x) = x
-(s x) +v (σ , _) = x +v σ
+z +v (_ ,, x) = x
+(s x) +v (σ ,, _) = x +v σ
 
 infixr 20 _∘w_
 _∘w_ : {Γ Δ Θ : Con} → Wk Δ Θ → Wk Γ Δ → Wk Γ Θ
@@ -37,14 +37,14 @@ _∘w_ : {Γ Δ Θ : Con} → Wk Δ Θ → Wk Γ Δ → Wk Γ Θ
 
 
 wkwk : {Γ Δ : Con} (A : Ty) → Wk Γ Δ → Wk (Γ , A) Δ
-wkwk A ε = ε
-wkwk A (σ , x) = wkwk A σ , s x
+wkwk {Δ = ●} A _ = tt
+wkwk {Δ = Δ , B} A (σ ,, x) = wkwk A σ ,, s x
 
 wk↑ : {Γ Δ : Con} (A : Ty) → Wk Γ Δ → Wk (Γ , A) (Δ , A)
-wk↑ A σ = wkwk A σ , z
+wk↑ A σ = wkwk A σ ,, z
 
 idw : {Γ : Con} → Wk Γ Γ
-idw {●} = ε
+idw {●} = tt
 idw {Γ , A} = wk↑ A idw
 
 
@@ -59,10 +59,10 @@ idw {Γ , A} = wk↑ A idw
 -- Embedding equations.
 ⌜wkwk⌝w : {Γ Δ : Con} {A : Ty} {σ : Wk Γ Δ} →
           ⌜ wkwk A σ ⌝w ≡ ⌜ σ ⌝w ∘ wk
-⌜wkwk⌝w {σ = ε} =
+⌜wkwk⌝w {Δ = ●} =
   ε          ≡⟨ εη ⁻¹ ⟩
-  ⌜ ε ⌝w ∘ wk ∎
-⌜wkwk⌝w {A = A} {σ = σ , x} =
+  ⌜ tt ⌝w ∘ wk ∎
+⌜wkwk⌝w {Δ = Δ , B} {A = A} {σ = σ ,, x} =
   ⌜ wkwk A σ ⌝w , ⌜ x ⌝v [ wk ] ≡⟨ ap (λ x → x , _) ⌜wkwk⌝w ⟩
   ⌜ σ ⌝w ∘ wk , ⌜ x ⌝v [ wk ]   ≡⟨ ,∘ ⁻¹ ⟩
   (⌜ σ ⌝w , ⌜ x ⌝v) ∘ wk        ∎
@@ -79,10 +79,10 @@ idw {Γ , A} = wk↑ A idw
 
 ⌜⌝+v : {Γ Δ : Con} {A : Ty} {x : Var Δ A} {σ : Wk Γ Δ} →
        ⌜ x +v σ ⌝v ≡ ⌜ x ⌝v [ ⌜ σ ⌝w ]
-⌜⌝+v {x = z} {σ = σ , y} =
+⌜⌝+v {x = z} {σ = σ ,, y} =
   ⌜ y ⌝v                ≡⟨ vz[,] ⁻¹ ⟩
   vz [ ⌜ σ ⌝w , ⌜ y ⌝v ] ∎
-⌜⌝+v {A = A} {x = s x} {σ = σ , y} =
+⌜⌝+v {A = A} {x = s x} {σ = σ ,, y} =
   ⌜ x +v σ ⌝v                     ≡⟨ ⌜⌝+v ⟩
   ⌜ x ⌝v [ ⌜ σ ⌝w ]                ≡⟨ ap (λ x → _ [ x ]) wk, ⁻¹ ⟩
   ⌜ x ⌝v [ wk ∘ (⌜ σ ⌝w , ⌜ y ⌝v) ] ≡⟨ [][] ⟩
@@ -90,10 +90,10 @@ idw {Γ , A} = wk↑ A idw
 
 ⌜∘⌝w : {Γ Δ Θ : Con} {σ : Wk Δ Θ} {ν : Wk Γ Δ} → 
        ⌜ σ ∘w ν ⌝w ≡ ⌜ σ ⌝w ∘ ⌜ ν ⌝w
-⌜∘⌝w {σ = ε} {ν} =
+⌜∘⌝w {Θ = ●} {ν = ν} =
   ε              ≡⟨ εη ⁻¹ ⟩
-  ⌜ ε ⌝w ∘ ⌜ ν ⌝w ∎
-⌜∘⌝w {σ = σ , x} {ν} =
+  ⌜ tt ⌝w ∘ ⌜ ν ⌝w ∎
+⌜∘⌝w {Θ = Θ , A} {σ = σ ,, x} {ν} =
   ⌜ σ ∘w ν ⌝w , ⌜ x +v ν ⌝v          ≡⟨ ap2 _,_ ⌜∘⌝w ⌜⌝+v ⟩
   ⌜ σ ⌝w ∘ ⌜ ν ⌝w , ⌜ x ⌝v [ ⌜ ν ⌝w ] ≡⟨ ,∘ ⁻¹ ⟩
   (⌜ σ ⌝w , ⌜ x ⌝v) ∘ ⌜ ν ⌝w          ∎

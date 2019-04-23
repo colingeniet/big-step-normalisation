@@ -24,8 +24,8 @@ open import Weakening.Variable.Base public
 -- Variables laws.
 +vwk : {Γ Δ : Con} {A B : Ty} {x : Var Δ A} {σ : Wk Γ Δ} →
        x +v (wkwk B σ) ≡ s (x +v σ)
-+vwk {x = z} {σ = _ , _} = refl
-+vwk {x = s x} {σ = σ , _} = +vwk {x = x} {σ = σ}
++vwk {x = z} = refl
++vwk {x = s x} {σ = σ ,, _} = +vwk {x = x} {σ = σ}
 
 +vid : {Γ : Con} {A : Ty} {x : Var Γ A} → x +v idw ≡ x
 +vid {x = z} = refl
@@ -33,8 +33,8 @@ open import Weakening.Variable.Base public
 
 +v∘ : {Γ Δ Θ : Con} {A : Ty} {x : Var Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
       x +v (σ ∘w ν) ≡ (x +v σ) +v ν
-+v∘ {x = z} {σ = _ , _} = refl
-+v∘ {x = s x} {σ = σ , _} = +v∘ {x = x} {σ = σ}
++v∘ {x = z} = refl
++v∘ {x = s x} {σ = σ ,, _} = +v∘ {x = x} {σ = σ}
 
 -- Associated presheaf.
 Var' : Ty → Pshw
@@ -58,22 +58,23 @@ embw : {Γ : Con} → Natw (Wk' Γ) (Tms' Γ)
 embw = mapnt embv
 
 
--- One of the categorical identity laws must be proved manually.
+-- Categorical identities.
+-- The first has to be proven manually.
 wkwk∘w : {Γ Δ Θ : Con} {A : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ} {x : Var Γ A} →
-         (wkwk A σ) ∘w (ν , x) ≡ σ ∘w ν
-wkwk∘w {σ = ε} = refl
-wkwk∘w {σ = σ , y} = ap (λ x → x , _) wkwk∘w
+         (wkwk A σ) ∘w (ν ,, x) ≡ σ ∘w ν
+wkwk∘w {Θ = ●} = refl
+wkwk∘w {Θ = Θ , A} = ap (λ x → x ,, _) wkwk∘w
 
 wk∘↑w : {Γ Δ Θ : Con} {A : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
        wkwk A (σ ∘w ν) ≡ (wkwk A σ) ∘w (wk↑ A ν)
-wk∘↑w {σ = ε} = refl
-wk∘↑w {σ = σ , x} = ap2 _,_ (wk∘↑w {σ = σ}) (+vwk {x = x} ⁻¹)
+wk∘↑w {Θ = ●} = refl
+wk∘↑w {Θ = Θ , A} {σ = σ ,, x} = ap2 _,,_ (wk∘↑w {σ = σ}) (+vwk {x = x} ⁻¹)
 
 id∘w : {Γ Δ : Con} {σ : Wk Γ Δ} → idw ∘w σ ≡ σ
-id∘w {Δ = ●} {σ = ε} = refl
-id∘w {Δ = Δ , A} {σ , x} = ap (λ x → x , _) (wkwk∘w ∙ id∘w)
+id∘w {Δ = ●} = refl
+id∘w {Δ = Δ , A} = ap (λ x → x ,, _) (wkwk∘w ∙ id∘w)
 
--- The other one, and associativity, are given by the presheaf lifting.
+-- The two remaining ones are obtained from the list of presheaves construction.
 ∘idw : {Γ Δ : Con} {σ : Wk Γ Δ} → σ ∘w idw ≡ σ
 ∘idw = +id (Wk' _)
 

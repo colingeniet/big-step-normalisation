@@ -26,4 +26,11 @@ record _×_ {a b} (A : Set a) (B : Set b) : Set (a ⊔ b) where
 
 open _×_ public
 
+-- It can be convenient to have a unit type at an arbitrary level.
+record ⊤l {l} : Set l where
+  constructor tt
+
+open ⊤l public
+
+
 infixr 4 _,,_ _×_

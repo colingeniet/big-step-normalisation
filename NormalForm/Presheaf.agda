@@ -48,3 +48,12 @@ NNs' = listp NN'
 
 embNNs : {Γ : Con} → Natw (NNs' Γ) (Tms' Γ)
 embNNs = mapnt embNN
+
+
+
+varp : {A : Ty} → Natw (Var' A) (NN' A)
+act varp _ = var
+nat varp = refl
+
+varsp : {Γ : Con} → Natw (Wk' Γ) (NNs' Γ)
+varsp = mapn varp

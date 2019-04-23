@@ -11,6 +11,9 @@ open import Library.Sets
 isProp⊤ : isProp ⊤
 isProp⊤ _ _ = refl
 
+isProp⊤l : ∀ {l} → isProp (⊤l {l})
+isProp⊤l _ _ = refl
+
 
 isProp× : ∀ {l m} {A : Set l} {B : Set m} →
           isProp A → isProp B → isProp (A × B)
@@ -45,4 +48,4 @@ isSetΣ {B = B} HA HB p q i j =
   in
   HA p1 q1 i j ,,
   isSetDependent2 {B = B} HA HB
-                   p2 q2 i j
+                  p2 q2 i j
