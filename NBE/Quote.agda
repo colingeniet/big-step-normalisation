@@ -88,6 +88,11 @@ nat (u (A ⟶ B)) {Δ} {Θ} {σ} {n} =
           in p i}
 
 
+-- Unquoting and quoting allows to transform neutral normal forms into normal forms.
+-- Effectively, it performs appropriate η-expansions.
+uq : (A : Ty) → Natw (NN' A) (Nf' A)
+uq A = (q A) ∘n (u A)
+
 -- Normalising requires to unquote the identity substitution.
 us : (Γ : Con) → Natw (NNs' Γ) ⟦ Γ ⟧C
 us Γ = mapn (λ {A} → u A)
@@ -97,3 +102,7 @@ us-wk Γ = us Γ ∘n varsp
 
 uid : {Γ : Con} → ⟦ Γ ⟧C $o Γ
 uid {Γ} = act (us-wk Γ) Γ idw
+
+
+norm : ∀ {Γ} {A} → Tm Γ A → Nf Γ A
+norm {Γ} {A} u = act (q A) Γ (act ⟦ u ⟧ Γ uid)
