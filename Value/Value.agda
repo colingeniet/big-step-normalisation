@@ -56,4 +56,3 @@ data Env where
 ⌜ app n v ⌝NV = ⌜ n ⌝NV $ ⌜ v ⌝V
 ⌜ ε ⌝E = ε
 ⌜ ρ , v ⌝E = ⌜ ρ ⌝E , ⌜ v ⌝V
-
