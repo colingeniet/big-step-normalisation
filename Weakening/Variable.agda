@@ -81,3 +81,13 @@ id∘w {Δ = Δ , A} = ap (λ x → x ,, _) (wkwk∘w ∙ id∘w)
 ∘∘w : {Γ Δ Θ Ψ : Con} {σ : Wk Θ Ψ} {ν : Wk Δ Θ} {δ : Wk Γ Δ} →
       (σ ∘w ν) ∘w δ ≡ σ ∘w (ν ∘w δ)
 ∘∘w = +∘ (Wk' _) ⁻¹
+
+-- Usefull lemma.
+wkid∘↑ : {Γ Δ : Con} {A : Ty} {σ : Wk Γ Δ} →
+         (wkwk A idw) ∘w (wk↑ A σ) ≡ σ ∘w (wkwk A idw)
+wkid∘↑ {A = A} {σ = σ} =
+  (wkwk A idw) ∘w (wk↑ A σ) ≡⟨ wk∘↑w ⁻¹ ⟩
+  wkwk A (idw ∘w σ)         ≡⟨ ap (λ x → wkwk A x) id∘w ⟩
+  wkwk A σ                  ≡⟨ ∘idw ⁻¹ ⟩
+  (wkwk A σ) ∘w idw         ≡⟨ wkwk∘w ⟩
+  σ ∘w (wkwk A idw) ∎

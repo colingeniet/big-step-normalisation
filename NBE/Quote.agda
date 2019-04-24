@@ -39,17 +39,11 @@ nat (q (A ⟶ B)) {Γ} {Δ} {σ} {θ} =
       aθ+ = λ {Γ} → act θ+ Γ
       aβ = λ {Γ} → act (q B) Γ
       aα = λ {Γ} → act (u A) Γ
-      p : σ ∘w wkwk A idw ≡ wkwk A idw ∘w wk↑ A σ
-      p = σ ∘w wkwk A idw       ≡⟨ wkwk∘w ⁻¹ ⟩
-          wkwk A σ ∘w idw       ≡⟨ ∘idw ⟩
-          wkwk A σ              ≡⟨ ap (wkwk A) (id∘w ⁻¹) ⟩
-          wkwk A (idw ∘w σ)     ≡⟨ wk∘↑w ⟩
-          wkwk A idw ∘w wk↑ A σ ∎
   in ap lam
      (aβ (aθ+ (wkwk A idw ,, aα (var z)))
         ≡⟨ refl ⟩
       aβ (aθ (σ ∘w wkwk A idw ,, aα (var z)))
-        ≡⟨ ap (λ ν → aβ (aθ (ν ,, aα (var z)))) p ⟩
+        ≡⟨ ap (λ ν → aβ (aθ (ν ,, aα (var z)))) wkid∘↑ ⁻¹ ⟩
       aβ (aθ (wkwk A idw ∘w wk↑ A σ ,, aα (var z)))
         ≡⟨ ap (λ x → aβ (aθ (wkwk A idw ∘w wk↑ A σ ,, x))) (nat (u A)) ⟩
       aβ (aθ (wkwk A idw ∘w wk↑ A σ ,, (aα (var z)) +⟨ ⟦ A ⟧T ⟩ (wk↑ A σ)))

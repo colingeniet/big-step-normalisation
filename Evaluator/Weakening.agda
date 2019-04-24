@@ -1,22 +1,19 @@
 {-# OPTIONS --safe --cubical #-}
 
-module Normalisation.Evaluator.Weakening where
+module Evaluator.Weakening where
 
 
 open import Library.Equality
 open import Library.Sets
 open import Syntax.Terms
 open import Syntax.Terms.Weakening
-open import Syntax.Weakening
-open import Normalisation.TermLike
-open import Normalisation.Variables
-open import Normalisation.Variables.Weakening
-open import Normalisation.Values
-open import Normalisation.Values.Weakening
-open import Normalisation.Values.Lemmas
-open import Normalisation.NormalForms
-open import Normalisation.NormalForms.Weakening
-open import Normalisation.Evaluator
+open import Weakening.Variable
+open import Value.Value
+open import Value.Weakening
+open import Value.Lemmas
+open import NormalForm.NormalForm
+open import NormalForm.Weakening
+open import Evaluator.Evaluator
 
 
 -- All computations can be weakened.
@@ -52,16 +49,25 @@ evalsε +evals δ = evalsε
 
 _+q_ : {Γ Δ : Con} {A : Ty} {v : Val Δ A} {n : Nf Δ A} →
        q v ⇒ n → (σ : Wk Γ Δ) → q (v +V σ) ⇒ (n +N σ)
-_+qs_ : {Γ Δ : Con} {A : Ty} {v : Ne Val Δ A} {n : Ne Nf Δ A} →
+_+qs_ : {Γ Δ : Con} {A : Ty} {v : NV Δ A} {n : NN Δ A} →
         qs v ⇒ n → (σ : Wk Γ Δ) → qs (v +NV σ) ⇒ (n +NN σ)
 (qo qv) +q δ = qo (qv +qs δ)
-(q⟶ {A = A} {f = f} $f qf) +q δ =
-  let p : (f +V δ) +V (drop A idw) ≡ (f +V (drop A idw)) +V (keep A δ)
-      p = +V∘ {v = f} {σ = δ} {ν = drop A idw} ⁻¹
-          ∙ ap (λ σ → f +V (drop A σ)) (∘idw ∙ id∘w ⁻¹)
-          ∙ +V∘ {v = f} {σ = drop A idw} {ν = keep A δ}
-  in q⟶ (tr (λ x → x $ _ ⇒ _) (p ⁻¹) ($f +$ (keep A δ)))
-        (qf +q (keep A δ))
+(q⟶ {A = A} {f = f} {fz = fz} $f qf) +q δ =
+  let $f+ : ((f +V (wkwk A idw)) +V (wk↑ A δ))
+            $ (neu (var z))
+            ⇒ (fz +V (wk↑ A δ))
+      $f+ = $f +$ (wk↑ A δ)
+      p : (f +V wkwk A idw) +V wk↑ A δ
+          ≡ (f +V δ) +V wkwk A idw
+      p = (f +V wkwk A idw) +V wk↑ A δ     ≡⟨ +V∘ {v = f} ⁻¹ ⟩
+          f +V ((wkwk A idw) ∘w (wk↑ A δ)) ≡⟨ ap (λ x → f +V x) wkid∘↑ ⟩
+          f +V (δ ∘w (wkwk A idw))         ≡⟨ +V∘ {v = f} ⟩
+          (f +V δ) +V (wkwk A idw)         ∎
+      $f+' : ((f +V δ) +V (wkwk A idw))
+             $ (neu (var z))
+             ⇒ (fz +V (wk↑ A δ))
+      $f+' = tr (λ x → x $ _ ⇒ _) p $f+
+  in q⟶ $f+' (qf +q (wk↑ A δ))
 (isPropq x y i) +q δ = isPropq (x +q δ) (y +q δ) i
 qsvar +qs δ = qsvar
 (qsapp qsf qv) +qs δ = qsapp (qsf +qs δ) (qv +q δ)
