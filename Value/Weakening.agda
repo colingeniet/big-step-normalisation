@@ -1,25 +1,25 @@
 {-# OPTIONS --safe --cubical #-}
 
-module Normalisation.Values.Weakening where
+module Value.Weakening where
 
 open import Library.Equality
 open import Library.Sets
 open import Syntax.Terms
-open import Syntax.Weakening
+open import Weakening.Variable
 open import Syntax.Terms.Lemmas
 open import Syntax.Terms.Weakening
-open import Normalisation.TermLike
-open import Normalisation.Variables.Weakening
-open import Normalisation.Values
+open import Value.Value
 
-
+-- Weakening of values.
 _+V_ : {Γ Δ : Con} {A : Ty} → Val Δ A → Wk Γ Δ → Val Γ A
-_+NV_ : {Γ Δ : Con} {A : Ty} → Ne Val Δ A → Wk Γ Δ → Ne Val Γ A
+_+NV_ : {Γ Δ : Con} {A : Ty} → NV Δ A → Wk Γ Δ → NV Γ A
 _+E_ : {Γ Δ Θ : Con} → Env Δ Θ → Wk Γ Δ → Env Γ Θ
 
+-- Weakening commutes with embedding (required to define weakening of the
+-- veq path constructor).
 ⌜⌝+V : {Γ Δ : Con} {A : Ty} {v : Val Δ A} {σ : Wk Γ Δ} →
        ⌜ v +V σ ⌝V ≡ ⌜ v ⌝V +t σ
-⌜⌝+NV : {Γ Δ : Con} {A : Ty} {v : Ne Val Δ A} {σ : Wk Γ Δ} →
+⌜⌝+NV : {Γ Δ : Con} {A : Ty} {v : NV Δ A} {σ : Wk Γ Δ} →
        ⌜ v +NV σ ⌝NV ≡ ⌜ v ⌝NV +t σ
 ⌜⌝+E : {Γ Δ Θ : Con} {ρ : Env Δ Θ} {σ : Wk Γ Δ} →
        ⌜ ρ +E σ ⌝E ≡ ⌜ ρ ⌝E +s σ
@@ -34,7 +34,7 @@ _+E_ : {Γ Δ Θ : Con} → Env Δ Θ → Wk Γ Δ → Env Γ Θ
 (isSetVal p q i j) +V σ = isSetVal (λ k → p k +V σ) (λ k → q k +V σ) i j
 (var x) +NV σ = var (x +v σ)
 (app f v) +NV σ = app (f +NV σ) (v +V σ)
-ε +E σ = ε
+ε +E _ = ε
 (ρ , v) +E σ = ρ +E σ , v +V σ
 
 ⌜⌝+V {v = lam u ρ} = ap (λ σ → lam u [ σ ]) ⌜⌝+E ∙ [][]
@@ -66,9 +66,9 @@ _+E_ : {Γ Δ Θ : Con} → Env Δ Θ → Wk Γ Δ → Env Γ Θ
 ⌜⌝+E {ρ = ρ , v} = ap2 _,_ (⌜⌝+E {ρ = ρ}) (⌜⌝+V {v = v}) ∙ ,∘ ⁻¹
 
 
-
+-- Functoriality of weakening (values form a presheaf over the category of weakenings).
 +Vid : {Γ : Con} {A : Ty} {v : Val Γ A} → v +V idw ≡ v
-+NVid : {Γ : Con} {A : Ty} {v : Ne Val Γ A} → v +NV idw ≡ v
++NVid : {Γ : Con} {A : Ty} {v : NV Γ A} → v +NV idw ≡ v
 +Eid : {Γ Δ : Con} {ρ : Env Γ Δ} → ρ +E idw ≡ ρ
 
 +Vid {v = lam u ρ} = ap (lam u) +Eid
@@ -95,7 +95,7 @@ _+E_ : {Γ Δ Θ : Con} → Env Δ Θ → Wk Γ Δ → Env Γ Θ
 
 +V∘ : {Γ Δ Θ : Con} {A : Ty} {v : Val Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
       v +V (σ ∘w ν) ≡ (v +V σ) +V ν
-+NV∘ : {Γ Δ Θ : Con} {A : Ty} {v : Ne Val Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
++NV∘ : {Γ Δ Θ : Con} {A : Ty} {v : NV Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
        v +NV (σ ∘w ν) ≡ (v +NV σ) +NV ν
 +E∘ : {Γ Δ Θ Ψ : Con} {ρ : Env Θ Ψ} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
       ρ +E (σ ∘w ν) ≡ (ρ +E σ) +E ν
@@ -117,7 +117,7 @@ _+E_ : {Γ Δ Θ : Con} → Env Δ Θ → Wk Γ Δ → Env Γ Θ
                         (k = i1) → λ i j →
                         ((isSetVal p q i j) +V σ) +V ν}))
       i j
-+NV∘ {v = var x} = ap var +v∘
++NV∘ {v = var x} = ap var (+v∘ {x = x})
 +NV∘ {v = app f v} {σ} {ν} = ap2 app (+NV∘ {v = f}) (+V∘ {v = v})
 +E∘ {ρ = ε} = refl
 +E∘ {ρ = ρ , v} = ap2 _,_ (+E∘ {ρ = ρ}) (+V∘ {v = v})
