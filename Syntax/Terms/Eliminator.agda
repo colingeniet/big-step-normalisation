@@ -116,3 +116,111 @@ record Methods {l} (M : Motives {l}) : Set (lsuc l) where
 
   elimTms : {Γ Δ : Con} (σ : Tms Γ Δ) → Tmsᴹ σ
   elimTms σ = termᴹ σ
+
+
+
+-- If the codomain of the function (the motives) is a mere proposition,
+-- the eliminator becomes simpler as one needs not to provide any path constructor.
+record PropMethods {l} (M : Motives {l}) : Set (lsuc l) where
+  open Motives M
+  infixr 10 _,ᴹ_
+  infixr 20 _∘ᴹ_
+  infixl 30 _[_]ᴹ
+  field
+    _[_]ᴹ : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {σ : Tms Γ Δ} →
+            Tmᴹ u → Tmsᴹ σ → Tmᴹ (u [ σ ])
+    π₂ᴹ : {Γ Δ : Con} {A : Ty} {σ : Tms Γ (Δ , A)} →
+          Tmsᴹ σ → Tmᴹ (π₂ σ)
+    lamᴹ : {Γ : Con} {A B : Ty} {u : Tm (Γ , A) B} →
+           Tmᴹ u → Tmᴹ (lam u)
+    appᴹ : {Γ : Con} {A B : Ty} {f : Tm Γ (A ⟶ B)} →
+           Tmᴹ f → Tmᴹ (app f)
+    idᴹ : {Γ : Con} → Tmsᴹ (id {Γ})
+    _∘ᴹ_ : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ν : Tms Γ Δ} →
+           Tmsᴹ σ → Tmsᴹ ν → Tmsᴹ (σ ∘ ν)
+    εᴹ : {Γ : Con} → Tmsᴹ (ε {Γ})
+    _,ᴹ_ : {Γ Δ : Con} {A : Ty} {σ : Tms Γ Δ} {u : Tm Γ A} →
+           Tmsᴹ σ → Tmᴹ u → Tmsᴹ (σ , u)
+    π₁ᴹ : {Γ Δ : Con} {A : Ty} {σ : Tms Γ (Δ , A)} →
+          Tmsᴹ σ → Tmsᴹ (π₁ σ)
+
+    isPropTmᴹ : {Γ : Con} {A : Ty} {u : Tm Γ A} → isProp (Tmᴹ u)
+    isPropTmsᴹ : {Γ Δ : Con} {σ : Tms Γ Δ} → isProp (Tmsᴹ σ)
+
+
+  {- Just like the definition of terms, the eliminator function is made 
+     non mutually inductive to avoid some mutual dependency problems.
+  -}
+  termᴹ : {i : term-index} (u : term i) → term-motive u
+
+  termᴹ (u [ σ ]) = (termᴹ u) [ termᴹ σ ]ᴹ
+  termᴹ (π₂ σ) = π₂ᴹ (termᴹ σ)
+  termᴹ (lam u) = lamᴹ (termᴹ u)
+  termᴹ (app f) = appᴹ (termᴹ f)
+
+  termᴹ id = idᴹ
+  termᴹ (σ ∘ ν) = (termᴹ σ) ∘ᴹ (termᴹ ν)
+  termᴹ ε = εᴹ
+  termᴹ (σ , u) = (termᴹ σ) ,ᴹ (termᴹ u)
+  termᴹ (π₁ σ) = π₁ᴹ (termᴹ σ)
+
+  termᴹ (id∘ {σ = σ} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (id∘ {σ = σ}) (idᴹ ∘ᴹ termᴹ σ) (termᴹ σ) i
+  termᴹ (∘id {σ = σ} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (∘id {σ = σ}) (termᴹ σ ∘ᴹ idᴹ) (termᴹ σ) i
+
+  termᴹ (∘∘ {σ = σ} {ν = ν} {δ = δ} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (∘∘ {σ = σ} {ν = ν} {δ = δ})
+                    ((termᴹ σ ∘ᴹ termᴹ ν) ∘ᴹ termᴹ δ)
+                    (termᴹ σ ∘ᴹ (termᴹ ν ∘ᴹ termᴹ δ)) i
+  termᴹ (εη {σ = σ} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (εη {σ = σ}) (termᴹ σ) εᴹ i
+
+  termᴹ (π₁β {σ = σ} {u = u} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (π₁β {σ = σ} {u = u})
+                    (π₁ᴹ (termᴹ σ ,ᴹ termᴹ u))
+                    (termᴹ σ) i
+  termᴹ (π₂β {σ = σ} {u = u} i) =
+    isPropDependent {B = Tmᴹ} isPropTmᴹ
+                    (π₂β {σ = σ} {u = u})
+                    (π₂ᴹ (termᴹ σ ,ᴹ termᴹ u))
+                    (termᴹ u) i
+  termᴹ (πη {σ = σ} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (πη {σ = σ}) (π₁ᴹ (termᴹ σ) ,ᴹ π₂ᴹ (termᴹ σ)) (termᴹ σ) i
+  termᴹ (,∘ {σ = σ} {ν = ν} {u = u} i) =
+    isPropDependent {B = Tmsᴹ} isPropTmsᴹ
+                    (,∘ {σ = σ} {ν = ν} {u = u})
+                    ((termᴹ σ ,ᴹ termᴹ u) ∘ᴹ termᴹ ν)
+                    ((termᴹ σ ∘ᴹ termᴹ ν) ,ᴹ (termᴹ u [ termᴹ ν ]ᴹ)) i
+  termᴹ (β {u = u} i) =
+    isPropDependent {B = Tmᴹ} isPropTmᴹ
+                    (β {u = u}) (appᴹ (lamᴹ (termᴹ u))) (termᴹ u) i
+  termᴹ (η {f = f} i) =
+    isPropDependent {B = Tmᴹ} isPropTmᴹ
+                    (η {f = f}) (lamᴹ (appᴹ (termᴹ f))) (termᴹ f) i
+  termᴹ (lam[] {u = u} {σ = σ} i) =
+    isPropDependent {B = Tmᴹ} isPropTmᴹ
+                    (lam[] {u = u} {σ = σ})
+                    ((lamᴹ (termᴹ u)) [ termᴹ σ ]ᴹ)
+                    (lamᴹ ((termᴹ u) [ termᴹ σ ∘ᴹ π₁ᴹ idᴹ ,ᴹ π₂ᴹ idᴹ ]ᴹ)) i
+
+  termᴹ (isSetTm p q i j) =
+    isSetDependent2 {B = Tmᴹ} isSetTm (PropisSet isPropTmᴹ)
+                     (λ k → termᴹ (p k)) (λ k → termᴹ (q k)) i j
+  termᴹ (isSetTms p q i j) =
+    isSetDependent2 {B = Tmsᴹ} isSetTms (PropisSet isPropTmsᴹ)
+                     (λ k → termᴹ (p k)) (λ k → termᴹ (q k)) i j
+
+
+  -- And the nicer looking version of the previous function.
+  elimTm : {Γ : Con} {A : Ty} (u : Tm Γ A) → Tmᴹ u
+  elimTm u = termᴹ u
+
+  elimTms : {Γ Δ : Con} (σ : Tms Γ Δ) → Tmsᴹ σ
+  elimTms σ = termᴹ σ
