@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -86,6 +86,11 @@ sce (ρ , u) = sce ρ  ×  scv u
 πηsce : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} (sceσ : sce σ) →
         (π₁sce sceσ ,, π₂sce sceσ) ≡[ ap sce πηE ]≡ sceσ
 πηsce {σ = σ , u} (sceσ ,, scvu) = refl
+
+sceεη : {Γ : Con} {σ : Env Γ ●} (sceσ : sce σ) →
+        sceσ ≡[ ap sce (envεη σ) ]≡ tt
+sceεη {σ = ε} tt = refl
+
 
 
 isPropsce : {Γ Δ : Con} {σ : Env Γ Δ} → isProp (sce σ)

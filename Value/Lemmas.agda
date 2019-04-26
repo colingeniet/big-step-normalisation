@@ -19,6 +19,9 @@ open import Value.Weakening
 πηE : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} → (π₁E ρ , π₂E ρ) ≡ ρ
 πηE {ρ = _ , _} = refl
 
+envεη : {Γ : Con} (σ : Env Γ ●) → σ ≡ ε
+envεη ε = refl
+
 -- Embedding and projections commute.
 π₁E≡ : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} → ⌜ π₁E ρ ⌝E ≡ π₁ ⌜ ρ ⌝E
 π₁E≡ {ρ = ρ , v} =
