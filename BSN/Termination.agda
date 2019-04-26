@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 {-
   Proof of termination of eval and quote.
@@ -29,6 +29,7 @@ open import Value.Sets
 open import Evaluator.Evaluator
 open import BSN.Completeness
 open import BSN.Soundness
+open import BSN.Stability
 open import BSN.StrongComputability
 
 
@@ -117,7 +118,7 @@ Methods.isPropTmsᴹ evalsce-methods {Δ} {Θ} {σ} x y i {Γ} {ρ} sceρ =
 
 
 
-{-
+
 -- By stability and determinism, a value can only evaluate to itself.
 -- Thus the previous theorem applied to values implies that every value
 -- is strongly computable.
@@ -132,4 +133,3 @@ env-sce {Γ = Γ} ρ =
   let ρ' ,, evalsρ ,, sceρ' = evalssce ⌜ ρ ⌝E (sceid {Γ})
       ρ'≡ρ = enveq (evals≡ evalsρ ⁻¹ ∙ evals≡ (stable-env ρ))
   in tr sce ρ'≡ρ sceρ'
--}
