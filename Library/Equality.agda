@@ -28,7 +28,7 @@ infixr 6 _∙_ _d∙_ _∙d_ _d∙d_ _∙≅_
 infixr 20 _*_
 infix 5 _≅_ ≅-syntax
 infix 4 _,≅_
-infixr 0 _≡⟨_⟩_ _≅⟨_⟩_
+infixr 0 _≡⟨_⟩_ _≅⟨_⟩_ _≅⟨_⟩'_
 infix 1 _∎ _≅∎
 
 
@@ -400,6 +400,20 @@ _∙≅_ {B = B} {x = x} {z = z} (p ,≅ q) (r ,≅ s) =
      (q d∙d s)
 
 
+-- Most general case for the application of a function.
+-- There is a function between the indexing families, and a family of function lying over it.
+ap≅ : ∀ {l m n k} {A : Set l} {B : A → Set m} {C : Set n} {D : C → Set k}
+        {f : A → C} (g : {a : A} → B a → D (f a)) {a b : A} {x : B a} {y : B b} →
+        x ≅[ B ] y → g x ≅[ D ] g y
+ap≅ {f = f} g (p ,≅ q) = (ap f p) ,≅ (apd g q)
+
+-- Special case, with two families over the same indexing type.
+ap'≅ : ∀ {l m n} {A : Set l} {B : A → Set m} {C : A → Set n}
+         (f : {a : A} → B a → C a) {a b : A} {x : B a} {y : B b} →
+         x ≅[ B ] y → f x ≅[ C ] f y
+ap'≅ f (p ,≅ q) = p ,≅ (apd f q)
+
+
 ≡-to-≅ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} {x y : B a} →
            x ≡ y → x ≅[ B ] y
 ≡-to-≅ p = refl ,≅ p
@@ -414,6 +428,11 @@ _≅⟨_⟩_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
            (x : B a) {y : B b} {z : B c} →
            {P : a ≡ b} → x ≡[ ap B P ]≡ y → y ≅[ B ] z → x ≅[ B ] z
 x ≅⟨ p ⟩ q = (≡[]-to-≅ p) ∙≅ q
+
+_≅⟨_⟩'_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
+            (x : B a) {y : B b} {z : B c} →
+            x ≅[ B ] y → y ≅[ B ] z → x ≅[ B ] z
+x ≅⟨ p ⟩' q = p ∙≅ q
 
 _≅∎ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} (x : B a) → x ≅[ B ] x
 x ≅∎ = refl≅
