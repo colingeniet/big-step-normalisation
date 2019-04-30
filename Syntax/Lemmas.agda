@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 module Syntax.Lemmas where
 
