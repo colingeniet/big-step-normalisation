@@ -36,12 +36,13 @@ data Wk where
 
 -- Weakening of variables, composition
 private
-  []wk, : {Γ Δ : Con} {A B : Ty Δ} {σ : Tms Γ Δ} {u : Tm Γ (B [ σ ]T)} →
-          A [ σ ]T ≡ A [ wk ]T [ σ , u ]T
-  []wk, {Γ} {Δ} {A} {B} {σ} {u} =
-    A [ σ ]T             ≡⟨ ap (λ x → A [ x ]T) (wk, ⁻¹) ⟩
-    A [ wk ∘ (σ , u) ]T  ≡⟨ [][]T ⟩
-    A [ wk ]T [ σ , u ]T ∎
+  abstract
+    []wk, : {Γ Δ : Con} {A B : Ty Δ} {σ : Tms Γ Δ} {u : Tm Γ (B [ σ ]T)} →
+            A [ σ ]T ≡ A [ wk ]T [ σ , u ]T
+    []wk, {Γ} {Δ} {A} {B} {σ} {u} =
+      A [ σ ]T             ≡⟨ ap (λ x → A [ x ]T) (wk, ⁻¹) ⟩
+      A [ wk ∘ (σ , u) ]T  ≡⟨ [][]T ⟩
+      A [ wk ]T [ σ , u ]T ∎
 
 _+v_ : {Γ Δ : Con} {A : Ty Δ} → Var Δ A → (σ : Wk Γ Δ) → Var Γ (A [ ⌜ σ ⌝w ]T)
 z +v (_ , y) = tr (Var _) []wk, y
@@ -150,12 +151,13 @@ idw : {Γ : Con} → Wk Γ Γ
 ⌜idw⌝ : {Γ : Con} → ⌜ idw {Γ} ⌝w ≡ id
 
 private
-  [⌜wkid⌝] : {Γ : Con} {A : Ty Γ} → A [ wk ]T ≡ A [ ⌜ wkw {A = A} idw ⌝w ]T
-  [⌜wkid⌝] {Γ} {A} =
-    A [ wk ]T           ≡⟨ ap (λ x → A [ x ]T) id∘ ⁻¹ ⟩
-    A [ id ∘ wk ]T      ≡⟨ ap (λ x → A [ x ∘ wk ]T) ⌜idw⌝ ⁻¹ ⟩
-    A [ ⌜ idw ⌝w ∘ wk ]T ≡⟨ ap (λ x → A [ x ]T) ⌜wkw⌝ ⁻¹ ⟩
-    A [ ⌜ wkw idw ⌝w ]T  ∎    
+  abstract
+    [⌜wkid⌝] : {Γ : Con} {A : Ty Γ} → A [ wk ]T ≡ A [ ⌜ wkw {A = A} idw ⌝w ]T
+    [⌜wkid⌝] {Γ} {A} =
+      A [ wk ]T           ≡⟨ ap (λ x → A [ x ]T) id∘ ⁻¹ ⟩
+      A [ id ∘ wk ]T      ≡⟨ ap (λ x → A [ x ∘ wk ]T) ⌜idw⌝ ⁻¹ ⟩
+      A [ ⌜ idw ⌝w ∘ wk ]T ≡⟨ ap (λ x → A [ x ]T) ⌜wkw⌝ ⁻¹ ⟩
+      A [ ⌜ wkw idw ⌝w ]T  ∎    
 
 idw {●} = ε
 idw {Γ , A} = wkw (idw {Γ}) , tr (Var _) [⌜wkid⌝] z
