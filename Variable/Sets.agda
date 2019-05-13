@@ -1,6 +1,6 @@
 {-# OPTIONS --safe --cubical #-}
 
-module Weakening.Variable.Sets where
+module Variable.Sets where
 
 open import Library.Equality
 open import Library.Decidable
@@ -10,7 +10,7 @@ open import Library.NotEqual
 open import Library.Pairs
 open import Library.Maybe
 open import Syntax.Terms
-open import Weakening.Variable
+open import Variable.Variable
 open import Agda.Builtin.Nat
 open import Library.Nat.Sets
 

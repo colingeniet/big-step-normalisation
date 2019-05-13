@@ -28,7 +28,7 @@ infixr 6 _∙_ _d∙_ _∙d_ _d∙d_ _∙≅_
 infixr 20 _*_
 infix 5 _≅_ ≅-syntax
 infix 4 _,≅_
-infixr 0 _≡⟨_⟩_ _≅⟨_⟩_ _≅⟨_⟩'_
+infixr 0 _≡⟨_⟩_ _≅⟨_⟩_ _≅⟨_⟩'_ _≅⟨_∣_⟩_
 infix 1 _∎ _≅∎
 
 
@@ -161,8 +161,7 @@ refl∙ {x = x} {p = p} j i =
 
 {-
   This squares is a face of the cube used to prove associativity.
-  It is somewhat similar to the transitivity-square above, but the link is not
-  obvious to me.
+  It is somewhat similar to the transitivity-square above.
   It looks like this:
   j^
    |->i
@@ -274,30 +273,30 @@ _∙d_ {P = P} p q = tr (λ P → _ ≡[ P ]≡ _) (refl∙ {p = P}) (p d∙d q)
 
 -- Transitivity laws for dependent paths. All those equalities lie over the
 -- corresponding equalities for non-dependent paths.
-private
-  transitivity-square-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
-                            {x : A} {y : B} {z : C}
-                            (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
-                            (i j : I) → transitivity-square P Q i j
-  transitivity-square-d {P = P} {Q} {x} p q i =
-    fill (λ j → transitivity-square P Q i j) _
-         (λ j → λ {(i = i0) → x; (i = i1) → q j}) (inc (p i))
+transitivity-square-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
+                          {x : A} {y : B} {z : C}
+                          (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
+                          (i j : I) → transitivity-square P Q i j
+transitivity-square-d {P = P} {Q} {x} p q i =
+  fill (λ j → transitivity-square P Q i j) _
+       (λ j → λ {(i = i0) → x; (i = i1) → q j}) (inc (p i))
 
-  diagonal-square-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
-                        {x : A} {y : B} {z : C}
-                        (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
-                        (i j : I) → diagonal-square P Q i j
-  diagonal-square-d {P = P} {Q} p q i j =
-    comp (hfill (λ k → λ {(i = i0) → P j;
-                          (j = i0) → P i;
-                          (i = i1) → Q (j ∧ k);
-                          (j = i1) → Q (i ∧ k)})
-                (inc (P (i ∨ j)))) _
-         (λ k → λ {(i = i0) → p j;
-                   (j = i0) → p i;
-                   (i = i1) → q (j ∧ k);
-                   (j = i1) → q (i ∧ k)})
-         (p (i ∨ j))
+diagonal-square-d : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
+                      {x : A} {y : B} {z : C}
+                      (p : x ≡[ P ]≡ y) (q : y ≡[ Q ]≡ z) →
+                      (i j : I) → diagonal-square P Q i j
+diagonal-square-d {P = P} {Q} p q i j =
+  comp (hfill (λ k → λ {(i = i0) → P j;
+                        (j = i0) → P i;
+                        (i = i1) → Q (j ∧ k);
+                        (j = i1) → Q (i ∧ k)})
+              (inc (P (i ∨ j)))) _
+       (λ k → λ {(i = i0) → p j;
+                 (j = i0) → p i;
+                 (i = i1) → q (j ∧ k);
+                 (j = i1) → q (i ∧ k)})
+       (p (i ∨ j))
+
 
 
 d∙refl : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y : B} {p : x ≡[ P ]≡ y} →
@@ -427,7 +426,12 @@ ap'≅ f (p ,≅ q) = p ,≅ (apd f q)
 _≅⟨_⟩_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
            (x : B a) {y : B b} {z : B c} →
            {P : a ≡ b} → x ≡[ ap B P ]≡ y → y ≅[ B ] z → x ≅[ B ] z
-x ≅⟨ p ⟩ q = (≡[]-to-≅ p) ∙≅ q
+x ≅⟨ p ⟩ q = _∙≅_ {x = x} (≡[]-to-≅ p) q
+
+_≅⟨_∣_⟩_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
+             (x : B a) {y : B b} {z : B c} →
+             (P : a ≡ b) → x ≡[ ap B P ]≡ y → y ≅[ B ] z → x ≅[ B ] z
+x ≅⟨ P ∣ p ⟩ q = _∙≅_ {x = x} (≡[]-to-≅ {P = P} p) q
 
 _≅⟨_⟩'_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
             (x : B a) {y : B b} {z : B c} →

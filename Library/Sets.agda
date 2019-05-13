@@ -107,32 +107,42 @@ isPropPath {B = B} H x y = (λ k → B k) *fill x d∙ H _ y
 
 
 -- Similar result for sets.
+isSetPath : ∀ {l} {B : I → Set l} →
+              ({i : I} → isSet (B i)) →
+              {x : B i0} {y : B i1} (p q : PathP B x y) →
+              p ≡ q
+isSetPath {B = B} H {x} {y} p q j i =
+  -- The idea is to split the dependent paths in two:
+  let -- The first part is a dependent path, but is the same for both p and q
+      t : (i : I) → B i
+      t = fill B i0 (λ k ()) (inc x)
+      -- The second part is non-dependent, and allows to use the hypothesis that
+      -- B is a set.
+      -- The definition is almost like the composition of r⁻¹ and t,
+      -- but we ensure that the underlying path is constant.
+      side-square : PathP B x y → (i j : I) → B (1- i ∨ j)
+      side-square r i = fill (λ j → B (1- i ∨ j)) _
+                             (λ j → λ {(i = i0) → y;
+                                       (i = i1) → t j})
+                             (inc (r (1- i)))
+      side-edge : PathP B x y → I → B i1
+      side-edge r i = side-square r i i1
+  in comp (λ k → B (1- k ∨ i)) _
+          (λ k → λ {(i = i0) → t (1- k);
+                    (i = i1) → y;
+                    (j = i0) → side-square p (1- i) (1- k);
+                    (j = i1) → side-square q (1- i) (1- k)})
+          (H (λ k → side-edge p (1- k))
+             (λ k → side-edge q (1- k))
+             j i)
+
 -- This version assumes a common underlying path.
 isSetDependent : ∀ {l m} {A : Set l} {B : A → Set m} →
                     ({x : A} → isSet (B x)) →
                     {a b : A} {p : a ≡ b} {x : B a} {y : B b} →
                     isProp (x ≡[ ap B p ]≡ y)
 isSetDependent {B = B} H {a} {b} {p} {x} {y} r s j i =
-  let t = trfill B p x
-      -- This is just composition, but with an ad hoc definition to simplify
-      -- the underlying path.
-      side-edge : x ≡[ ap B p ]≡ y → I → B b
-      side-edge r i = comp (λ j → B (p (1- i ∨ j))) _
-                           (λ j → λ {(i = i0) → y; (i = i1) → t j})
-                           (r (1- i))
-      side-square : x ≡[ ap B p ]≡ y → (i j : I) → B (p (1- i ∨ j))
-      side-square r i = fill (λ j → B (p (1- i ∨ j))) _
-                             (λ j → λ {(i = i0) → y; (i = i1) → t j})
-                             (inc (r (1- i)))
-  in
-  comp (λ k → B (p (1- k ∨ i))) _
-       (λ k → λ {(i = i0) → t (1- k);
-                 (i = i1) → y;
-                 (j = i0) → side-square r (1- i) (1- k);
-                 (j = i1) → side-square s (1- i) (1- k)})
-       (H (λ k → side-edge r (1- k))
-          (λ k → side-edge s (1- k))
-          j i)
+  isSetPath {B = λ i → B (p i)} H r s j i
 
 -- This version assumes that the indexing type is a set.
 isSetDependent2 :
@@ -146,7 +156,7 @@ isSetDependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
   d∙ isSetDependent {B = B} HB (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
 
 
-{- The type of a square with p q r s as edges.
+{- Fill a square in a set given all edges
        s
     b_____d
     |     |
@@ -154,6 +164,28 @@ isSetDependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
     |_____|
     a  r  c
 -}
+isSetFillDependentSquare :
+  ∀ {l} {A : I → I → Set l} → (∀ {i j} → isSet (A i j)) →
+    {a : A i0 i0} {b : A i0 i1} {c : A i1 i0} {d : A i1 i1}
+    (p : a ≡[ (λ j → A i0 j) ]≡ b) (q : c ≡[ (λ j → A i1 j) ]≡ d)
+    (r : a ≡[ (λ i → A i i0) ]≡ c) (s : b ≡[ (λ i → A i i1) ]≡ d) →
+    (i j : I) → (A i j) [ (i ∨ j ∨ 1- i ∨ 1- j) ↦
+                          (λ {(i = i0) → p j; (i = i1) → q j;
+                              (j = i0) → r i; (j = i1) → s i}) ]
+isSetFillDependentSquare {A = A} H p q r s i j =
+  let base : (i j : I) → A i j
+      base i = fill (A i) _
+                    (λ {j (i = i0) → p j;
+                        j (i = i1) → q j})
+                    (inc (r i))
+  in inc (comp (λ _ → A i j) _
+                (λ k → λ {(i = i0) → p j;
+                          (i = i1) → q j;
+                          (j = i0) → r i;
+                          (j = i1) → isSetPath H (λ i → base i i1) s k i})
+                (base i j))
+
+
 square-filler : ∀ {l} {A : Set l} {a b c d : A}
                   (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) →
                   Setω
@@ -166,12 +198,13 @@ square-filler {A = A} p q r s = (i j : I) →
 isSetFillSquare : ∀ {l} {A : Set l} → isSet A → {a b c d : A}
                       (p : a ≡ b) (q : c ≡ d) (r : a ≡ c) (s : b ≡ d) →
                       square-filler p q r s
-isSetFillSquare {A = A} H {a} {b} {c} {d} p q r s i j =
+isSetFillSquare {A = A} H p q r s i j =
   inc (hcomp (λ k → λ {(i = i0) → p (j ∨ 1- k);
                        (i = i1) → q j;
                        (j = i0) → transitivity-square (r ⁻¹) p (1- i) (1- k);
                        (j = i1) → H ((r ⁻¹ ∙ p) ⁻¹ ∙ q) s k i})
              (transitivity-square ((r ⁻¹ ∙ p) ⁻¹) q i j))
+
 
 -- Furthermore, the square can be filled by extending a partial square.
 isSetFillPartialSquare : ∀ {l} {A : Set l} → isSet A →
