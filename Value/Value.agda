@@ -9,7 +9,7 @@ module Value.Value where
 open import Library.Equality
 open import Library.Sets
 open import Syntax.Terms
-open import Weakening.Variable
+open import Variable.Variable
 
 
 -- Values and environments (list of values) are mutually defined.
