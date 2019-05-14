@@ -8,7 +8,9 @@ open import Syntax.Terms
 open import Syntax.Lemmas
 open import Syntax.Weakening
 open import Variable.Variable
+open import Variable.Lemmas
 open import Value.Value
+
 
 -- Weakening of values.
 _+V_ : {Γ Δ : Con} {A : Ty Δ} → Val Δ A → (σ : Wk Γ Δ) → Val Γ (A [ ⌜ σ ⌝w ]T)
@@ -35,14 +37,14 @@ private
       A [ ⌜ ρ ⌝E ]T [ ⌜ σ ⌝w ]T ∎
 
     [<>][] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {v : Val Δ A} {σ : Wk Γ Δ} →
-             B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T ≡ B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T
+             B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ≡ B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T
     [<>][] {Γ} {Δ} {A} {B} {v} {σ} =
-      B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T          ≡⟨ [][]T ⁻¹ ⟩
-      B [ < ⌜ v ⌝V > ∘ ⌜ σ ⌝w ]T             ≡⟨ ap (B [_]T) <>∘ ⟩
-      B [ ⌜ σ ⌝w , ⌜ v ⌝V [ ⌜ σ ⌝w ] ]T      ≡⟨ ap (λ x → B [ _ , x ]T) ⌜⌝+V ⁻¹ ⟩
-      B [ ⌜ σ ⌝w , ⌜ v +V σ ⌝V ]T            ≡⟨ ap (λ x → B [ x ]T) ↑∘<> ⁻¹ ⟩
-      B [ (⌜ σ ⌝w ↑ A) ∘ < ⌜ v +V σ ⌝V > ]T  ≡⟨ [][]T ⟩
-      B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ∎
+      B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ≡⟨ [][]T ⁻¹ ⟩
+      B [ (⌜ σ ⌝w ↑ A) ∘ < ⌜ v +V σ ⌝V > ]T  ≡⟨ ap (λ x → B [ x ]T) ↑∘<> ⟩
+      B [ ⌜ σ ⌝w , ⌜ v +V σ ⌝V ]T            ≡⟨ ap (λ x → B [ _ , x ]T) ⌜⌝+V ⟩
+      B [ ⌜ σ ⌝w , ⌜ v ⌝V [ ⌜ σ ⌝w ] ]T      ≡⟨ ap (B [_]T) <>∘ ⁻¹ ⟩
+      B [ < ⌜ v ⌝V > ∘ ⌜ σ ⌝w ]T             ≡⟨ [][]T ⟩
+      B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T          ∎
 
 
 (lam u ρ) +V σ = tr (Val _) [+E] (lam u (ρ +E σ))
@@ -53,7 +55,7 @@ private
                                  ∙ ⌜⌝+V {v = v} ⁻¹) i
 (isSetVal p q i j) +V σ = isSetVal (λ k → p k +V σ) (λ k → q k +V σ) i j
 (var x) +NV σ = var (x +v σ)
-(app f v) +NV σ = tr (NV _) ([<>][] {v = v} ⁻¹)
+(app f v) +NV σ = tr (NV _) ([<>][] {v = v})
                      (app (tr (NV _) Π[] (f +NV σ)) (v +V σ))
 ε +E _ = ε
 (ρ , v) +E σ = ρ +E σ , tr (Val _) ([+E] ⁻¹) (v +V σ)
@@ -92,8 +94,8 @@ abstract
             ⌜ f +NV σ ⌝NV                 ≅⟨ trfill (Tm Γ) Π[] ⌜ f +NV σ ⌝NV ⟩
             tr (Tm Γ) Π[] ⌜ f +NV σ ⌝NV   ≅∎
     in ≅-to-≡ {B = Tm Γ} isSetTy (
-    ⌜ tr (NV Γ) ([<>][] {v = v} ⁻¹) (app (tr (NV Γ) Π[] (f +NV σ)) (v +V σ)) ⌝NV
-      ≅⟨ apd ⌜_⌝NV (trfill (NV Γ) ([<>][] {v = v} ⁻¹)
+    ⌜ tr (NV Γ) ([<>][] {v = v}) (app (tr (NV Γ) Π[] (f +NV σ)) (v +V σ)) ⌝NV
+      ≅⟨ apd ⌜_⌝NV (trfill (NV Γ) ([<>][] {v = v})
                            (app (tr (NV Γ) Π[] (f +NV σ)) (v +V σ))) ⁻¹ ⟩
     ⌜ tr (NV Γ) Π[] (f +NV σ) ⌝NV $ ⌜ v +V σ ⌝V
       ≅⟨ (λ i → ≅-to-≡ isSetTy p i $ ⌜ v +V σ ⌝V) ⟩
@@ -188,8 +190,8 @@ abstract
             B [ id ]T          ≅⟨ [id]T ⟩
             B                  ≅∎)
     in ≅-to-≡[] {B = NV Γ} isSetTy (
-      tr (NV Γ) ([<>][] {v = v} ⁻¹) (app (tr (NV Γ) Π[] (f +NV idw)) (v +V idw))
-        ≅⟨ trfill (NV Γ) ([<>][] {v = v} ⁻¹) _ ⁻¹ ⟩
+      tr (NV Γ) ([<>][] {v = v}) (app (tr (NV Γ) Π[] (f +NV idw)) (v +V idw))
+        ≅⟨ trfill (NV Γ) ([<>][] {v = v}) _ ⁻¹ ⟩
       app (tr (NV Γ) Π[] (f +NV idw)) (v +V idw)
         ≅⟨ (λ i → app (≅-to-≡[] isSetTy p {P = λ i → Π (r i) (s i)} i)
                       (≅-to-≡[] isSetTy q {P = r} i)) ⟩
@@ -273,14 +275,14 @@ abstract
             B [ ⌜ σ ⌝w ↑ A ]T [ ⌜ ν ⌝w ↑ (A [ ⌜ σ ⌝w ]T) ]T ≅∎))
     in ≅-to-≡[] {B = NV Γ} isSetTy (
        (app f v) +NV (σ ∘w ν)
-         ≅⟨ trfill (NV Γ) ([<>][] {v = v} ⁻¹) (app (tr (NV Γ) Π[] (f +NV (σ ∘w ν))) (v +V (σ ∘w ν))) ⁻¹ ⟩
+         ≅⟨ trfill (NV Γ) ([<>][] {v = v}) (app (tr (NV Γ) Π[] (f +NV (σ ∘w ν))) (v +V (σ ∘w ν))) ⁻¹ ⟩
        app (tr (NV Γ) Π[] (f +NV (σ ∘w ν))) (v +V (σ ∘w ν))
          ≅⟨ (λ i → app (≅-to-≡[] isSetTy p {P = λ i → Π (r i) (s i)} i)
                        (≅-to-≡[] isSetTy q {P = r} i)) ⟩
        app (tr (NV Γ) Π[] ((tr (NV Δ) Π[] (f +NV σ)) +NV ν)) ((v +V σ) +V ν)
-         ≅⟨ trfill (NV Γ) ([<>][] {v = v +V σ} ⁻¹) _ ⟩
+         ≅⟨ trfill (NV Γ) ([<>][] {v = v +V σ}) _ ⟩
        (app (tr (NV Δ) Π[] (f +NV σ)) (v +V σ)) +NV ν
-         ≅⟨ apd (_+NV ν) (trfill (NV Δ) ([<>][] {v = v} ⁻¹) _) ⟩
+         ≅⟨ apd (_+NV ν) (trfill (NV Δ) ([<>][] {v = v}) _) ⟩
        ((app f v) +NV σ) +NV ν ≅∎)
   +E∘ {ρ = ε} = refl
   +E∘ {Γ} {Δ} {Θ} {Ψ , A} {ρ , v} {σ} {ν} i =
