@@ -127,7 +127,7 @@ isSetPath {B = B} H {x} {y} p q j i =
                              (inc (r (1- i)))
       side-edge : PathP B x y → I → B i1
       side-edge r i = side-square r i i1
-  in comp (λ k → B (1- k ∨ i)) _
+  in comp (λ k → B (1- k ∨ i))
           (λ k → λ {(i = i0) → t (1- k);
                     (i = i1) → y;
                     (j = i0) → side-square p (1- i) (1- k);
@@ -178,7 +178,7 @@ isSetFillDependentSquare {A = A} H p q r s i j =
                     (λ {j (i = i0) → p j;
                         j (i = i1) → q j})
                     (inc (r i))
-  in inc (comp (λ _ → A i j) _
+  in inc (comp (λ _ → A i j)
                 (λ k → λ {(i = i0) → p j;
                           (i = i1) → q j;
                           (j = i0) → r i;
