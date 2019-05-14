@@ -117,7 +117,7 @@ isSetDependent {B = B} H {a} {b} {p} {x} {y} r s j i =
       -- This is just composition, but with an ad hoc definition to simplify
       -- the underlying path.
       side-edge : x ≡[ ap B p ]≡ y → I → B b
-      side-edge r i = comp (λ j → B (p (1- i ∨ j))) _
+      side-edge r i = comp (λ j → B (p (1- i ∨ j)))
                            (λ j → λ {(i = i0) → y; (i = i1) → t j})
                            (r (1- i))
       side-square : x ≡[ ap B p ]≡ y → (i j : I) → B (p (1- i ∨ j))
@@ -125,7 +125,7 @@ isSetDependent {B = B} H {a} {b} {p} {x} {y} r s j i =
                              (λ j → λ {(i = i0) → y; (i = i1) → t j})
                              (inc (r (1- i)))
   in
-  comp (λ k → B (p (1- k ∨ i))) _
+  comp (λ k → B (p (1- k ∨ i)))
        (λ k → λ {(i = i0) → t (1- k);
                  (i = i1) → y;
                  (j = i0) → side-square r (1- i) (1- k);
