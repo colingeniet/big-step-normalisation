@@ -84,7 +84,7 @@ _∙_ {x = x} p q i = hcomp (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p 
 
 -- Equality proofs syntactic sugar
 _≡⟨_⟩_ : ∀ {l} {A : Set l} (x : A) {y z : A} → x ≡ y → y ≡ z → x ≡ z
-x ≡⟨ p ⟩ q = p ∙ q
+x ≡⟨ p ⟩ q = _∙_ {x = x} p q
 
 _∎ : ∀ {l} {A : Set l} (x : A) → x ≡ x
 x ∎ = refl
@@ -436,7 +436,7 @@ x ≅⟨ P ∣ p ⟩ q = _∙≅_ {x = x} (≡[]-to-≅ {P = P} p) q
 _≅⟨_⟩'_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
             (x : B a) {y : B b} {z : B c} →
             x ≅[ B ] y → y ≅[ B ] z → x ≅[ B ] z
-x ≅⟨ p ⟩' q = p ∙≅ q
+x ≅⟨ p ⟩' q = _∙≅_ {x = x} p q
 
 _≅∎ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} (x : B a) → x ≅[ B ] x
 x ≅∎ = refl≅

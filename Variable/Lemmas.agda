@@ -4,6 +4,8 @@ module Variable.Lemmas where
 
 open import Library.Equality
 open import Library.Sets
+open import Library.Pairs
+open import Library.Pairs.Sets
 open import Syntax.Terms
 open import Syntax.Lemmas
 open import Variable.Variable
@@ -187,6 +189,33 @@ abstract
     in ⌜ wkw σ ⌝w , ⌜ tr (Var _) [⌜wkw⌝] z ⌝v
          ≡⟨ (λ i → p i , ≅-to-≡[] isSetTy q {P = ap (A [_]T) p} i) ⟩
        ⌜ σ ⌝w ∘ wk , tr (Tm _) ([][]T ⁻¹) vz ∎
+
+  ↑wid : {Γ : Con} {A : Ty Γ} → idw {Γ} ↑w A ≅[ (λ x → Wk x (Γ , A)) ] idw {Γ , A}
+  ↑wid {Γ} {A} =
+    let p : A [ ⌜ idw ⌝w ]T ≡ A
+        p = A [ ⌜ idw ⌝w ]T ≡⟨ ap (A [_]T) ⌜idw⌝ ⟩
+            A [ id ]T      ≡⟨ [id]T ⟩
+            A              ∎
+        q : wkw {A = A [ ⌜ idw ⌝w ]T} idw
+            ≡[ ap (λ x → Wk (Γ , x) Γ) p ]≡
+            wkw {A = A} idw
+        q = apd (λ x → wkw {A = x} idw) p
+        r : tr (Var _) [⌜wkw⌝] (z {A = A [ ⌜ idw ⌝w ]T})
+            ≅[ (λ (x : Σ Con Ty) → Var (fst x) (snd x)) ]
+            tr (Var _) [⌜wkid⌝] (z {A = A})
+        r = tr (Var _) [⌜wkw⌝] (z {A = A [ ⌜ idw ⌝w ]T})
+              ≅⟨ ap (_ ,,_) [⌜wkw⌝] ⁻¹ ∣ trfill (Var _) [⌜wkw⌝] z ⁻¹ ⟩
+            z {A = A [ ⌜ idw ⌝w ]T}
+              ≅⟨ ap (λ x → Γ , x ,, x [ wk {A = x} ]T) p ∣ apd (λ x → z {A = x}) p ⟩
+            z {A = A}
+              ≅⟨ ap (_ ,,_) [⌜wkid⌝] ∣ trfill (Var _) [⌜wkid⌝] z ⟩
+            tr (Var _) [⌜wkid⌝] (z {A = A}) ≅∎
+        s : (Γ , A [ ⌜ idw ⌝w ]T ,, A [ ⌜ wkw {A = A [ ⌜ idw ⌝w ]T} idw ⌝w ]T)
+            ≡ (Γ , A ,, A [ ⌜ wkw {A = A} idw ⌝w ]T)
+        s i = Γ , p i ,, A [ ⌜ wkw {A = p i} idw ⌝w ]T
+    in wkw {A = A [ ⌜ idw ⌝w ]T} idw , tr (Var (Γ , A [ ⌜ idw ⌝w ]T)) [⌜wkw⌝] z
+         ≅⟨ (λ i → q i , ≅-to-≡[] (isSetΣ isSetCon isSetTy) r {P = s} i) ⟩
+       wkw {A = A} idw , tr (Var (Γ , A)) [⌜wkid⌝] z ≅∎
 
 {-
 wk∘↑w : {Γ Δ Θ : Con} {A : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
