@@ -58,9 +58,7 @@ private
       ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ≡⟨ ⌜⌝+E ⟩
       ⌜ idenv ⌝E +s wkw idw             ≡⟨ ap (_+s wkw idw) idenv≡ ⟩
       id ∘ ⌜ wkw idw ⌝w                 ≡⟨ id∘ ⟩
-      ⌜ wkw idw ⌝w                      ≡⟨ ⌜wkw⌝ ⟩
-      ⌜ idw ⌝w ∘ wk                     ≡⟨ ap (_∘ wk) ⌜idw⌝ ⟩
-      id ∘ wk                          ≡⟨ id∘ ⟩
+      ⌜ wkw idw ⌝w                      ≡⟨ ⌜wkid⌝ ⟩
       wk                               ∎
 
     [⌜id+E⌝] : {Γ : Con} {A : Ty Γ} → A [ wk ]T ≡ A [ ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ]T

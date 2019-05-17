@@ -150,12 +150,16 @@ idw : {Γ : Con} → Wk Γ Γ
 ⌜idw⌝ : {Γ : Con} → ⌜ idw {Γ} ⌝w ≡ id
 
 abstract
-  [⌜wkid⌝] : {Γ : Con} {A : Ty Γ} → A [ wk ]T ≡ A [ ⌜ wkw {A = A} idw ⌝w ]T
-  [⌜wkid⌝] {Γ} {A} =
-    A [ wk ]T           ≡⟨ ap (λ x → A [ x ]T) id∘ ⁻¹ ⟩
-    A [ id ∘ wk ]T      ≡⟨ ap (λ x → A [ x ∘ wk ]T) ⌜idw⌝ ⁻¹ ⟩
-    A [ ⌜ idw ⌝w ∘ wk ]T ≡⟨ ap (λ x → A [ x ]T) ⌜wkw⌝ ⁻¹ ⟩
-    A [ ⌜ wkw idw ⌝w ]T  ∎    
+  ⌜wkid⌝ : {Γ : Con} {A : Ty Γ} → ⌜ wkw {A = A} idw ⌝w ≡ wk
+  ⌜wkid⌝ {Γ} {A} =
+    ⌜ wkw idw ⌝w  ≡⟨ ⌜wkw⌝ ⟩
+    ⌜ idw ⌝w ∘ wk ≡⟨ ap (_∘ wk) ⌜idw⌝ ⟩
+    id ∘ wk      ≡⟨ id∘ ⟩
+    wk           ∎
+
+[⌜wkid⌝] : {Γ : Con} {A : Ty Γ} → A [ wk ]T ≡ A [ ⌜ wkw {A = A} idw ⌝w ]T
+[⌜wkid⌝] {Γ} {A} = ap (A [_]T) ⌜wkid⌝ ⁻¹
+
 
 idw {●} = ε
 idw {Γ , A} = wkw (idw {Γ}) , tr (Var _) [⌜wkid⌝] z

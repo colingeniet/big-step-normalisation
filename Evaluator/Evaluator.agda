@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 module Evaluator.Evaluator where
 
@@ -7,6 +7,7 @@ open import Library.Sets
 open import Syntax.Terms
 open import Syntax.Lemmas
 open import Variable.Variable
+open import Variable.Lemmas
 open import Value.Value
 open import Value.Weakening
 open import Value.Lemmas
@@ -61,6 +62,26 @@ private
     B [ ρ , v ]T            ≡⟨ ap (B [_]T) ↑∘<> ⁻¹ ⟩
     B [ (ρ ↑ A) ∘ < v > ]T  ≡⟨ [][]T ⟩
     B [ ρ ↑ A ]T [ < v > ]T ∎
+
+  [↑wk][<z>] : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} →
+               B ≡ B [ ⌜ wkw idw ⌝w ↑ A ]T [ < ⌜ tr (Val _) [⌜wkid⌝] (neu (var z)) ⌝V > ]T
+  [↑wk][<z>] {Γ} {A} {B} =
+    let p : wk ≡ ⌜ wkw idw ⌝w
+        p = ⌜wkid⌝ ⁻¹
+        q : vz ≅[ Tm (Γ , A) ] ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V
+        q = ⌜ neu (var z) ⌝V
+              ≅⟨ apd ⌜_⌝V (trfill (Val _) [⌜wkid⌝] (neu (var z))) ⟩
+            ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V ≅∎
+    in B         ≡⟨ [id]T ⁻¹ ⟩
+       B [ id ]T ≡⟨ ap (B [_]T) πη ⁻¹ ⟩
+       B [ wk , vz ]T
+         ≡⟨ (λ i → B [ p i , ≅-to-≡[] isSetTy q {P = ap (A [_]T) p} i ]T) ⟩
+       B [ ⌜ wkw idw ⌝w , ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V ]T
+         ≡⟨ ap (B [_]T) ↑∘<> ⁻¹ ⟩
+       B [ (⌜ wkw idw ⌝w ↑ A) ∘ < ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V > ]T
+         ≡⟨ [][]T ⟩
+       B [ ⌜ wkw idw ⌝w ↑ A ]T [ < ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V > ]T ∎
+
 
 data evals_>_⇒_ where
   -- evals id ρ = ρ
@@ -209,38 +230,91 @@ abstract
   eval$≡ (isProp$ c c' i) =
     isSetTm (eval$≡ c) (eval$≡ c') i
 
-{-
--- q : Val Γ A → Nf Γ A
-data q_⇒_ : {Γ : Con} {A : Ty} → Val Γ A → Nf Γ A → Set
--- qs : NV Γ Δ → NN Γ Δ
-data qs_⇒_ : {Γ : Con} {A : Ty} → NV Γ A → NN Γ A → Set
 
-data q_⇒_ where
-  -- q (n : o) = qs n
-  -- A value of type o must be neutral !
-  qo : {Γ : Con} {n : NV Γ o} {nf : NN Γ o} →
-       qs n ⇒ nf → q (neu n) ⇒ (neu nf)
-  -- q (f : A ⟶ B) = lam (q (f $ vz))
-  q⟶ : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)}
-       {fz : Val (Γ , A) B} {nffvz : Nf (Γ , A) B} →
-       (f +V (wkwk A idw)) $ (neu (var z)) ⇒ fz → q fz ⇒ nffvz →
-       q f ⇒ lam nffvz
-  isPropq : {Γ : Con} {A : Ty} {v : Val Γ A} {n : Nf Γ A} →
-            isProp (q v ⇒ n)
+
+-- q : Val Γ A → Nf Γ A
+data q_⇒_ : {Γ : Con} {A : Ty Γ} → Val Γ A → Nf Γ A → Set
+-- qs : NV Γ Δ → NN Γ Δ
+data qs_⇒_ : {Γ : Con} {A : Ty Γ} → NV Γ A → NN Γ A → Set
+
+q≡ : {Γ : Con} {A : Ty Γ} {u : Val Γ A} {n : Nf Γ A} →
+     q u ⇒ n → ⌜ u ⌝V ≡ ⌜ n ⌝N
+qs≡ : {Γ : Con} {A : Ty Γ} {u : NV Γ A} {n : NN Γ A} →
+      qs u ⇒ n → ⌜ u ⌝NV ≡ ⌜ n ⌝NN
+
 data qs_⇒_ where
   -- qs x ⇒ x
-  qsvar : {Γ : Con} {A : Ty} {x : Var Γ A} → qs (var x) ⇒ (var x)
+  qsvar : {Γ : Con} {A : Ty Γ} {x : Var Γ A} → qs (var x) ⇒ (var x)
   -- qs (n $ v) ⇒ (qs n) $ (q v)
-  qsapp : {Γ : Con} {A B : Ty} {f : NV Γ (A ⟶ B)} {u : Val Γ A}
-          {neff : NN Γ (A ⟶ B)} {nfu : Nf Γ A} →
-          qs f ⇒ neff → q u ⇒ nfu →
-          qs (app f u) ⇒ (app neff nfu)
-  isPropqs : {Γ : Con} {A : Ty} {v : NV Γ A} {n : NN Γ A} →
+  qsapp : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} {f : NV Γ (Π A B)} {u : Val Γ A}
+          {neff : NN Γ (Π A B)} {nfu : Nf Γ A} →
+          qs f ⇒ neff → (qu : q u ⇒ nfu) →
+          qs (app f u) ⇒ tr (NN Γ) (ap (λ x → B [ < x > ]T) (q≡ qu) ⁻¹) (app neff nfu)
+  isPropqs : {Γ : Con} {A : Ty Γ} {v : NV Γ A} {n : NN Γ A} →
              isProp (qs v ⇒ n)
 
+data q_⇒_ where
+  -- q (n : U / El x) = qs n
+  -- A value of base type must be neutral !
+  qU : {Γ : Con} {n : NV Γ U} {nf : NN Γ U} →
+       qs n ⇒ nf → q (neu n) ⇒ neuU nf
+  qEl : {Γ : Con} {u : Tm Γ U} {n : NV Γ (El u)} {nf : NN Γ (El u)} →
+        qs n ⇒ nf → q (neu n) ⇒ neuEl nf
+  -- q (f : A ⟶ B) = lam (q (f $ vz))
+  qΠ : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} {f : Val Γ (Π A B)}
+       {fz : Val (Γ , A) B} {nffvz : Nf (Γ , A) B} →
+       tr (Val _) Π[] (f +V (wkw idw))
+         $ tr (Val _) [⌜wkid⌝] (neu (var z))
+         ⇒ tr (Val _) [↑wk][<z>] fz →
+       q fz ⇒ nffvz → q f ⇒ lam nffvz
+  isPropq : {Γ : Con} {A : Ty Γ} {v : Val Γ A} {n : Nf Γ A} →
+            isProp (q v ⇒ n)
 
--- norm : Tm Γ A → Nf Γ A
-data norm_⇒_ : {Γ : Con} {A : Ty} → Tm Γ A → Nf Γ A → Set where
-  qeval : {Γ : Con} {A : Ty} {u : Tm Γ A} {v : Val Γ A} {n : Nf Γ A} →
-          eval u > idenv ⇒ v → q v ⇒ n → norm u ⇒ n
--}
+abstract
+  q≡ (qU {n = v} {n} qn) =
+    ⌜ v ⌝NV ≡⟨ qs≡ qn ⟩
+    ⌜ n ⌝NN ∎
+  q≡ (qEl {n = v} {n} qn) =
+    ⌜ v ⌝NV ≡⟨ qs≡ qn ⟩
+    ⌜ n ⌝NN ∎
+  q≡ (qΠ {Γ} {A} {B} {f} {fz} {nffvz} $f qf) =
+    let p : tr (Tm _) Π[] (⌜ f ⌝V [ wk {A = A} ]) ≅[ Tm _ ] ⌜ tr (Val _) Π[] (f +V wkw idw) ⌝V
+        p = tr (Tm _) Π[] (⌜ f ⌝V [ wk ])
+               ≅⟨ trfill (Tm _) Π[] (⌜ f ⌝V [ wk ]) ⁻¹ ⟩
+            ⌜ f ⌝V [ wk ]
+              ≅⟨ apd (⌜ f ⌝V [_]) ⌜wkid⌝ ⁻¹ ⟩
+            ⌜ f ⌝V [ ⌜ wkw idw ⌝w ]
+              ≅⟨ ⌜⌝+V {v = f} ⁻¹ ⟩
+            ⌜ f +V wkw idw ⌝V
+              ≅⟨ apd ⌜_⌝V (trfill (Val _) Π[] (f +V wkw idw)) ⟩
+            ⌜ tr (Val _) Π[] (f +V wkw idw) ⌝V ≅∎
+        q : vz {A = A} ≅[ Tm _ ] ⌜ tr (Val _) [⌜wkid⌝] (neu (var z)) ⌝V
+        q = ⌜ neu (var z) ⌝V
+              ≅⟨ apd ⌜_⌝V (trfill (Val _) [⌜wkid⌝] (neu (var z))) ⟩
+            ⌜ tr (Val _) [⌜wkid⌝] (neu (var z)) ⌝V ≅∎
+    in ≅-to-≡ {B = Tm _} isSetTy (
+    ⌜ f ⌝V
+      ≅⟨ classicη ≅⁻¹ ⟩'
+    lam (tr (Tm _) Π[] (⌜ f ⌝V [ wk ]) $ vz)
+      ≅⟨ (λ i → lam (≅-to-≡[] isSetTy p {P = ap (λ x → Π (A [ x ]T) (B [ x ↑ A ]T)) ⌜wkid⌝ ⁻¹} i
+                    $ ≅-to-≡[] isSetTy q {P = ap (A [_]T) ⌜wkid⌝ ⁻¹} i)) ⟩
+    lam (⌜ tr (Val _) Π[] (f +V wkw idw) ⌝V $ ⌜ tr (Val _) [⌜wkid⌝] (neu (var z)) ⌝V)
+      ≅⟨ (λ i → lam (eval$≡ $f i)) ⟩
+    lam ⌜ tr (Val _) [↑wk][<z>] fz ⌝V
+      ≅⟨ (λ i → lam ⌜ trfill (Val _) [↑wk][<z>] fz (1- i) ⌝V) ⟩
+    lam ⌜ fz ⌝V
+      ≅⟨ (λ i → lam (q≡ qf i)) ⟩
+    lam ⌜ nffvz ⌝N ≅∎)
+  q≡ (isPropq c c' i) =
+    isSetTm (q≡ c) (q≡ c') i  
+
+  qs≡ (qsvar {x = x}) =
+    ⌜ x ⌝v ∎
+  qs≡ (qsapp {f = f} {v} {n} {m} qf qv) = ≅-to-≡ {B = Tm _} isSetTy (
+    ⌜ f ⌝NV $ ⌜ v ⌝V
+      ≅⟨ (λ i → qs≡ qf i $ q≡ qv i) ⟩
+    ⌜ n ⌝NN $ ⌜ m ⌝N
+      ≅⟨ apd ⌜_⌝NN (trfill (NN _) (ap (λ x → _ [ < x > ]T) (q≡ qv) ⁻¹) (app n m)) ⟩
+    ⌜ tr (NN _) (ap (λ x → _ [ < x > ]T) (q≡ qv) ⁻¹) (app n m) ⌝NN ≅∎)
+  qs≡ (isPropqs c c' i) =
+    isSetTm (qs≡ c) (qs≡ c') i
