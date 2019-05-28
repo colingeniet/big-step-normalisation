@@ -47,40 +47,41 @@ eval$≡ : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} {u : Val Γ (Π A B)}
          {v : Val Γ A} {uv : Val Γ (B [ < ⌜ v ⌝V > ]T)} → u $ v ⇒ uv →
          ⌜ u ⌝V $ ⌜ v ⌝V ≡ ⌜ uv ⌝V
 
-private
-  [evals≡] : {Γ Δ Θ : Con} {A : Ty Θ} {σ : Tms Δ Θ} {ρ : Env Γ Δ}
-             {σρ : Env Γ Θ} → evals σ > ρ ⇒ σρ →
-             A [ ⌜ σρ ⌝E ]T ≡ A [ σ ]T [ ⌜ ρ ⌝E ]T
-  [evals≡] {A = A} {σ} {ρ} {σρ} evalsσ =
-    A [ ⌜ σρ ⌝E ]T       ≡⟨ ap (A [_]T) (evals≡ evalsσ) ⁻¹ ⟩
-    A [ σ ∘ ⌜ ρ ⌝E ]T    ≡⟨ [][]T ⟩
-    A [ σ ]T [ ⌜ ρ ⌝E ]T ∎
 
-  [↑∘<>] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {ρ : Tms Γ Δ}
-           {v : Tm Γ (A [ ρ ]T)} → B [ ρ , v ]T ≡ B [ ρ ↑ A ]T [ < v > ]T
-  [↑∘<>] {A = A} {B} {ρ} {v} =
-    B [ ρ , v ]T            ≡⟨ ap (B [_]T) ↑∘<> ⁻¹ ⟩
-    B [ (ρ ↑ A) ∘ < v > ]T  ≡⟨ [][]T ⟩
-    B [ ρ ↑ A ]T [ < v > ]T ∎
+-- A few lemmas used for transports
+[evals≡] : {Γ Δ Θ : Con} {A : Ty Θ} {σ : Tms Δ Θ} {ρ : Env Γ Δ}
+           {σρ : Env Γ Θ} → evals σ > ρ ⇒ σρ →
+           A [ ⌜ σρ ⌝E ]T ≡ A [ σ ]T [ ⌜ ρ ⌝E ]T
+[evals≡] {A = A} {σ} {ρ} {σρ} evalsσ =
+  A [ ⌜ σρ ⌝E ]T       ≡⟨ ap (A [_]T) (evals≡ evalsσ) ⁻¹ ⟩
+  A [ σ ∘ ⌜ ρ ⌝E ]T    ≡⟨ [][]T ⟩
+  A [ σ ]T [ ⌜ ρ ⌝E ]T ∎
 
-  [↑wk][<z>] : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} →
-               B ≡ B [ ⌜ wkw idw ⌝w ↑ A ]T [ < ⌜ tr (Val _) [⌜wkid⌝] (neu (var z)) ⌝V > ]T
-  [↑wk][<z>] {Γ} {A} {B} =
-    let p : wk ≡ ⌜ wkw idw ⌝w
-        p = ⌜wkid⌝ ⁻¹
-        q : vz ≅[ Tm (Γ , A) ] ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V
-        q = ⌜ neu (var z) ⌝V
-              ≅⟨ apd ⌜_⌝V (trfill (Val _) [⌜wkid⌝] (neu (var z))) ⟩
-            ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V ≅∎
-    in B         ≡⟨ [id]T ⁻¹ ⟩
-       B [ id ]T ≡⟨ ap (B [_]T) πη ⁻¹ ⟩
-       B [ wk , vz ]T
-         ≡⟨ (λ i → B [ p i , ≅-to-≡[] isSetTy q {P = ap (A [_]T) p} i ]T) ⟩
-       B [ ⌜ wkw idw ⌝w , ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V ]T
-         ≡⟨ ap (B [_]T) ↑∘<> ⁻¹ ⟩
-       B [ (⌜ wkw idw ⌝w ↑ A) ∘ < ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V > ]T
-         ≡⟨ [][]T ⟩
-       B [ ⌜ wkw idw ⌝w ↑ A ]T [ < ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V > ]T ∎
+[↑∘<>] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {ρ : Tms Γ Δ}
+         {v : Tm Γ (A [ ρ ]T)} → B [ ρ , v ]T ≡ B [ ρ ↑ A ]T [ < v > ]T
+[↑∘<>] {A = A} {B} {ρ} {v} =
+  B [ ρ , v ]T            ≡⟨ ap (B [_]T) ↑∘<> ⁻¹ ⟩
+  B [ (ρ ↑ A) ∘ < v > ]T  ≡⟨ [][]T ⟩
+  B [ ρ ↑ A ]T [ < v > ]T ∎
+
+[↑wk][<z>] : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} →
+             B ≡ B [ ⌜ wkw idw ⌝w ↑ A ]T [ < ⌜ tr (Val _) [⌜wkid⌝] (neu (var z)) ⌝V > ]T
+[↑wk][<z>] {Γ} {A} {B} =
+  let p : wk ≡ ⌜ wkw idw ⌝w
+      p = ⌜wkid⌝ ⁻¹
+      q : vz ≅[ Tm (Γ , A) ] ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V
+      q = ⌜ neu (var z) ⌝V
+            ≅⟨ apd ⌜_⌝V (trfill (Val _) [⌜wkid⌝] (neu (var z))) ⟩
+          ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V ≅∎
+  in B         ≡⟨ [id]T ⁻¹ ⟩
+     B [ id ]T ≡⟨ ap (B [_]T) πη ⁻¹ ⟩
+     B [ wk , vz ]T
+       ≡⟨ (λ i → B [ p i , ≅-to-≡[] isSetTy q {P = ap (A [_]T) p} i ]T) ⟩
+     B [ ⌜ wkw idw ⌝w , ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V ]T
+       ≡⟨ ap (B [_]T) ↑∘<> ⁻¹ ⟩
+     B [ (⌜ wkw idw ⌝w ↑ A) ∘ < ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V > ]T
+       ≡⟨ [][]T ⟩
+     B [ ⌜ wkw idw ⌝w ↑ A ]T [ < ⌜ tr (Val (Γ , A)) [⌜wkid⌝] (neu (var z)) ⌝V > ]T ∎
 
 
 data evals_>_⇒_ where
