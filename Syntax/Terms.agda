@@ -69,8 +69,8 @@ data term where
   [][]T : {Γ Δ Θ : Con} {A : Ty Θ} {σ : Tms Δ Θ} {ν : Tms Γ Δ} →
           A [ σ ∘ ν ]T ≡ A [ σ ]T [ ν ]T
   U[] : {Γ Δ : Con} {σ : Tms Γ Δ} → U [ σ ]T ≡ U
-  El[] : {Γ Δ : Con} {x : Tm Δ U} {σ : Tms Γ Δ} →
-         (El x) [ σ ]T ≡ El (tr (Tm Γ) U[] (x [ σ ]))
+  El[] : {Γ Δ : Con} {u : Tm Δ U} {σ : Tms Γ Δ} →
+         (El u) [ σ ]T ≡ El (tr (Tm Γ) U[] (u [ σ ]))
   Π[] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {σ : Tms Γ Δ} →
         (Π A B) [ σ ]T ≡ Π (A [ σ ]T) (B [ σ ∘ π₁ id , tr (Tm _) ([][]T ⁻¹) (π₂ id) ]T)
   -- Substitutions laws.
@@ -193,4 +193,3 @@ abstract
           πηC : (Θ : Con) (p : Θ ≡ Γ , A) → (π₁C Θ p) , (π₂C Θ p) ≡ Θ
           πηC ● p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊤; (_ , _) → ⊥}) p))
           πηC (Θ , C) _ = refl
-

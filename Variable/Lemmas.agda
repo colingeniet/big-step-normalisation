@@ -217,20 +217,14 @@ abstract
          ≅⟨ (λ i → q i , ≅-to-≡[] (isSetΣ isSetCon isSetTy) r {P = s} i) ⟩
        wkw {A = A} idw , tr (Var (Γ , A)) [⌜wkid⌝] z ≅∎
 
-{-
-wk∘↑w : {Γ Δ Θ : Con} {A : Ty} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
-       wkwk A (σ ∘w ν) ≡ (wkwk A σ) ∘w (wk↑ A ν)
-wk∘↑w {Θ = ●} = refl
-wk∘↑w {Θ = Θ , A} {σ = σ ,, x} = ap2 _,,_ (wk∘↑w {σ = σ}) (+vwk {x = x} ⁻¹)
-
 
 -- Usefull lemma.
-wkid∘↑ : {Γ Δ : Con} {A : Ty} {σ : Wk Γ Δ} →
-         (wkwk A idw) ∘w (wk↑ A σ) ≡ σ ∘w (wkwk A idw)
-wkid∘↑ {A = A} {σ = σ} =
-  (wkwk A idw) ∘w (wk↑ A σ) ≡⟨ wk∘↑w ⁻¹ ⟩
-  wkwk A (idw ∘w σ)         ≡⟨ ap (λ x → wkwk A x) id∘w ⟩
-  wkwk A σ                  ≡⟨ ∘idw ⁻¹ ⟩
-  (wkwk A σ) ∘w idw         ≡⟨ wkwk∘w ⟩
-  σ ∘w (wkwk A idw) ∎
--}
+wkid∘↑ : {Γ Δ : Con} {A : Ty Δ} {σ : Wk Γ Δ} →
+         (wkw idw) ∘w (σ ↑w A) ≡ σ ∘w (wkw idw)
+wkid∘↑ {A = A} {σ} =
+  (wkw idw) ∘w (σ ↑w A) ≡⟨ wkw∘w ⟩
+  idw ∘w (wkw σ)        ≡⟨ id∘w ⟩
+  wkw σ                 ≡⟨ ∘idw ⁻¹ ⟩
+  (wkw σ) ∘w idw        ≡⟨ wkw∘w ⟩
+  σ ∘w (wkw idw)        ∎
+

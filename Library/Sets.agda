@@ -127,7 +127,7 @@ isSetPath {B = B} H {x} {y} p q j i =
                              (inc (r (1- i)))
       side-edge : PathP B x y → I → B i1
       side-edge r i = side-square r i i1
-  in comp (λ k → B (1- k ∨ i))
+  in comp (λ k → B (1- k ∨ i)) _
           (λ k → λ {(i = i0) → t (1- k);
                     (i = i1) → y;
                     (j = i0) → side-square p (1- i) (1- k);
@@ -156,6 +156,14 @@ isSetDependent2 {B = B} HA HB {p = p} {q} {x} {y} r s =
   d∙ isSetDependent {B = B} HB (tr (λ p → x ≡[ ap B p ]≡ y) (HA p q) r) s
 
 
+isSet≅ : ∀ {l m} {A : Set l} {B : A → Set m} →
+           isSet A → ({x : A} → isSet (B x)) →
+           {a b : A} {x : B a} {y : B b} →
+           isProp (x ≅[ B ] y)
+isSet≅ {B = B} HA HB (P ,≅ p) (Q ,≅ q) i =
+  HA P Q i ,≅ isSetDependent2 {B = B} HA HB p q i
+
+
 {- Fill a square in a set given all edges
        s
     b_____d
@@ -178,7 +186,7 @@ isSetFillDependentSquare {A = A} H p q r s i j =
                     (λ {j (i = i0) → p j;
                         j (i = i1) → q j})
                     (inc (r i))
-  in inc (comp (λ _ → A i j)
+  in inc (comp (λ _ → A i j) _
                 (λ k → λ {(i = i0) → p j;
                           (i = i1) → q j;
                           (j = i0) → r i;

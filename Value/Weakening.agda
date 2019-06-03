@@ -27,24 +27,23 @@ _+E_ : {Γ Δ Θ : Con} → Env Δ Θ → Wk Γ Δ → Env Γ Θ
        ⌜ ρ +E σ ⌝E ≡ ⌜ ρ ⌝E +s σ
 
 
-private
-  abstract
-    [+E] : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ Θ} {σ : Wk Γ Δ} →
-           A [ ⌜ ρ +E σ ⌝E ]T ≡ A [ ⌜ ρ ⌝E ]T [ ⌜ σ ⌝w ]T
-    [+E] {Γ} {Δ} {Θ} {A} {ρ} {σ} =
-      A [ ⌜ ρ +E σ ⌝E ]T       ≡⟨ ap (λ x → A [ x ]T) ⌜⌝+E ⟩
-      A [ ⌜ ρ ⌝E ∘ ⌜ σ ⌝w ]T    ≡⟨ [][]T ⟩
-      A [ ⌜ ρ ⌝E ]T [ ⌜ σ ⌝w ]T ∎
+abstract
+  [+E] : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ Θ} {σ : Wk Γ Δ} →
+         A [ ⌜ ρ +E σ ⌝E ]T ≡ A [ ⌜ ρ ⌝E ]T [ ⌜ σ ⌝w ]T
+  [+E] {Γ} {Δ} {Θ} {A} {ρ} {σ} =
+    A [ ⌜ ρ +E σ ⌝E ]T       ≡⟨ ap (λ x → A [ x ]T) ⌜⌝+E ⟩
+    A [ ⌜ ρ ⌝E ∘ ⌜ σ ⌝w ]T    ≡⟨ [][]T ⟩
+    A [ ⌜ ρ ⌝E ]T [ ⌜ σ ⌝w ]T ∎
 
-    [<>][] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {v : Val Δ A} {σ : Wk Γ Δ} →
-             B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ≡ B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T
-    [<>][] {Γ} {Δ} {A} {B} {v} {σ} =
-      B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ≡⟨ [][]T ⁻¹ ⟩
-      B [ (⌜ σ ⌝w ↑ A) ∘ < ⌜ v +V σ ⌝V > ]T  ≡⟨ ap (λ x → B [ x ]T) ↑∘<> ⟩
-      B [ ⌜ σ ⌝w , ⌜ v +V σ ⌝V ]T            ≡⟨ ap (λ x → B [ _ , x ]T) ⌜⌝+V ⟩
-      B [ ⌜ σ ⌝w , ⌜ v ⌝V [ ⌜ σ ⌝w ] ]T      ≡⟨ ap (B [_]T) <>∘ ⁻¹ ⟩
-      B [ < ⌜ v ⌝V > ∘ ⌜ σ ⌝w ]T             ≡⟨ [][]T ⟩
-      B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T          ∎
+  [<>][] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {v : Val Δ A} {σ : Wk Γ Δ} →
+           B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ≡ B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T
+  [<>][] {Γ} {Δ} {A} {B} {v} {σ} =
+    B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ v +V σ ⌝V > ]T ≡⟨ [][]T ⁻¹ ⟩
+    B [ (⌜ σ ⌝w ↑ A) ∘ < ⌜ v +V σ ⌝V > ]T  ≡⟨ ap (λ x → B [ x ]T) ↑∘<> ⟩
+    B [ ⌜ σ ⌝w , ⌜ v +V σ ⌝V ]T            ≡⟨ ap (λ x → B [ _ , x ]T) ⌜⌝+V ⟩
+    B [ ⌜ σ ⌝w , ⌜ v ⌝V [ ⌜ σ ⌝w ] ]T      ≡⟨ ap (B [_]T) <>∘ ⁻¹ ⟩
+    B [ < ⌜ v ⌝V > ∘ ⌜ σ ⌝w ]T             ≡⟨ [][]T ⟩
+    B [ < ⌜ v ⌝V > ]T [ ⌜ σ ⌝w ]T          ∎
 
 
 (lam u ρ) +V σ = tr (Val _) [+E] (lam u (ρ +E σ))

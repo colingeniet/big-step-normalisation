@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --safe --cubical #-}
 
 module NormalForm.Weakening where
 
@@ -24,12 +24,12 @@ _+NN_ : {Γ Δ : Con} {A : Ty Δ} → NN Δ A → (σ : Wk Γ Δ) → NN Γ (A [
 ⌜⌝+NN : {Γ Δ : Con} {A : Ty Δ} {n : NN Δ A} {σ : Wk Γ Δ} →
         ⌜ n +NN σ ⌝NN ≡ ⌜ n ⌝NN +t σ
 
-private
-  abstract
-    [⌜↑⌝] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {σ : Wk Γ Δ} →
-            B [ ⌜ σ ↑w A ⌝w ]T ≡ B [ ⌜ σ ⌝w ↑ A ]T
-    [⌜↑⌝] {B = B} = ap (B [_]T) ⌜↑w⌝
+abstract
+  [⌜↑⌝] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {σ : Wk Γ Δ} →
+          B [ ⌜ σ ↑w A ⌝w ]T ≡ B [ ⌜ σ ⌝w ↑ A ]T
+  [⌜↑⌝] {B = B} = ap (B [_]T) ⌜↑w⌝
 
+  private
     [<>][] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {n : Nf Δ A} {σ : Wk Γ Δ} →
              B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ n +N σ ⌝N > ]T ≡ B [ < ⌜ n ⌝N > ]T [ ⌜ σ ⌝w ]T
     [<>][] {Γ} {Δ} {A} {B} {n} {σ} =
@@ -222,10 +222,14 @@ abstract
        app f n ≅∎
 
 {-
-  +N∘ : {Γ Δ Θ : Con} {A : Ty} {n : Nf Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
-        n +N (σ ∘w ν) ≡ (n +N σ) +N ν
-  +NN∘ : {Γ Δ Θ : Con} {A : Ty} {n : NN Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
-         n +NN (σ ∘w ν) ≡ (n +NN σ) +NN ν
+  +N∘ : {Γ Δ Θ : Con} {A : Ty Θ} {n : Nf Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
+        n +N (σ ∘w ν) ≅[ Nf Γ ] (n +N σ) +N ν
+  +NN∘ : {Γ Δ Θ : Con} {A : Ty Θ} {n : NN Θ A} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
+         n +NN (σ ∘w ν) ≅[ NN Γ ] (n +NN σ) +NN ν
+
+  +NN∘ {n = var x} = ap≅ var (+v∘ {x = x})
+  +NN∘ {n = app f n} = {!!}
+
   +N∘ {n = lam {A = A} n} {σ} {ν} =
     lam (n +N (wk↑ A (σ ∘w ν)))     ≡⟨ ap (λ ρ → lam (n +N (ρ ,, z))) wk∘↑w ⟩
     lam (n +N (wk↑ A σ ∘w wk↑ A ν)) ≡⟨ ap lam +N∘ ⟩
