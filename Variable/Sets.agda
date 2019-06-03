@@ -14,8 +14,13 @@ open import Variable.Variable
 open import Agda.Builtin.Nat
 open import Library.Nat.Sets
 
+{- It is much easier to decide heterogeneous equality first,
+   as otherwise agda get stuck on unsolved equality constraints on types
+   Those could theoretically be solved 'by hand' since types form a set
+   (at least I think so), but it would be very tedious.
+-}
 discreteVar' : {Γ : Con} {A B : Ty Γ} (x : Var Γ A) (y : Var Γ B) →
-              Decidable (x ≅[ Var Γ ] y)
+               Decidable (x ≅[ Var Γ ] y)
 discreteVar' z z = yes refl≅
 discreteVar' {Γ} z (s y) =
   no (λ p → let q : ⊤ ≅[ (λ (A : Ty Γ) → Set) ] ⊥
@@ -41,7 +46,7 @@ discreteVar' {Γ , C} (s x) (s y)
                             q = yes-injective (apd f (snd p))
                         in n (≡[]-to-≅ (apd snd q)))
 
--- Using injectivity, it suffice to decide equality of untyped variables.
+-- Decidability of regular equality follows easily.
 discreteVar : {Γ : Con} {A : Ty Γ} → Discrete (Var Γ A)
 discreteVar x y with discreteVar' x y
 ...                | no n = no (λ p → n (≡-to-≅ p))
