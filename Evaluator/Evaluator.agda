@@ -209,7 +209,6 @@ abstract
 
 
 
-
 -- q : Val Γ A → Nf Γ A
 data q_⇒_ : {Γ : Con} {A : Ty Γ} → Val Γ A → Nf Γ A → Set
 -- qs : NV Γ Δ → NN Γ Δ

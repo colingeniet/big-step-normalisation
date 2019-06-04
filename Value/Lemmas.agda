@@ -52,14 +52,13 @@ idenv : {Γ : Con} → Env Γ Γ
 idenv≡ : {Γ : Con} → ⌜ idenv {Γ} ⌝E ≡ id
 
 abstract
-  private
-    ⌜id+Ewk⌝ : {Γ : Con} {A : Ty Γ} → ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ≡ wk
-    ⌜id+Ewk⌝ {Γ} {A} =
-      ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ≡⟨ ⌜⌝+E ⟩
-      ⌜ idenv ⌝E +s wkw idw             ≡⟨ ap (_+s wkw idw) idenv≡ ⟩
-      id ∘ ⌜ wkw idw ⌝w                 ≡⟨ id∘ ⟩
-      ⌜ wkw idw ⌝w                      ≡⟨ ⌜wkid⌝ ⟩
-      wk                               ∎
+  ⌜id+Ewk⌝ : {Γ : Con} {A : Ty Γ} → ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ≡ wk
+  ⌜id+Ewk⌝ {Γ} {A} =
+    ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ≡⟨ ⌜⌝+E ⟩
+    ⌜ idenv ⌝E +s wkw idw             ≡⟨ ap (_+s wkw idw) idenv≡ ⟩
+    id ∘ ⌜ wkw idw ⌝w                 ≡⟨ id∘ ⟩
+    ⌜ wkw idw ⌝w                      ≡⟨ ⌜wkid⌝ ⟩
+    wk                               ∎
 
   [⌜id+E⌝] : {Γ : Con} {A : Ty Γ} → A [ wk ]T ≡ A [ ⌜ idenv {Γ} +E wkw {A = A} idw ⌝E ]T
   [⌜id+E⌝] {A = A} = ap (A [_]T) ⌜id+Ewk⌝ ⁻¹
