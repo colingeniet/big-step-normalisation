@@ -11,8 +11,6 @@ open import Library.Pairs
 open import Library.Maybe
 open import Syntax.Terms
 open import Variable.Variable
-open import Agda.Builtin.Nat
-open import Library.Nat.Sets
 
 {- It is much easier to decide heterogeneous equality first,
    as otherwise agda get stuck on unsolved equality constraints on types
@@ -23,28 +21,24 @@ discreteVar' : {Γ : Con} {A B : Ty Γ} (x : Var Γ A) (y : Var Γ B) →
                Decidable (x ≅[ Var Γ ] y)
 discreteVar' z z = yes refl≅
 discreteVar' {Γ} z (s y) =
-  no (λ p → let q : ⊤ ≅[ (λ (A : Ty Γ) → Set) ] ⊥
-                q = ap≅ {f = λ A → A} f p
-            in ⊤≢⊥ (snd q))
+  no (λ p → ⊤≢⊥ (apd f (snd p)))
   where f : {A : Ty Γ} → Var Γ A → Set
         f z = ⊤
-        f (s x) = ⊥
+        f (s _) = ⊥
 discreteVar' {Γ} (s x) z = 
-  no (λ p → let q : ⊤ ≅[ (λ (A : Ty Γ) → Set) ] ⊥
-                q = ap≅ {f = λ A → A} f p
-            in ⊤≢⊥ (snd q))
+  no (λ p → ⊤≢⊥ (apd f (snd p)))
   where f : {A : Ty Γ} → Var Γ A → Set
         f z = ⊥
-        f (s x) = ⊤
+        f (s _) = ⊤
 discreteVar' {Γ , C} (s x) (s y)
   with discreteVar' x y
 ...  | yes p = yes (ap≅ s p)
-...  | no n = no (λ p → let f : {A : Ty (Γ , C)} → Var (Γ , C) A →
-                                Maybe (Σ[ B ∈ Ty Γ ] Var Γ B)
-                            f = λ {(s x) → yes (_ ,, x); z → no}
-                            q : (_ ,, x) ≡ (_ ,, y)
-                            q = yes-injective (apd f (snd p))
-                        in n (≡[]-to-≅ (apd snd q)))
+...  | no n = no λ p → let f : {A : Ty (Γ , C)} → Var (Γ , C) A →
+                               Maybe (Σ[ B ∈ Ty Γ ] Var Γ B)
+                           f = λ {(s x) → yes (_ ,, x); z → no}
+                           q : (_ ,, x) ≡ (_ ,, y)
+                           q = yes-injective (apd f (snd p))
+                       in n (≡[]-to-≅ (apd snd q))
 
 -- Decidability of regular equality follows easily.
 discreteVar : {Γ : Con} {A : Ty Γ} → Discrete (Var Γ A)

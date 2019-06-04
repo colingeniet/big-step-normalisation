@@ -77,7 +77,7 @@ abstract
                         ∙ ⌜⌝+V {v = v} ⁻¹) j ⌝V
         s = λ j → ⌜ veq {u = u} {v} p j ⌝V +t σ
     in ouc (isSetFillSquare isSetTm r s IHu IHv i j)
-  ⌜⌝+V {v = isSetVal {x = u} {v} p q i j} {σ} k =
+  ⌜⌝+V {v = isSetVal p q i j} {σ} k =
     ouc (isSetPartial isSetTm
                       (λ j → ⌜⌝+V {v = p j} {σ} k)
                       (λ j → ⌜⌝+V {v = q j} {σ} k)
@@ -86,6 +86,7 @@ abstract
                           (k = i1) → λ i j →
                           ⌜ isSetVal p q i j ⌝V +t σ}))
         i j
+
   ⌜⌝+NV {v = var x} = ⌜⌝+v
   ⌜⌝+NV {Γ} {Δ} {A} {app {B = B} f v} {σ} =
     let p : ⌜ tr (NV Γ) Π[] (f +NV σ) ⌝NV ≅[ Tm Γ ] tr (Tm Γ) Π[] ⌜ f +NV σ ⌝NV
@@ -163,7 +164,7 @@ abstract
         r = λ j → (veq {u = u} {v} p j) +V idw
         s = veq {u = u} {v} p
     in ouc (isSetFillDependentSquare isSetVal r s IHu IHv i j)
-  +Vid {v = isSetVal {x = u} {v} p q i j} k =
+  +Vid {v = isSetVal p q i j} k =
     ouc (isSetPartial isSetVal
                       (λ j → +Vid {v = p j} k)
                       (λ j → +Vid {v = q j} k)
