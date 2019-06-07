@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -14,61 +14,119 @@ open import Library.Sets
 open import Library.Pairs
 open import Library.Pairs.Sets
 open import Syntax.Terms
-open import Syntax.Terms.Lemmas
-open import Syntax.Types.Sets
-open import Weakening.Variable
+open import Syntax.Lemmas
+open import Variable.Variable
 open import Value.Value
 open import Value.Weakening
 open import Value.Lemmas
 open import Value.Sets
 open import NormalForm.NormalForm
 open import NormalForm.Weakening
-open import NormalForm.Sets
 open import Evaluator.Evaluator
 open import Evaluator.Weakening
-open import BSN.Completeness
+open import TypeEvaluator.Skeleton
+open import TypeEvaluator.TypeValue
+open import TypeEvaluator.Sets
+open import TypeEvaluator.Evaluator
 open import BSN.Stability
 open import BSN.Soundness
 
 
+scvTV : {S : TSk} {Γ : Con} (A : TV S Γ) → Val Γ ⌜ A ⌝T → Set
+scvTV {Γ = Γ} U v = Σ[ n ∈ Nf Γ U ] q v ⇒ n
+scvTV {Γ = Γ} (El u) v = Σ[ n ∈ Nf Γ (El u) ] q v ⇒ n
+scvTV {Π S T} {Γ} (Π A B) f =
+  {Δ : Con} (σ : Wk Δ Γ) {v : Val Δ ⌜ A [ ⌜ σ ⌝w ]TV ⌝T} → scvTV (A [ ⌜ σ ⌝w ]TV) v →
+  Σ[ C ∈ TV T Δ ] Σ[ fv ∈ Val Δ ⌜ C ⌝T ]
+  ((tr (Val Δ) Π[] (f +V σ)) $ (tr (Val Δ) (⌜[]TV⌝ ⁻¹) v) ⇒ fv  ×  scvTV C fv)
 
--- Definition of strongly computable values.
-scv : {Γ : Con} {A : Ty} → Val Γ A → Set
--- At the base type, a value is strongly computable if quote is defined on it.
-scv {Γ} {o} v = Σ[ n ∈ Nf Γ o ] q v ⇒ n
--- For function types, a function is strongly computable if for any sc argument,
--- the application of that function to that argument gives a scv.
--- Furthermore, the argument may come from an extended environment, in which
--- case the function is to be weakened.
-scv {Γ} {A ⟶ B} f =
-  {Δ : Con} (σ : Wk Δ Γ) {v : Val Δ A} → scv v →
-  Σ[ fv ∈ Val Δ B ] ((f +V σ) $ v ⇒ fv  ×  scv fv)
-
-
-isPropscv : {Γ : Con} {A : Ty} {v : Val Γ A} → isProp (scv v)
-isPropscv {A = o} {v} (n ,, qn) (m ,, qm) i =
+isPropscvTV : {S : TSk} {Γ : Con} {A : TV S Γ} {v : Val Γ ⌜ A ⌝T} → isProp (scvTV A v)
+isPropscvTV {A = U} {v} (n ,, qn) (m ,, qm) i =
   let n≡m : n ≡ m
       n≡m = q-sound qn qm
   in n≡m i ,, isPropDependent isPropq n≡m qn qm i
-isPropscv {Γ} {A ⟶ B} {f} x y i σ {v} scvv =
-  let fv ,, $fv ,, scvfv = x σ scvv
-      fv' ,, $fv' ,, scvfv' = y σ scvv
-      fv≡fv' : fv ≡ fv'
-      fv≡fv' = $-sound $fv $fv'
-  in fv≡fv' i ,,
-     isPropDependent {B = λ x → (f +V σ) $ v ⇒ x} isProp$
-                     fv≡fv' $fv $fv' i ,,
-     isPropDependent {B = scv} (isPropscv {A = B})
-                     fv≡fv' scvfv scvfv' i
-
-_+scv_ : {Γ Δ : Con} {A : Ty} {v : Val Δ A} → scv v → (σ : Wk Γ Δ) → scv (v +V σ)
-_+scv_ {A = o} (n ,, qn) σ = n +N σ ,, qn +q σ
-_+scv_ {A = A ⟶ B} {f} scvf σ δ {v} scvv =
-  let fv ,, $fv ,, scvfv = scvf (σ ∘w δ) scvv
-      $fv = tr (λ x → x $ _ ⇒ _) (+V∘ {v = f}) $fv
-  in fv ,, $fv ,, scvfv
+isPropscvTV {A = El u} {v} (n ,, qn) (m ,, qm) i =
+  let n≡m : n ≡ m
+      n≡m = q-sound qn qm
+  in n≡m i ,, isPropDependent isPropq n≡m qn qm i
+isPropscvTV {Π S T} {Γ} {Π A B} {f} x y i {Δ} σ {v} scvv =
+  let C ,, fv ,, $fv ,, scvfv = x σ scvv
+      C' ,, fv' ,, $fv' ,, scvfv' = y σ scvv
+      fv≅fv' = $-sound $fv $fv'
+      C≡C' = ⌜⌝T-injective (fst fv≅fv')
+      fv≡fv' = ≅-to-≡[] isSetTy fv≅fv' {P = ap ⌜_⌝T C≡C'}
+  in C≡C' i ,, fv≡fv' i ,,
+     isPropPath {B = λ i → _ $ _ ⇒ (fv≡fv' i)} isProp$ $fv $fv' i ,,
+     isPropPath {B = λ i → scvTV (C≡C' i) (fv≡fv' i)} isPropscvTV scvfv scvfv' i
 
 
+abstract
+  _+scvTV_ : {S : TSk} {Γ Δ : Con} {A : TV S Δ} {v : Val Δ ⌜ A ⌝T} →
+             scvTV A v → (σ : Wk Γ Δ) → scvTV (A [ ⌜ σ ⌝w ]TV) (tr (Val Γ) ⌜[]TV⌝ (v +V σ))
+  _+scvTV_ {A = U} {v} (n ,, qn) σ =
+   tr (Nf _) U[] (n +N σ) ,,
+   (λ i → q trfill (Val _) U[] (v +V σ) i ⇒ trfill (Nf _) U[] (n +N σ) i) * (qn +q σ)
+  _+scvTV_ {A = El u} {v} (n ,, qn) σ =
+   tr (Nf _) El[] (n +N σ) ,,
+   (λ i → q trfill (Val _) El[] (v +V σ) i ⇒ trfill (Nf _) El[] (n +N σ) i) * (qn +q σ)
+  _+scvTV_ {Π S T} {Γ} {Δ} {Π A B} {f} scvf σ {Θ} δ {v} scvv =
+    let A+ = A [ ⌜ σ ⌝w ]TV [ ⌜ δ ⌝w ]TV
+        A+' = A [ ⌜ σ ∘w δ ⌝w ]TV
+        P : A+ ≡ A+'
+        P = A [ ⌜ σ ⌝w ]TV [ ⌜ δ ⌝w ]TV ≡⟨ [][]TV ⁻¹ ⟩
+            A [ ⌜ σ ⌝w ∘ ⌜ δ ⌝w ]TV     ≡⟨ ap (A [_]TV) (⌜∘⌝w ⁻¹) ⟩
+            A [ ⌜ σ ∘w δ ⌝w ]TV        ∎
+        v' : Val Θ ⌜ A+' ⌝T
+        v' = tr (λ x → Val Θ ⌜ x ⌝T) P v
+        v≡v' = trfill (λ x → Val Θ ⌜ x ⌝T) P v
+        scvv' : scvTV A+' v'
+        scvv' = (λ i → scvTV (P i) (v≡v' i)) * scvv
+        C ,, fv ,, $fv ,, scvfv = scvf (σ ∘w δ) scvv'
+        p : tr (Val Θ) Π[] (f +V (σ ∘w δ))
+            ≅[ Val Θ ] tr (Val Θ) Π[] (tr (Val Γ) ⌜[]TV⌝ (f +V σ) +V δ)
+        p = tr (Val Θ) Π[] (f +V (σ ∘w δ))
+              ≅⟨ trfill (Val Θ) Π[] (f +V (σ ∘w δ)) ⁻¹ ⟩
+            f +V (σ ∘w δ)
+              ≅⟨ +V∘ {v = f} ⟩
+            (f +V σ) +V δ
+              ≅⟨ apd (_+V δ) (trfill (Val Γ) ⌜[]TV⌝ (f +V σ)) ⟩
+            (tr (Val Γ) ⌜[]TV⌝ (f +V σ)) +V δ
+              ≅⟨ trfill (Val Θ) Π[] _ ⟩
+            tr (Val Θ) Π[] (tr (Val Γ) ⌜[]TV⌝ (f +V σ) +V δ) ≅∎
+        q : tr (Val Θ) (⌜[]TV⌝ ⁻¹) v' ≅[ Val  Θ ] tr (Val Θ) (⌜[]TV⌝ ⁻¹) v
+        q = tr (Val Θ) (⌜[]TV⌝ ⁻¹) v' ≅⟨ trfill (Val Θ) (⌜[]TV⌝ ⁻¹) v' ⁻¹ ⟩
+            v'                       ≅⟨ trfill (λ x → Val Θ ⌜ x ⌝T) P v ⁻¹ ⟩
+            v                        ≅⟨ trfill (Val Θ) (⌜[]TV⌝ ⁻¹) v ⟩
+            tr (Val Θ) (⌜[]TV⌝ ⁻¹) v  ≅∎
+        Q : ⌜ A ⌝T [ ⌜ σ ∘w δ ⌝w ]T ≡ ⌜ A [ ⌜ σ ⌝w ]TV ⌝T [ ⌜ δ ⌝w ]T
+        Q = ⌜ A ⌝T [ ⌜ σ ∘w δ ⌝w ]T       ≡⟨ ap (⌜ A ⌝T [_]T) ⌜∘⌝w ⟩
+            ⌜ A ⌝T [ ⌜ σ ⌝w ∘ ⌜ δ ⌝w ]T    ≡⟨ [][]T ⟩
+            ⌜ A ⌝T [ ⌜ σ ⌝w ]T [ ⌜ δ ⌝w ]T ≡⟨ ap (_[ ⌜ δ ⌝w ]T) ⌜[]TV⌝ ⟩
+            ⌜ A [ ⌜ σ ⌝w ]TV ⌝T [ ⌜ δ ⌝w ]T ∎
+        R : ⌜ B ⌝T [ ⌜ σ ∘w δ ⌝w ↑ ⌜ A ⌝T ]T ≅[ Ty ]
+            ⌜ tr (λ x → TV T (Γ , x)) ⌜[]TV⌝ (B [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]TV) ⌝T [ ⌜ δ ⌝w ↑ ⌜ A [ ⌜ σ ⌝w ]TV ⌝T ]T
+        R = ⌜ B ⌝T [ ⌜ σ ∘w δ ⌝w ↑ ⌜ A ⌝T ]T
+              ≅⟨ apd (λ x → ⌜ B ⌝T [ x ↑ ⌜ A ⌝T ]T) (⌜∘⌝w {σ = σ} {δ}) ⟩
+            ⌜ B ⌝T [ (⌜ σ ⌝w ∘ ⌜ δ ⌝w) ↑ ⌜ A ⌝T ]T
+              ≅⟨ ap≅ (⌜ B ⌝T [_]T) ↑∘↑ ≅⁻¹ ⟩'
+            ⌜ B ⌝T [ (⌜ σ ⌝w ↑ ⌜ A ⌝T) ∘ (⌜ δ ⌝w ↑ ⌜ A ⌝T [ ⌜ σ ⌝w ]T) ]T
+              ≅⟨ [][]T ⟩
+            ⌜ B ⌝T [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]T [ ⌜ δ ⌝w ↑ ⌜ A ⌝T [ ⌜ σ ⌝w ]T ]T
+              ≅⟨ apd (λ x → x [ ⌜ δ ⌝w ↑ ⌜ A ⌝T [ ⌜ σ ⌝w ]T ]T) (⌜[]TV⌝ {A = B} {⌜ σ ⌝w ↑ ⌜ A ⌝T})  ⟩
+            ⌜ B [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]TV ⌝T [ ⌜ δ ⌝w ↑ ⌜ A ⌝T [ ⌜ σ ⌝w ]T ]T
+              ≅⟨ (λ i → ⌜ trfill (λ x → TV T (Γ , x)) ⌜[]TV⌝ (B [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]TV) i ⌝T
+                        [ ⌜ δ ⌝w ↑ (⌜[]TV⌝ {A = A} i) ]T) ⟩
+            ⌜ tr (λ x → TV T (Γ , x)) ⌜[]TV⌝ (B [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]TV) ⌝T [ ⌜ δ ⌝w ↑ ⌜ A [ ⌜ σ ⌝w ]TV ⌝T ]T ≅∎
+        $fv' = (λ i → (≅-to-≡[] isSetTy p {P = λ i → Π (Q i) (≅-to-≡[] isSetCon R {P = ap (Θ ,_) Q} i)} i)
+                      $ (≅-to-≡[] isSetTy q {P = Q} i)
+                      ⇒ fv)
+               * $fv
+    in C ,, fv ,, $fv' ,, scvfv
+
+
+
+
+{-
 -- Extension of strong computability to environments.
 sce : {Γ Δ : Con} → Env Γ Δ → Set
 sce ε = ⊤
@@ -111,44 +169,8 @@ _+sce_ {ρ = ρ , u} (sceρ ,, scvu) σ = sceρ +sce σ ,, scvu +scv σ
 π₂sce+ {ρ = _ , _} = refl
 
 
-{-
-  Main lemma:
-  The fact that strong computability implies termination of quote is actually
-  not obvious. The proof requires to simultaneously prove the converse for
-  neutral values.
--}
--- Main direction: strong computability implies termination of quote.
-scv-q : {Γ : Con} {A : Ty} {v : Val Γ A} →
-        scv v → Σ[ n ∈ Nf Γ A ] (q v ⇒ n)
--- Converse for neutral values.
-q-scv : {Γ : Con} {A : Ty} {v : NV Γ A} →
-        Σ[ n ∈ NN Γ A ] (qs v ⇒ n) → scv (neu v)
-
--- The converse allows in particular to show that variables are sc.
-scvvar : {Γ : Con} {A : Ty} {x : Var Γ A} → scv (neu (var x))
-scvvar {x = x} = q-scv (var x ,, qsvar)
-
-scv-q {A = o} scvv = scvv
--- For functions, we follow the definition of quote and apply
--- the function to vz. This is why sc of variables is required.
-scv-q {A = A ⟶ B} {f} scvf =
-  let fz ,, $fz ,, scvfz = scvf (wkwk A idw) {neu (var z)} scvvar
-      nfz ,, qfz = scv-q scvfz
-  in lam nfz ,, q⟶ $fz qfz
-
-q-scv {A = o} (n ,, qn) = neu n ,, qo qn
--- For functions, since we are considering neutral values, application
--- to a value is trivial. Quote simply quotes the function and the value
--- separately.
-q-scv {A = A ⟶ B} {f} (nf ,, qsf) σ {v} scvv =
-  let fv = app (f +NV σ) v
-      $fv = $app (f +NV σ) v
-      n ,, qv = scv-q scvv
-      nfv = app (nf +NN σ) n
-      qfv = qsapp (qsf +qs σ) qv
-  in neu fv ,, $fv ,, q-scv (nfv ,, qfv)
-
 -- The identity environment is strongly computable.
 sceid : {Γ : Con} → sce (idenv {Γ})
 sceid {●} = tt
 sceid {Γ , A} = sceid +sce (wkwk A idw) ,, scvvar
+-}
