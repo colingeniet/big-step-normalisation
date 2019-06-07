@@ -4,12 +4,16 @@ module TypeEvaluator.Evaluator where
 
 open import Library.Equality
 open import Library.Sets
+open import Library.Pairs
+open import Library.Pairs.Sets
 open import Syntax.Terms
 open import Syntax.Lemmas
 open import TypeEvaluator.Skeleton
 open import TypeEvaluator.TypeValue
 open import TypeEvaluator.Sets
 
+
+infixl 30 _[_]TV
 
 _[_]TV : {S : TSk} {Γ Δ : Con} → TV S Δ → Tms Γ Δ → TV S Γ
 ⌜[]TV⌝ : {S : TSk} {Γ Δ : Con} {A : TV S Δ} {σ : Tms Γ Δ} →
@@ -123,38 +127,64 @@ evalT (isSetTy p q i j) =
   isSetDependent2 {B = λ x → TV x _} isSetTSk isSetTV
                   (λ k → evalT (p k)) (λ k → evalT (q k)) i j
 
-⌜evalT⌝ {A = U} = refl
-⌜evalT⌝ {A = El u} = refl
-⌜evalT⌝ {A = Π A B} =
-  let T = skeleton B
-      p : A ≡ ⌜ evalT A ⌝T
-      p = ⌜evalT⌝
-      q : B ≅[ Ty ] ⌜ tr (λ x → TV T (_ , x)) ⌜evalT⌝ (evalT B) ⌝T
-      q = B           ≅⟨ ⌜evalT⌝ ⟩
-          ⌜ evalT B ⌝T ≅⟨ apd ⌜_⌝T (trfill (λ x → TV T (_ , x)) ⌜evalT⌝ (evalT B)) ⟩
-          ⌜ tr (λ x → TV T (_ , x)) ⌜evalT⌝ (evalT B) ⌝T ≅∎
-  in λ i → Π (p i) (≅-to-≡[] isSetCon q {P = ap (_ ,_) p} i)
-⌜evalT⌝ {A = A [ σ ]T} =
-  A [ σ ]T            ≡⟨ ap (_[ σ ]T) ⌜evalT⌝ ⟩
-  ⌜ evalT A ⌝T [ σ ]T  ≡⟨ ⌜[]TV⌝ ⟩
-  ⌜ evalT A [ σ ]TV ⌝T ∎
-⌜evalT⌝ {A = [id]T {A = A} i} j =
-  let p = ⌜evalT⌝ {A = A [ id ]T}
-      q = ⌜evalT⌝ {A = A}
-      r = λ i → [id]T {A = A} i
-      s = λ i → ⌜ evalT ([id]T {A = A} i) ⌝T
-  in {!isSetFillSquare isSetTy p q r s i!}
-⌜evalT⌝ {A = [][]T i} = {!!}
-⌜evalT⌝ {A = U[] i} = {!!}
-⌜evalT⌝ {A = El[] i} = {!!}
-⌜evalT⌝ {A = Π[] i} = {!!}
-⌜evalT⌝ {A = isSetTy p q i j} k =
-  {!ouc (isSetPartial isSetTy
-                    (λ j → ⌜evalT⌝ {A = p j} k)
-                    (λ j → ⌜evalT⌝ {A = q j} k)
-                    (λ {(k = i0) → λ i j →
-                        isSetTy p q i j;
-                        (k = i1) → λ i j →
-                        ⌜ isSetTV (λ k → evalT (p k)) (λ k → evalT (q k)) i j ⌝T}))
-      i j!}
+abstract
+  ⌜evalT⌝ {A = U} = refl
+  ⌜evalT⌝ {A = El u} = refl
+  ⌜evalT⌝ {A = Π A B} =
+    let T = skeleton B
+        p : A ≡ ⌜ evalT A ⌝T
+        p = ⌜evalT⌝
+        q : B ≅[ Ty ] ⌜ tr (λ x → TV T (_ , x)) ⌜evalT⌝ (evalT B) ⌝T
+        q = B           ≅⟨ ⌜evalT⌝ ⟩
+            ⌜ evalT B ⌝T ≅⟨ apd ⌜_⌝T (trfill (λ x → TV T (_ , x)) ⌜evalT⌝ (evalT B)) ⟩
+            ⌜ tr (λ x → TV T (_ , x)) ⌜evalT⌝ (evalT B) ⌝T ≅∎
+    in λ i → Π (p i) (≅-to-≡[] isSetCon q {P = ap (_ ,_) p} i)
+  ⌜evalT⌝ {A = A [ σ ]T} =
+    A [ σ ]T            ≡⟨ ap (_[ σ ]T) ⌜evalT⌝ ⟩
+    ⌜ evalT A ⌝T [ σ ]T  ≡⟨ ⌜[]TV⌝ ⟩
+    ⌜ evalT A [ σ ]TV ⌝T ∎
+  ⌜evalT⌝ {A = [id]T {A = A} i} j =
+    let p = ⌜evalT⌝ {A = A [ id ]T}
+        q = ⌜evalT⌝ {A = A}
+        r = λ i → [id]T {A = A} i
+        s = λ i → ⌜ evalT ([id]T {A = A} i) ⌝T
+    in {!isSetFillSquare isSetTy p q r s i!}
+  ⌜evalT⌝ {A = [][]T i} = {!!}
+  ⌜evalT⌝ {A = U[] i} = {!!}
+  ⌜evalT⌝ {A = El[] i} = {!!}
+  ⌜evalT⌝ {A = Π[] i} = {!!}
+  ⌜evalT⌝ {A = isSetTy p q i j} k =
+    {!ouc (isSetPartial isSetTy
+                      (λ j → ⌜evalT⌝ {A = p j} k)
+                      (λ j → ⌜evalT⌝ {A = q j} k)
+                      (λ {(k = i0) → λ i j →
+                          isSetTy p q i j;
+                          (k = i1) → λ i j →
+                          ⌜ isSetTV (λ k → evalT (p k)) (λ k → evalT (q k)) i j ⌝T}))
+        i j!}
 
+
+  evalT⌜⌝ : {S : TSk} {Γ : Con} {A : TV S Γ} →
+            evalT ⌜ A ⌝T ≡[ ap (λ x → TV x Γ) (skeleton⌜⌝T {A = A}) ]≡ A
+  evalT⌜⌝ {A = U} = refl
+  evalT⌜⌝ {A = El u} = refl
+  evalT⌜⌝ {A = Π A B} i =
+    let p : evalT ⌜ A ⌝T ≡[ ap (λ x → TV x _) (skeleton⌜⌝T {A = A}) ]≡ A
+        p = evalT⌜⌝ {A = A}
+        q : tr (λ x → TV (skeleton ⌜ B ⌝T) (_ , x)) ⌜evalT⌝ (evalT ⌜ B ⌝T)
+            ≅[ (λ (x : TSk × Con) → TV (fst x) (snd x)) ] B
+        q = tr (λ x → TV (skeleton ⌜ B ⌝T) (_ , x)) ⌜evalT⌝ (evalT ⌜ B ⌝T)
+              ≅⟨ ap (λ x → _ ,, _ , x) (⌜evalT⌝ ⁻¹)
+               ∣ trfill (λ x → TV (skeleton ⌜ B ⌝T) (_ , x)) ⌜evalT⌝ (evalT ⌜ B ⌝T) ⁻¹ ⟩
+            evalT ⌜ B ⌝T ≅⟨ ap (_,, _) (skeleton⌜⌝T {A = B}) ∣ evalT⌜⌝ ⟩
+            B           ≅∎
+    in Π (p i) (≅-to-≡[] (isSet× isSetTSk isSetCon) q
+                         {P = λ i → (skeleton⌜⌝T {A = B} i) ,, _ , ⌜ evalT⌜⌝ {A = A} i ⌝T} i)
+
+
+  ⌜⌝T-injective : {S : TSk} {Γ : Con} {A B : TV S Γ} → ⌜ A ⌝T ≡ ⌜ B ⌝T → A ≡ B
+  ⌜⌝T-injective {A = A} {B} p = ≅-to-≡ {B = λ x → TV x _} isSetTSk (
+    A           ≅⟨ evalT⌜⌝ ⁻¹ ⟩
+    evalT ⌜ A ⌝T ≅⟨ apd evalT p ⟩
+    evalT ⌜ B ⌝T ≅⟨ evalT⌜⌝ ⟩
+    B           ≅∎)

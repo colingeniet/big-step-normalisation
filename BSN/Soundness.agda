@@ -1,29 +1,25 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 module BSN.Soundness where
 
 open import Library.Equality
+open import Library.Sets
 open import Syntax.Terms
 open import Value.Value
 open import Value.Lemmas
 open import NormalForm.NormalForm
 open import Evaluator.Evaluator
-open import BSN.Completeness
-open import NBE.Stability
 
 
--- Soundness of the evaluator is trivial using completeness, and the fact
--- that embeddings are injective
---  - by definition for values
---  - using NBE for normal forms
-eval-sound : {Γ Δ : Con} {A : Ty} {u : Tm Δ A} {ρ : Env Γ Δ} {v w : Val Γ A} →
-             eval u > ρ ⇒ v → eval u > ρ ⇒ w → v ≡ w
-eval-sound {u = u} {ρ} {v} {w} evalv evalw =
-  let p : ⌜ v ⌝V ≡ ⌜ w ⌝V
-      p = ⌜ v ⌝V       ≡⟨ eval≡ evalv ⁻¹ ⟩
-          u [ ⌜ ρ ⌝E ] ≡⟨ eval≡ evalw ⟩
-          ⌜ w ⌝V       ∎
-  in veq p
+eval-sound : {Γ Δ : Con} {A : Ty Δ} {B B' : Ty Γ} {u : Tm Δ A}
+             {ρ : Env Γ Δ} {v : Val Γ B} {w : Val Γ B'} →
+             eval u > ρ ⇒ v → eval u > ρ ⇒ w → v ≅[ Val Γ ] w
+eval-sound {B = B} {B'} {u} {ρ} {v} {w} evalv evalw =
+  let p : ⌜ v ⌝V ≅[ Tm _ ] ⌜ w ⌝V
+      p = ⌜ v ⌝V       ≅⟨ eval≡ evalv ≅⁻¹ ⟩'
+          u [ ⌜ ρ ⌝E ] ≅⟨ eval≡ evalw ⟩'
+          ⌜ w ⌝V       ≅∎
+  in ≡[]-to-≅ (veqdep (snd p))
 
 evals-sound : {Γ Δ Θ : Con} {σ : Tms Δ Θ} {ρ : Env Γ Δ} {ν δ : Env Γ Θ} →
               evals σ > ρ ⇒ ν → evals σ > ρ ⇒ δ → ν ≡ δ
@@ -34,16 +30,21 @@ evals-sound {σ = σ} {ρ} {ν} {δ} evalsν evalsδ =
           ⌜ δ ⌝E     ∎
   in enveq p
 
-$-sound : {Γ : Con} {A B : Ty} {f : Val Γ (A ⟶ B)} {v : Val Γ A} {w t : Val Γ B} →
-          f $ v ⇒ w → f $ v ⇒ t → w ≡ t
+$-sound : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} {C C' : Ty Γ}
+          {f : Val Γ (Π A B)} {v : Val Γ A} {w : Val Γ C} {t : Val Γ C'} →
+          f $ v ⇒ w → f $ v ⇒ t → w ≅[ Val Γ ] t
 $-sound {f = f} {v} {w} {t} $w $t =
-  let p : ⌜ w ⌝V ≡ ⌜ t ⌝V
-      p = ⌜ w ⌝V         ≡⟨ eval$≡ $w ⁻¹ ⟩
-          ⌜ f ⌝V $ ⌜ v ⌝V ≡⟨ eval$≡ $t ⟩
-          ⌜ t ⌝V         ∎
-  in veq p
+  let p : ⌜ w ⌝V ≅[ Tm _ ] ⌜ t ⌝V
+      p = ⌜ w ⌝V         ≅⟨ eval$≡ $w ≅⁻¹ ⟩'
+          ⌜ f ⌝V $ ⌜ v ⌝V ≅⟨ eval$≡ $t ⟩'
+          ⌜ t ⌝V         ≅∎
+  in ≡[]-to-≅ (veqdep (snd p))
 
-q-sound : {Γ : Con} {A : Ty} {v : Val Γ A} {n m : Nf Γ A} →
+postulate
+  ⌜⌝N-injective : {Γ : Con} {A : Ty Γ} {n m : Nf Γ A} → ⌜ n ⌝N ≡ ⌜ m ⌝N → n ≡ m
+  ⌜⌝NN-injective : {Γ : Con} {A : Ty Γ} {n m : NN Γ A} → ⌜ n ⌝NN ≡ ⌜ m ⌝NN → n ≡ m
+
+q-sound : {Γ : Con} {A : Ty Γ} {v : Val Γ A} {n m : Nf Γ A} →
           q v ⇒ n → q v ⇒ m → n ≡ m
 q-sound {v = v} {n} {m} qn qm =
   let p : ⌜ n ⌝N ≡ ⌜ m ⌝N
@@ -51,3 +52,12 @@ q-sound {v = v} {n} {m} qn qm =
           ⌜ v ⌝V ≡⟨ q≡ qm ⟩
           ⌜ m ⌝N ∎
   in ⌜⌝N-injective p
+
+qs-sound : {Γ : Con} {A : Ty Γ} {v : NV Γ A} {n m : NN Γ A} →
+          qs v ⇒ n → qs v ⇒ m → n ≡ m
+qs-sound {v = v} {n} {m} qn qm =
+  let p : ⌜ n ⌝NN ≡ ⌜ m ⌝NN
+      p = ⌜ n ⌝NN ≡⟨ qs≡ qn ⁻¹ ⟩
+          ⌜ v ⌝NV ≡⟨ qs≡ qm ⟩
+          ⌜ m ⌝NN ∎
+  in ⌜⌝NN-injective p
