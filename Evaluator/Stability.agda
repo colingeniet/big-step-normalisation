@@ -5,7 +5,7 @@
   normal forms are invariant by normalisation.
 -}
 
-module BSN.Stability where
+module Evaluator.Stability where
 
 open import Library.Equality
 open import Library.Sets

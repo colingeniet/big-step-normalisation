@@ -1,74 +1,39 @@
 {-# OPTIONS --cubical #-}
 
-{-
-  Definition of the notion of strong computability, which is central in the
-  proof of termination.
-  This notion can be seen as a (a priori) stronger requirement than the
-  termination of quote, which will allow the induction to go through.
--}
-
-module BSN.StrongComputability where
+module StrongComputability.Weakening where
 
 open import Library.Equality
 open import Library.Sets
 open import Library.Pairs
-open import Library.Pairs.Sets
 open import Syntax.Terms
 open import Syntax.Lemmas
 open import Variable.Variable
 open import Value.Value
 open import Value.Weakening
 open import Value.Lemmas
-open import Value.Sets
 open import NormalForm.NormalForm
 open import NormalForm.Weakening
 open import Evaluator.Evaluator
 open import Evaluator.Weakening
 open import TypeEvaluator.Skeleton
 open import TypeEvaluator.TypeValue
-open import TypeEvaluator.Sets
 open import TypeEvaluator.Evaluator
-open import BSN.Stability
-open import BSN.Soundness
-
-
-scvTV : {S : TSk} {Γ : Con} (A : TV S Γ) → Val Γ ⌜ A ⌝T → Set
-scvTV {Γ = Γ} U v = Σ[ n ∈ Nf Γ U ] q v ⇒ n
-scvTV {Γ = Γ} (El u) v = Σ[ n ∈ Nf Γ (El u) ] q v ⇒ n
-scvTV {Π S T} {Γ} (Π A B) f =
-  {Δ : Con} (σ : Wk Δ Γ) {v : Val Δ ⌜ A [ ⌜ σ ⌝w ]TV ⌝T} → scvTV (A [ ⌜ σ ⌝w ]TV) v →
-  Σ[ C ∈ TV T Δ ] Σ[ fv ∈ Val Δ ⌜ C ⌝T ]
-  ((tr (Val Δ) Π[] (f +V σ)) $ (tr (Val Δ) (⌜[]TV⌝ ⁻¹) v) ⇒ fv  ×  scvTV C fv)
-
-isPropscvTV : {S : TSk} {Γ : Con} {A : TV S Γ} {v : Val Γ ⌜ A ⌝T} → isProp (scvTV A v)
-isPropscvTV {A = U} {v} (n ,, qn) (m ,, qm) i =
-  let n≡m : n ≡ m
-      n≡m = q-sound qn qm
-  in n≡m i ,, isPropDependent isPropq n≡m qn qm i
-isPropscvTV {A = El u} {v} (n ,, qn) (m ,, qm) i =
-  let n≡m : n ≡ m
-      n≡m = q-sound qn qm
-  in n≡m i ,, isPropDependent isPropq n≡m qn qm i
-isPropscvTV {Π S T} {Γ} {Π A B} {f} x y i {Δ} σ {v} scvv =
-  let C ,, fv ,, $fv ,, scvfv = x σ scvv
-      C' ,, fv' ,, $fv' ,, scvfv' = y σ scvv
-      fv≅fv' = $-sound $fv $fv'
-      C≡C' = ⌜⌝T-injective (fst fv≅fv')
-      fv≡fv' = ≅-to-≡[] isSetTy fv≅fv' {P = ap ⌜_⌝T C≡C'}
-  in C≡C' i ,, fv≡fv' i ,,
-     isPropPath {B = λ i → _ $ _ ⇒ (fv≡fv' i)} isProp$ $fv $fv' i ,,
-     isPropPath {B = λ i → scvTV (C≡C' i) (fv≡fv' i)} isPropscvTV scvfv scvfv' i
+open import StrongComputability.StrongComputability
 
 
 abstract
   _+scvTV_ : {S : TSk} {Γ Δ : Con} {A : TV S Δ} {v : Val Δ ⌜ A ⌝T} →
              scvTV A v → (σ : Wk Γ Δ) → scvTV (A [ ⌜ σ ⌝w ]TV) (tr (Val Γ) ⌜[]TV⌝ (v +V σ))
   _+scvTV_ {A = U} {v} (n ,, qn) σ =
-   tr (Nf _) U[] (n +N σ) ,,
-   (λ i → q trfill (Val _) U[] (v +V σ) i ⇒ trfill (Nf _) U[] (n +N σ) i) * (qn +q σ)
+   tr (Nf _) (⌜[]TV⌝ {A = U}) (n +N σ) ,,
+   (λ i → q trfill (Val _) (⌜[]TV⌝ {A = U}) (v +V σ) i
+          ⇒ trfill (Nf _) (⌜[]TV⌝ {A = U}) (n +N σ) i)
+   * (qn +q σ)
   _+scvTV_ {A = El u} {v} (n ,, qn) σ =
-   tr (Nf _) El[] (n +N σ) ,,
-   (λ i → q trfill (Val _) El[] (v +V σ) i ⇒ trfill (Nf _) El[] (n +N σ) i) * (qn +q σ)
+   tr (Nf _) (⌜[]TV⌝ {A = El u}) (n +N σ) ,,
+   (λ i → q trfill (Val _) (⌜[]TV⌝ {A = El u}) (v +V σ) i
+          ⇒ trfill (Nf _) (⌜[]TV⌝ {A = El u}) (n +N σ) i)
+   * (qn +q σ)
   _+scvTV_ {Π S T} {Γ} {Δ} {Π A B} {f} scvf σ {Θ} δ {v} scvv =
     let A+ = A [ ⌜ σ ⌝w ]TV [ ⌜ δ ⌝w ]TV
         A+' = A [ ⌜ σ ∘w δ ⌝w ]TV
@@ -124,53 +89,32 @@ abstract
     in C ,, fv ,, $fv' ,, scvfv
 
 
+  _+scv_ : {Γ Δ : Con} {A : Ty Δ} {v : Val Δ A} → scv v → (σ : Wk Γ Δ) → scv (v +V σ)
+  _+scv_ {A = A} {v} scvv σ =
+    let p : tr (Val _) ⌜[]TV⌝ (tr (Val _) ⌜evalT⌝ v +V σ)
+            ≡ tr (Val _) ⌜evalT⌝ (v +V σ)
+        p = ≅-to-≡ {B = Val _} isSetTy (
+              tr (Val _) ⌜[]TV⌝ (tr (Val _) ⌜evalT⌝ v +V σ)
+                ≅⟨ trfill (Val _) ⌜[]TV⌝ _ ⁻¹ ⟩
+              tr (Val _) ⌜evalT⌝ v +V σ ≅⟨ apd (_+V σ) (trfill (Val _) ⌜evalT⌝ v) ⁻¹ ⟩
+              v +V σ                   ≅⟨ trfill (Val _) ⌜evalT⌝ (v +V σ) ⟩
+              tr (Val _) ⌜evalT⌝ (v +V σ) ≅∎)
+    in tr (scvTV _) p (scvv +scvTV σ)
 
+  _+sce_ : {Γ Δ Θ : Con} {ρ : Env Δ Θ} → sce ρ → (σ : Wk Γ Δ) → sce (ρ +E σ)
+  _+sce_ {ρ = ε} tt A = tt
+  _+sce_ {ρ = ρ , v} (sceρ ,, scvv) σ =
+    sceρ +sce σ ,, trd scv (trfill (Val _) ([+E] ⁻¹) (v +V σ)) (_+scv_ {v = v} scvv σ)
 
 {-
--- Extension of strong computability to environments.
-sce : {Γ Δ : Con} → Env Γ Δ → Set
-sce ε = ⊤
-sce (ρ , u) = sce ρ  ×  scv u
-
--- Associated projections.
-π₁sce : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
-        sce ρ → sce (π₁E ρ)
-π₁sce {ρ = _ , _} = fst
-
-π₂sce : {Γ Δ : Con} {A : Ty} {ρ : Env Γ (Δ , A)} →
-        sce ρ → scv (π₂E ρ)
-π₂sce {ρ = _ , _} = snd
-
-πηsce : {Γ Δ : Con} {A : Ty} {σ : Env Γ (Δ , A)} (sceσ : sce σ) →
-        (π₁sce sceσ ,, π₂sce sceσ) ≡[ ap sce πηE ]≡ sceσ
-πηsce {σ = σ , u} (sceσ ,, scvu) = refl
-
-sceεη : {Γ : Con} {σ : Env Γ ●} (sceσ : sce σ) →
-        sceσ ≡[ ap sce (envεη σ) ]≡ tt
-sceεη {σ = ε} tt = refl
-
-
-
-isPropsce : {Γ Δ : Con} {σ : Env Γ Δ} → isProp (sce σ)
-isPropsce {Δ = ●} {ε} = isProp⊤
-isPropsce {Δ = Δ , A} {ρ , u} = isProp× isPropsce isPropscv
-
--- Weakenings.
-_+sce_ : {Γ Δ Θ : Con} {ρ : Env Δ Θ} → sce ρ → (σ : Wk Γ Δ) → sce (ρ +E σ)
-_+sce_ {ρ = ε} tt A = tt
-_+sce_ {ρ = ρ , u} (sceρ ,, scvu) σ = sceρ +sce σ ,, scvu +scv σ
-
-
-π₁sce+ : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
+-- Weakenings lemmas.
+π₁sce+ : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
          π₁sce (sceρ +sce σ) ≡[ ap sce (π₁+ {ρ = ρ}) ]≡ (π₁sce sceρ) +sce σ
 π₁sce+ {ρ = _ , _} = refl
-π₂sce+ : {Γ Δ Θ : Con} {A : Ty} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
-         π₂sce (sceρ +sce σ) ≡[ ap scv (π₂+ {ρ = ρ}) ]≡ (π₂sce sceρ) +scv σ
-π₂sce+ {ρ = _ , _} = refl
 
-
--- The identity environment is strongly computable.
-sceid : {Γ : Con} → sce (idenv {Γ})
-sceid {●} = tt
-sceid {Γ , A} = sceid +sce (wkwk A idw) ,, scvvar
+π₂sce+ : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ (Θ , A)} {sceρ : sce ρ} {σ : Wk Γ Δ} →
+         π₂sce {ρ = ρ +E σ} (_+sce_ {ρ = ρ} sceρ σ)
+         ≅[ {!!} ] _+scv_ {v = π₂E ρ} (π₂sce {ρ = ρ} sceρ) σ
+π₂sce+ {ρ = _ , _} = {!!}
 -}
+

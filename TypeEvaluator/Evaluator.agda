@@ -23,76 +23,77 @@ U [ σ ]TV = U
 (El u) [ σ ]TV = El (tr (Tm _) U[] (u [ σ ]))
 (Π A B) [ σ ]TV = Π (A [ σ ]TV) (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV))
 
-⌜[]TV⌝ {A = U} = U[]
-⌜[]TV⌝ {A = El u} = El[]
-⌜[]TV⌝ {A = Π A B} {σ} =
-  let p : ⌜ A ⌝T [ σ ]T ≡ ⌜ A [ σ ]TV ⌝T
-      p = ⌜[]TV⌝
-      q : ⌜ B ⌝T [ σ ↑ ⌜ A ⌝T ]T ≅[ Ty ] ⌜ tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) ⌝T
-      q = ⌜ B ⌝T [ σ ↑ ⌜ A ⌝T ]T
-            ≅⟨ ⌜[]TV⌝ ⟩
-          ⌜ B [ σ ↑ ⌜ A ⌝T ]TV ⌝T
-            ≅⟨ apd ⌜_⌝T (trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV)) ⟩
-          ⌜ tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) ⌝T ≅∎
-  in (Π ⌜ A ⌝T ⌜ B ⌝T) [ σ ]T
-       ≡⟨ Π[] ⟩
-     Π (⌜ A ⌝T [ σ ]T) (⌜ B ⌝T [ σ ↑ ⌜ A ⌝T ]T)
-       ≡⟨ (λ i → Π (p i) (≅-to-≡[] isSetCon q {P = ap (_ ,_) p} i)) ⟩
-     Π ⌜ A [ σ ]TV ⌝T ⌜ tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) ⌝T ∎
+abstract
+  ⌜[]TV⌝ {A = U} = U[]
+  ⌜[]TV⌝ {A = El u} = El[]
+  ⌜[]TV⌝ {A = Π A B} {σ} =
+    let p : ⌜ A ⌝T [ σ ]T ≡ ⌜ A [ σ ]TV ⌝T
+        p = ⌜[]TV⌝
+        q : ⌜ B ⌝T [ σ ↑ ⌜ A ⌝T ]T ≅[ Ty ] ⌜ tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) ⌝T
+        q = ⌜ B ⌝T [ σ ↑ ⌜ A ⌝T ]T
+              ≅⟨ ⌜[]TV⌝ ⟩
+            ⌜ B [ σ ↑ ⌜ A ⌝T ]TV ⌝T
+              ≅⟨ apd ⌜_⌝T (trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV)) ⟩
+            ⌜ tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) ⌝T ≅∎
+    in (Π ⌜ A ⌝T ⌜ B ⌝T) [ σ ]T
+         ≡⟨ Π[] ⟩
+       Π (⌜ A ⌝T [ σ ]T) (⌜ B ⌝T [ σ ↑ ⌜ A ⌝T ]T)
+         ≡⟨ (λ i → Π (p i) (≅-to-≡[] isSetCon q {P = ap (_ ,_) p} i)) ⟩
+       Π ⌜ A [ σ ]TV ⌝T ⌜ tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) ⌝T ∎
 
 
-[id]TV : {S : TSk} {Γ : Con} {A : TV S Γ} → A [ id ]TV ≡ A
-[id]TV {A = U} = refl
-[id]TV {A = El u} =
-  let p : tr (Tm _) U[] (u [ id ]) ≡ u
-      p = ≅-to-≡ isSetTy (
-            tr (Tm _) U[] (u [ id ]) ≅⟨ trfill (Tm _) U[] (u [ id ]) ⁻¹ ⟩
-            u [ id ]                 ≅⟨ [id] ⟩'
-            u                        ≅∎)
-  in ap El p
-[id]TV {A = Π A B} i =
-  let p : A [ id ]TV ≡ A
-      p = [id]TV
-      q : tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ id ↑ ⌜ A ⌝T ]TV) ≅[ TV _ ] B
-      q = tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ id ↑ ⌜ A ⌝T ]TV)
-            ≅⟨ trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ id ↑ ⌜ A ⌝T ]TV) ⁻¹ ⟩
-          B [ id ↑ ⌜ A ⌝T ]TV ≅⟨ ap≅ (B [_]TV) ↑id ⟩'
-          B [ id ]TV         ≅⟨ [id]TV ⟩
-          B                  ≅∎
-  in Π (p i) (≅-to-≡[] isSetCon q {P = ap (λ x → _ , ⌜ x ⌝T) p} i)
+  [id]TV : {S : TSk} {Γ : Con} {A : TV S Γ} → A [ id ]TV ≡ A
+  [id]TV {A = U} = refl
+  [id]TV {A = El u} =
+    let p : tr (Tm _) U[] (u [ id ]) ≡ u
+        p = ≅-to-≡ isSetTy (
+              tr (Tm _) U[] (u [ id ]) ≅⟨ trfill (Tm _) U[] (u [ id ]) ⁻¹ ⟩
+              u [ id ]                 ≅⟨ [id] ⟩'
+              u                        ≅∎)
+    in ap El p
+  [id]TV {A = Π A B} i =
+    let p : A [ id ]TV ≡ A
+        p = [id]TV
+        q : tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ id ↑ ⌜ A ⌝T ]TV) ≅[ TV _ ] B
+        q = tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ id ↑ ⌜ A ⌝T ]TV)
+              ≅⟨ trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ id ↑ ⌜ A ⌝T ]TV) ⁻¹ ⟩
+            B [ id ↑ ⌜ A ⌝T ]TV ≅⟨ ap≅ (B [_]TV) ↑id ⟩'
+            B [ id ]TV         ≅⟨ [id]TV ⟩
+            B                  ≅∎
+    in Π (p i) (≅-to-≡[] isSetCon q {P = ap (λ x → _ , ⌜ x ⌝T) p} i)
 
-[][]TV : {S : TSk} {Γ Δ Θ : Con} {A : TV S Θ} {σ : Tms Δ Θ} {ν : Tms Γ Δ} →
-          A [ σ ∘ ν ]TV ≡ A [ σ ]TV [ ν ]TV
-[][]TV {A = U} = refl
-[][]TV {A = El u} {σ} {ν} =
-  let p : tr (Tm _) U[] (u [ σ ∘ ν ]) ≡ tr (Tm _) U[] (tr (Tm _) U[] (u [ σ ]) [ ν ])
-      p = ≅-to-≡ {B = Tm _} isSetTy (
-            tr (Tm _) U[] (u [ σ ∘ ν ])     ≅⟨ trfill (Tm _) U[] (u [ σ ∘ ν ]) ⁻¹ ⟩
-            u [ σ ∘ ν ]                     ≅⟨ [][] ⟩'
-            u [ σ ] [ ν ]                   ≅⟨ apd (_[ ν ]) (trfill (Tm _) U[] (u [ σ ])) ⟩
-            (tr (Tm _) U[] (u [ σ ])) [ ν ] ≅⟨ trfill (Tm _) U[] _ ⟩
-            tr (Tm _) U[] (tr (Tm _) U[] (u [ σ ]) [ ν ]) ≅∎)
-  in ap El p
-[][]TV {A = Π A B} {σ} {ν} i =
-  let p : A [ σ ∘ ν ]TV ≡ A [ σ ]TV [ ν ]TV
-      p = [][]TV
-      q : tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ (σ ∘ ν) ↑ ⌜ A ⌝T ]TV)
-          ≅[ TV _ ]
-          tr (λ x → TV _ (_ , x)) ⌜[]TV⌝
-             (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) [ ν ↑ ⌜ A [ σ ]TV ⌝T ]TV)
-      q = tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ (σ ∘ ν) ↑ ⌜ A ⌝T ]TV)
-            ≅⟨ trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ _ ⁻¹ ⟩
-          B [ (σ ∘ ν) ↑ ⌜ A ⌝T ]TV
-            ≅⟨ ap≅ (B [_]TV) ↑∘↑ ≅⁻¹ ⟩'
-          B [ (σ ↑ ⌜ A ⌝T) ∘ (ν ↑ ⌜ A ⌝T [ σ ]T) ]TV
-            ≅⟨ [][]TV ⟩
-          B [ σ ↑ ⌜ A ⌝T ]TV [ ν ↑ ⌜ A ⌝T [ σ ]T ]TV
-            ≅⟨ apd (_[ ν ↑ _ ]TV) (trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV)) ⟩
-          (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) [ ν ↑ ⌜ A [ σ ]TV ⌝T ]TV)
-            ≅⟨ trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ _ ⟩
-          tr (λ x → TV _ (_ , x)) ⌜[]TV⌝
-             (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ _ ]TV) [ ν ↑ _ ]TV) ≅∎
-  in Π (p i) (≅-to-≡[] isSetCon q {P = ap (λ x → _ , ⌜ x ⌝T) p} i)
+  [][]TV : {S : TSk} {Γ Δ Θ : Con} {A : TV S Θ} {σ : Tms Δ Θ} {ν : Tms Γ Δ} →
+            A [ σ ∘ ν ]TV ≡ A [ σ ]TV [ ν ]TV
+  [][]TV {A = U} = refl
+  [][]TV {A = El u} {σ} {ν} =
+    let p : tr (Tm _) U[] (u [ σ ∘ ν ]) ≡ tr (Tm _) U[] (tr (Tm _) U[] (u [ σ ]) [ ν ])
+        p = ≅-to-≡ {B = Tm _} isSetTy (
+              tr (Tm _) U[] (u [ σ ∘ ν ])     ≅⟨ trfill (Tm _) U[] (u [ σ ∘ ν ]) ⁻¹ ⟩
+              u [ σ ∘ ν ]                     ≅⟨ [][] ⟩'
+              u [ σ ] [ ν ]                   ≅⟨ apd (_[ ν ]) (trfill (Tm _) U[] (u [ σ ])) ⟩
+              (tr (Tm _) U[] (u [ σ ])) [ ν ] ≅⟨ trfill (Tm _) U[] _ ⟩
+              tr (Tm _) U[] (tr (Tm _) U[] (u [ σ ]) [ ν ]) ≅∎)
+    in ap El p
+  [][]TV {A = Π A B} {σ} {ν} i =
+    let p : A [ σ ∘ ν ]TV ≡ A [ σ ]TV [ ν ]TV
+        p = [][]TV
+        q : tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ (σ ∘ ν) ↑ ⌜ A ⌝T ]TV)
+            ≅[ TV _ ]
+            tr (λ x → TV _ (_ , x)) ⌜[]TV⌝
+               (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) [ ν ↑ ⌜ A [ σ ]TV ⌝T ]TV)
+        q = tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ (σ ∘ ν) ↑ ⌜ A ⌝T ]TV)
+              ≅⟨ trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ _ ⁻¹ ⟩
+            B [ (σ ∘ ν) ↑ ⌜ A ⌝T ]TV
+              ≅⟨ ap≅ (B [_]TV) ↑∘↑ ≅⁻¹ ⟩'
+            B [ (σ ↑ ⌜ A ⌝T) ∘ (ν ↑ ⌜ A ⌝T [ σ ]T) ]TV
+              ≅⟨ [][]TV ⟩
+            B [ σ ↑ ⌜ A ⌝T ]TV [ ν ↑ ⌜ A ⌝T [ σ ]T ]TV
+              ≅⟨ apd (_[ ν ↑ _ ]TV) (trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV)) ⟩
+            (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ ⌜ A ⌝T ]TV) [ ν ↑ ⌜ A [ σ ]TV ⌝T ]TV)
+              ≅⟨ trfill (λ x → TV _ (_ , x)) ⌜[]TV⌝ _ ⟩
+            tr (λ x → TV _ (_ , x)) ⌜[]TV⌝
+               (tr (λ x → TV _ (_ , x)) ⌜[]TV⌝ (B [ σ ↑ _ ]TV) [ ν ↑ _ ]TV) ≅∎
+    in Π (p i) (≅-to-≡[] isSetCon q {P = ap (λ x → _ , ⌜ x ⌝T) p} i)
 
 
 

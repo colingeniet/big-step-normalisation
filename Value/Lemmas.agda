@@ -23,28 +23,28 @@ open import Value.Weakening
 envεη : {Γ : Con} (σ : Env Γ ●) → σ ≡ ε
 envεη ε = refl
 
-abstract
-  -- Embedding and projections commute.
-  π₁E≡ : {Γ Δ : Con} {A : Ty Δ} {ρ : Env Γ (Δ , A)} → ⌜ π₁E ρ ⌝E ≡ π₁ ⌜ ρ ⌝E
-  π₁E≡ {ρ = ρ , v} =
-    ⌜ ρ ⌝E              ≡⟨ π₁β ⁻¹ ⟩
-    π₁ (⌜ ρ ⌝E , ⌜ v ⌝V) ∎
-  π₂E≡ : {Γ Δ : Con} {A : Ty Δ} {ρ : Env Γ (Δ , A)} →
-         ⌜ π₂E ρ ⌝V ≅[ Tm Γ ] π₂ ⌜ ρ ⌝E
-  π₂E≡ {ρ = ρ , v} =
-    ⌜ v ⌝V              ≅⟨ π₂β ≅⁻¹ ⟩'
-    π₂ (⌜ ρ ⌝E , ⌜ v ⌝V) ≅∎
 
-  -- Weakening and projections commute.
-  π₁+ : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ (Θ , A)} {σ : Wk Γ Δ} →
-        π₁E (ρ +E σ) ≡ (π₁E ρ) +E σ
-  π₁+ {ρ = _ , _} = refl
-  π₂+ : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ (Θ , A)} {σ : Wk Γ Δ} →
-        π₂E (ρ +E σ) ≅[ Val Γ ] (π₂E ρ) +V σ
-  π₂+ {Γ} {ρ = _ , x} {σ} =
-    tr (Val Γ) _ (x +V σ)
-      ≅⟨ trfill (Val Γ) _ (x +V σ) ⁻¹ ⟩
-    x +V σ ≅∎
+-- Embedding and projections commute.
+π₁E≡ : {Γ Δ : Con} {A : Ty Δ} {ρ : Env Γ (Δ , A)} → ⌜ π₁E ρ ⌝E ≡ π₁ ⌜ ρ ⌝E
+π₁E≡ {ρ = ρ , v} =
+  ⌜ ρ ⌝E              ≡⟨ π₁β ⁻¹ ⟩
+  π₁ (⌜ ρ ⌝E , ⌜ v ⌝V) ∎
+π₂E≡ : {Γ Δ : Con} {A : Ty Δ} {ρ : Env Γ (Δ , A)} →
+       ⌜ π₂E ρ ⌝V ≅[ Tm Γ ] π₂ ⌜ ρ ⌝E
+π₂E≡ {ρ = ρ , v} =
+  ⌜ v ⌝V              ≅⟨ π₂β ≅⁻¹ ⟩'
+  π₂ (⌜ ρ ⌝E , ⌜ v ⌝V) ≅∎
+
+-- Weakening and projections commute.
+π₁+ : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ (Θ , A)} {σ : Wk Γ Δ} →
+      π₁E (ρ +E σ) ≡ (π₁E ρ) +E σ
+π₁+ {ρ = _ , _} = refl
+π₂+ : {Γ Δ Θ : Con} {A : Ty Θ} {ρ : Env Δ (Θ , A)} {σ : Wk Γ Δ} →
+      π₂E (ρ +E σ) ≅[ Val Γ ] (π₂E ρ) +V σ
+π₂+ {Γ} {ρ = _ , x} {σ} =
+  tr (Val Γ) _ (x +V σ)
+    ≅⟨ trfill (Val Γ) _ (x +V σ) ⁻¹ ⟩
+  x +V σ ≅∎
 
 
 -- The identity environment.
