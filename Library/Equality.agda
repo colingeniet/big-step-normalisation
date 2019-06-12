@@ -40,7 +40,7 @@ hfill {φ = φ} u u0 i = hcomp (λ j → λ {(φ = i1) → u (i ∧ j) 1=1;
 
 fill : ∀ {l} (A : I → Set l) (φ : I) (u : ∀ i → Partial φ (A i))
              (u0 : A i0 [ φ ↦ u i0 ]) (i : I) → A i
-fill A φ u u0 i = comp (λ j → A (i ∧ j)) _
+fill A φ u u0 i = comp (λ j → A (i ∧ j))
                        (λ j → λ {(φ = i1) → u (i ∧ j) 1=1;
                                  (i = i0) → ouc u0 })
                        (ouc u0)
@@ -259,7 +259,7 @@ _d∙d_ : ∀ {l} {A B C : Set l} {P : A ≡ B} {Q : B ≡ C}
           {x : A} {y : B} {z : C} → x ≡[ P ]≡ y → y ≡[ Q ]≡ z →
           x ≡[ P ∙ Q ]≡ z
 _d∙d_ {A = A} {P = P} {Q} {x} p q i =
-   comp (λ j → transitivity-square P Q i j) _
+   comp (λ j → transitivity-square P Q i j)
         (λ j → λ {(i = i0) → x; (i = i1) → q j}) (p i)
 
 _d∙_ : ∀ {l} {A B : Set l} {P : A ≡ B} {x : A} {y z : B} →
@@ -290,7 +290,7 @@ diagonal-square-d {P = P} {Q} p q i j =
                         (j = i0) → P i;
                         (i = i1) → Q (j ∧ k);
                         (j = i1) → Q (i ∧ k)})
-              (inc (P (i ∨ j)))) _
+              (inc (P (i ∨ j))))
        (λ k → λ {(i = i0) → p j;
                  (j = i0) → p i;
                  (i = i1) → q (j ∧ k);
@@ -310,7 +310,7 @@ refl∙d {A = A} {P = P} {x = x} {p = p} j i =
   comp (hfill (λ k → λ {(i = i0) → A;
                         (i = i1) → P k;
                         (j = i1) → P (i ∧ k)})
-              (inc A)) _
+              (inc A))
        (λ k → λ {(i = i0) → x;
                  (i = i1) → p k;
                  (j = i1) → p (i ∧ k)})
@@ -323,7 +323,7 @@ refl∙d {A = A} {P = P} {x = x} {p = p} j i =
   comp (hfill (λ k → λ {(j = i1) → A;
                         (i = i0) → A;
                         (i = i1) → P (1- j ∧ 1- k)})
-              (inc (P (1- j ∧ i)))) _
+              (inc (P (1- j ∧ i))))
        (λ k → λ {(j = i1) → x;
                  (i = i0) → x;
                  (i = i1) → p (1- j ∧ 1- k)})
@@ -342,7 +342,7 @@ private
     comp (hfill (λ k → λ {(i = i0) → Q (j ∧ k);
                           (j = i0) → P (1- i);
                           (j = i1) → Q k})
-                (inc (P (1- i ∨ j)))) _
+                (inc (P (1- i ∨ j))))
          (λ k → λ {(i = i0) → q (j ∧ k);
                    (j = i0) → p (1- i);
                    (j = i1) → q k})
@@ -356,7 +356,7 @@ private
 ∙∙d {A = A} {P = P} {Q} {R} {x = x} {p = p} {q} {r} j i =
   comp (hfill (λ k → λ {(i = i0) → A;
                         (i = i1) → assoc-cube-back Q R j k})
-              (inc (transitivity-square P Q i (1- j)))) _
+              (inc (transitivity-square P Q i (1- j))))
        (λ k → λ {(i = i0) → x;
                  (i = i1) → assoc-cube-back-d q r j k})
        (transitivity-square-d p q i (1- j))

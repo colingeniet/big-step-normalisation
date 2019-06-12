@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-meta #-}
 
 {-
   Definition of the notion of strong computability, which is central in the
@@ -53,12 +53,12 @@ scv {A = A} v = scvTV (evalT A) (tr (Val _) ⌜evalT⌝ v)
 
 abstract
   -- 'Constructor' for function types (the base constructors should not be needed).
-  scvΠ : {Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {f : Val Δ (Π A B)} →
-         ({Γ : Con} (σ : Wk Γ Δ) {v : Val Γ (A [ ⌜ σ ⌝w ]T)} → scv v →
-          Σ[ C ∈ Ty Γ ] Σ[ fv ∈ Val Γ C ] (tr (Val _) Π[] (f +V σ) $ v ⇒ fv  ×  scv fv)) →
-         scv f
-  scvΠ {Δ} {A} {B} {f} H {Γ} σ {v} scvv =
-    let v' : Val Γ (A [ ⌜ σ ⌝w ]T)
+  scvΠ-intro : {Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {f : Val Δ (Π A B)} →
+               ({Γ : Con} (σ : Wk Γ Δ) {v : Val Γ (A [ ⌜ σ ⌝w ]T)} → scv v →
+               Σ[ C ∈ Ty Γ ] Σ[ fv ∈ Val Γ C ] (tr (Val _) Π[] (f +V σ) $ v ⇒ fv  ×  scv fv)) →
+               scv f
+  scvΠ-intro {Δ} {A} {B} {f} H {Γ} σ {v} scvv = {!!}
+{-    let v' : Val Γ (A [ ⌜ σ ⌝w ]T)
         v' = tr (Val Γ) (⌜evalT⌝ ⁻¹) v
         v'' : Val Γ ⌜ evalT A [ ⌜ σ ⌝w ]TV ⌝T
         v'' = tr (Val Γ) ⌜evalT⌝ v'
@@ -91,9 +91,21 @@ abstract
         scvfv' : scvTV C' fv'
         scvfv' = (λ i → scvTV (P i) (≅-to-≡[] isSetTy p {P = apd ⌜_⌝T P} i))
                  * scvfv
-        $fv' : tr (Val Γ) Π[] (tr (Val Δ) ⌜evalT⌝ f +V σ) $ ? ⇒ fv'
-        $fv' = ?
-    in {!C' ,, fv' ,, $fv' ,, scvfv'!}
+        v''' : Val Γ (⌜ evalT A ⌝T [ ⌜ σ ⌝w ]T)
+        v''' = tr (Val Γ) (⌜[]TV⌝ ⁻¹) v
+        f+ : Val Γ (Π (A [ ⌜ σ ⌝w ]T) (B [ ⌜ σ ⌝w ↑ A ]T))
+        f+ = tr (Val Γ) Π[] (f +V σ)
+        f+' : Val Γ (Π (⌜ evalT A ⌝T [ ⌜ σ ⌝w ]T) (? [ ⌜ σ ⌝w ↑ _ ]T))
+        f+' = tr (Val Γ) Π[] (tr (Val Δ) ⌜evalT⌝ f +V σ)
+        $fv' : f+' $ v''' ⇒ fv'
+        $fv' = {!!}
+    in C' ,, fv' ,, $fv' ,, scvfv'-}
+    
+  -- 'Eliminator' for function types.
+  scvΠ-elim : {Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {f : Val Δ (Π A B)} → scv f →
+              {Γ : Con} (σ : Wk Γ Δ) {v : Val Γ (A [ ⌜ σ ⌝w ]T)} → scv v →
+              Σ[ C ∈ Ty Γ ] Σ[ fv ∈ Val Γ C ] (tr (Val _) Π[] (f +V σ) $ v ⇒ fv  ×  scv fv)
+  scvΠ-elim {Δ} {A} {B} {f} scvf {Γ} σ {v} scvv = {!!}
 
 
 -- Extension of strong computability to environments.

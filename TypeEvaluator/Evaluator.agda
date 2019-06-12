@@ -149,7 +149,7 @@ abstract
         q = ⌜evalT⌝ {A = A}
         r = λ i → [id]T {A = A} i
         s = λ i → ⌜ evalT ([id]T {A = A} i) ⌝T
-    in {!isSetFillSquare isSetTy p q r s i!}
+    in {!isSetFillSquare isSetTy p q r s i j)!}
   ⌜evalT⌝ {A = [][]T i} = {!!}
   ⌜evalT⌝ {A = U[] i} = {!!}
   ⌜evalT⌝ {A = El[] i} = {!!}
