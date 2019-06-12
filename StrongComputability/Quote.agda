@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical #-}
 
-module BSN.Quote where
+module StrongComputability.Quote where
 
 open import Library.Equality
 open import Library.Sets
@@ -20,7 +20,8 @@ open import TypeEvaluator.Skeleton
 open import TypeEvaluator.TypeValue
 open import TypeEvaluator.Sets
 open import TypeEvaluator.Evaluator
-open import BSN.StrongComputability
+open import StrongComputability.StrongComputability
+open import StrongComputability.Weakening
 
 
 abstract
@@ -54,7 +55,7 @@ abstract
                 ⌜ B ⌝T [ ⌜ wkw idw ⌝w ↑ ⌜ A ⌝T ]T [ < ⌜ tr (Val _) (⌜[]TV⌝ ⁻¹) (neu (var varz)) ⌝V > ]T
                   ≡⟨ [][]T ⁻¹ ⟩
                 ⌜ B ⌝T [ (⌜ wkw idw ⌝w ↑ ⌜ A ⌝T) ∘ < ⌜ tr (Val _) (⌜[]TV⌝ ⁻¹) (neu (var varz)) ⌝V > ]T
-                  ≡⟨ (λ i → ⌜ B ⌝T [ ↑∘<> {A = ⌜ A ⌝T} {σ = ⌜ wkw idw ⌝w} {u = ⌜ tr (Val _) (⌜[]TV⌝ ⁻¹) (neu (var varz)) ⌝V} i ]T) ⟩
+                  ≡⟨ (λ i → ⌜ B ⌝T [ ↑∘<> {u = ⌜ tr (Val _) (⌜[]TV⌝ ⁻¹) (neu (var varz)) ⌝V} i ]T) ⟩
                 ⌜ B ⌝T [ ⌜ wkw idw ⌝w , ⌜ tr (Val _) (⌜[]TV⌝ ⁻¹) (neu (var varz)) ⌝V ]T
                   ≡⟨ (λ i → ⌜ B ⌝T [ ⌜wkid⌝ i , ≅-to-≡[] isSetTy p {P = ap (⌜ A ⌝T [_]T) ⌜wkid⌝} i ]T) ⟩
                 ⌜ B ⌝T [ wk , vz ]T              ≡⟨ ap (⌜ B ⌝T [_]T) πη ⟩
@@ -76,23 +77,31 @@ abstract
                       ⇒ (trfill (Val _) (ap ⌜_⌝T C≡B) fz i))
                * $fz
         qfz' : q fz' ⇒ nfz'
-        qfz' = (λ i → q (trfill (Val _) (ap ⌜_⌝T C≡B) fz i) ⇒ (trfill (Nf _) (ap ⌜_⌝T C≡B) nfz i)) * qfz
+        qfz' = (λ i → q (trfill (Val _) (ap ⌜_⌝T C≡B) fz i)
+                      ⇒ (trfill (Nf _) (ap ⌜_⌝T C≡B) nfz i))
+               * qfz
     in lam nfz' ,, qΠ $fz' qfz'
 
   scvTV-unquote {A = U} n qv = neuU n ,, qU qv
   scvTV-unquote {A = El u} n qv = neuEl n ,, qEl qv
   scvTV-unquote {S} {Γ} {Π A B} {f} n qf {Δ} σ {v} scvv =
     let m ,, qv = scvTV-quote scvv
+        f+ : NV Δ (Π ⌜ A ⌝T ⌜ B ⌝T [ ⌜ σ ⌝w ]T)
         f+ = f +NV σ
+        f+' : NV Δ (Π (⌜ A ⌝T [ ⌜ σ ⌝w ]T) (⌜ B ⌝T [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]T))
         f+' = tr (NV Δ) Π[] f+
+        neuf+'' = Val Δ (Π (⌜ A ⌝T [ ⌜ σ ⌝w ]T) (⌜ B ⌝T [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]T))
         neuf+'' = tr (Val Δ) Π[] (neu f+)
         p : neu f+' ≡ neuf+''
         p = ≅-to-≡ {B = Val Δ} isSetTy (
               neu (tr (NV Δ) Π[] f+)  ≅⟨ apd neu (trfill (NV Δ) Π[] f+) ⁻¹ ⟩
               neu f+                  ≅⟨ trfill (Val Δ) Π[] (neu f+) ⟩
               tr (Val Δ) Π[] (neu f+) ≅∎)
+        v' : Val Δ (⌜ A ⌝T [ ⌜ σ ⌝w ]T)
         v' = tr (Val Δ) (⌜[]TV⌝ ⁻¹) v
+        C : Ty Δ
         C = ⌜ B ⌝T [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]T [ < ⌜ v' ⌝V > ]T
+        C' : Ty Δ
         C' = ⌜ B [ ⌜ σ ⌝w , ⌜ v' ⌝V ]TV ⌝T
         C≡C' : C ≡ C'
         C≡C' = ⌜ B ⌝T [ ⌜ σ ⌝w ↑ ⌜ A ⌝T ]T [ < ⌜ v' ⌝V > ]T ≡⟨ [][]T ⁻¹ ⟩
@@ -118,6 +127,38 @@ abstract
         qfv = qsapp qf' qv'
         nm'' = tr (NN Δ) C≡C' nm'
         qfv' : qs fv' ⇒ nm''
-        qfv' = (λ i → qs (trfill (NV Δ) C≡C' fv i) ⇒ (trfill (NN Δ) C≡C' nm' i)) * qfv
+        qfv' = (λ i → qs (trfill (NV Δ) C≡C' fv i)
+                      ⇒ (trfill (NN Δ) C≡C' nm' i))
+               * qfv
     in B [ ⌜ σ ⌝w , ⌜ v' ⌝V ]TV ,, neu fv' ,,
        $fv' ,, scvTV-unquote nm'' qfv'
+
+
+
+  scv-quote : {Γ : Con} {A : Ty Γ} {v : Val Γ A} → scv v → Σ[ n ∈ Nf Γ A ] q v ⇒ n
+  scv-quote {A = A} {v} scvv =
+    let n ,, qv = scvTV-quote scvv
+        p = trfill (Val _) ⌜evalT⌝ v
+        q = trfill (Nf _) (⌜evalT⌝ ⁻¹) n
+    in tr (Nf _) (⌜evalT⌝ ⁻¹) n ,, (λ i → q (p (1- i)) ⇒ (q i)) * qv
+
+  scv-unquote : {Γ : Con} {A : Ty Γ} {v : NV Γ A} (n : NN Γ A) → qs v ⇒ n → scv (neu v)
+  scv-unquote {A = A} {v} n qv =
+    let p = trfill (NV _) ⌜evalT⌝ v
+        q = trfill (NN _) ⌜evalT⌝ n
+        scvv : scvTV (evalT A) (neu (tr (NV _) ⌜evalT⌝ v))
+        scvv = scvTV-unquote (tr (NN _) ⌜evalT⌝ n) ((λ i → qs (p i) ⇒ (q i)) * qv)
+        r : neu (tr (NV _) ⌜evalT⌝ v) ≡ tr (Val _) ⌜evalT⌝ (neu v)
+        r = ≅-to-≡ {B = Val _} isSetTy (
+              neu (tr (NV _) ⌜evalT⌝ v)  ≅⟨ apd neu (trfill (NV _) ⌜evalT⌝ v) ⁻¹ ⟩
+              neu v                     ≅⟨ trfill (Val _) ⌜evalT⌝ (neu v) ⟩
+              tr (Val _) ⌜evalT⌝ (neu v) ≅∎)
+    in tr (scvTV (evalT A)) r scvv
+
+  scvvar : {Γ : Con} {A : Ty Γ} {x : Var Γ A} → scv (neu (var x))
+  scvvar {x = x} = scv-unquote (var x) qsvar
+
+  sceid : {Γ : Con} → sce (idenv {Γ})
+  sceid {●} = tt
+  sceid {Γ , A} =
+    (sceid {Γ}) +sce (wkw idw) ,, trd scv (trfill (Val _) [⌜id+E⌝] (neu (var z))) scvvar
