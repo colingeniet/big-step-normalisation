@@ -32,6 +32,7 @@ open import TypeEvaluator.TypeValue
 open import TypeEvaluator.Evaluator
 open import StrongComputability.StrongComputability
 open import StrongComputability.Weakening
+open import StrongComputability.Lemmas
 open import StrongComputability.Sets
 
 

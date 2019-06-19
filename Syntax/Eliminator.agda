@@ -261,15 +261,17 @@ module Proposition where
                       (π₁β {σ = σ} {u = u})
                       (π₁ᴹ (termᴹ σ ,ᴹ termᴹ u))
                       (termᴹ σ) i
-    termᴹ (π₂β' {A = A} {σ = σ} {u = u} i) = {!!}
-{-      let p : π₂ (σ , u) ≡[ ap (λ x → Tm _ (A [ x ]T)) π₁β ]≡ u
+    termᴹ (π₂β' {A = A} {σ = σ} {u = u} i) =
+      let p : π₂ (σ , u) ≡[ ap (λ x → Tm _ (A [ x ]T)) π₁β ]≡ u
           p = ≅-to-≡[] isSetTy π₂β
           q : π₂ᴹ (termᴹ σ ,ᴹ termᴹ u) ≡[ apd Tmᴹ p ]≡ termᴹ u
           q = isPropPath {B = λ i → Tmᴹ (p i)} isPropTmᴹ
                          (π₂ᴹ (termᴹ σ ,ᴹ termᴹ u)) (termᴹ u)
           r : π₂ᴹ (termᴹ σ ,ᴹ termᴹ u) ≅[ Tmᴹ ] termᴹ (tr (λ x → Tm _ (A [ x ]T)) (π₁β ⁻¹) u)
-          r = {!termᴹ (π₂ (σ , u))!}
-      in ≅-to-≡[] {B = Tmᴹ} isSetTm r {P = π₂β'} i-}
+          r = {!!}
+          s : termᴹ (π₂ (σ , u)) ≡[ ap Tmᴹ π₂β' ]≡ termᴹ (tr (λ x → Tm _ (A [ x ]T)) (π₁β ⁻¹) u)
+          s = ≅-to-≡[] {B = Tmᴹ} isSetTm r {P = π₂β'}
+      in {!s i!}
     termᴹ (πη {σ = σ} i) =
       isPropDependent {B = Tmsᴹ} isPropTmsᴹ
                       (πη {σ = σ}) (π₁ᴹ (termᴹ σ) ,ᴹ π₂ᴹ (termᴹ σ)) (termᴹ σ) i
