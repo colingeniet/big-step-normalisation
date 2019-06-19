@@ -23,7 +23,7 @@ open import Agda.Builtin.Cubical.Sub public
 
 
 infix 5 _≡[_]≡_
-infix 8 _⁻¹
+infix 8 _⁻¹ _≅⁻¹
 infixr 6 _∙_ _d∙_ _∙d_ _d∙d_ _∙≅_
 infixr 20 _*_
 infix 5 _≅_ ≅-syntax
@@ -87,7 +87,7 @@ _≡⟨_⟩_ : ∀ {l} {A : Set l} (x : A) {y z : A} → x ≡ y → y ≡ z →
 x ≡⟨ p ⟩ q = _∙_ {x = x} p q
 
 _∎ : ∀ {l} {A : Set l} (x : A) → x ≡ x
-x ∎ = refl
+x ∎ = refl {x = x}
 
 
 -- Transitivity laws.
@@ -439,4 +439,4 @@ _≅⟨_⟩'_ : ∀ {l m} {A : Set l} {B : A → Set m} {a b c : A}
 x ≅⟨ p ⟩' q = _∙≅_ {x = x} p q
 
 _≅∎ : ∀ {l m} {A : Set l} {B : A → Set m} {a : A} (x : B a) → x ≅[ B ] x
-x ≅∎ = refl≅
+x ≅∎ = refl≅ {x = x}
