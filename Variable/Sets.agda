@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 module Variable.Sets where
 

@@ -10,8 +10,6 @@ module Syntax.Terms where
 open import Library.Equality
 open import Library.Sets
 open import Library.Maybe
-open import Library.Negation
-open import Library.NotEqual
 
 ---- Terms Definition.
 infixr 0 _≈⟨_⟩_ _≋⟨_⟩_ _≈⟨_⟩'_ _≋⟨_⟩'_
@@ -36,6 +34,7 @@ data Con where
   ● : Con
   _,_ : (Γ : Con) → Ty Γ → Con
 
+-- Required predeclarations.
 Π' : {Γ : Con} (A : Ty Γ) (B : Ty (Γ , A)) → Ty Γ
 _[_]' : {Γ Δ : Con} → Ty Δ → Tms Γ Δ → Ty Γ
 _↑_ : {Γ Δ : Con} (σ : Tms Γ Δ) (A : Ty Δ) → Tms (Γ , A [ σ ]') (Δ , A)
@@ -67,7 +66,7 @@ data Ty where
   Π[] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {σ : Tms Γ Δ} →
         (Π A B) [ σ ] ≡ Π (A [ σ ]') (B [ σ ↑ A ])
   El≈ : {Γ : Con} {u v : Tm Γ U} → u ≈ v → El u ≡ El v
-  _[_]≈ : {Γ Δ : Con} {A : Ty Δ} {σ ν : Tms Γ Δ} → σ ≋ ν → A [ σ ] ≡ A [ ν ]
+  _[_]≈T : {Γ Δ : Con} (A : Ty Δ) {σ ν : Tms Γ Δ} → σ ≋ ν → A [ σ ] ≡ A [ ν ]
   isSetTy : {Γ : Con} → isSet (Ty Γ)
 
 _[_]' = Ty._[_]
@@ -160,50 +159,3 @@ infixl 10 _$_
 _$_ : {Γ : Con} {A : Ty Γ} {B : Ty (Γ , A)} →
       Tm Γ (Π A B) → (u : Tm Γ A) → Tm Γ (B [ < u > ])
 f $ u = (app f) [ < u > ]
-
-
-abstract
-  isSetCon : isSet Con
-  isSetCon {●} {●} p q =
-    let p≡refl : p ≡ refl
-        p≡refl i j = ●η (p j) (λ k → p (j ∧ (1- k))) i
-        q≡refl : q ≡ refl
-        q≡refl i j = ●η (q j) (λ k → q (j ∧ (1- k))) i
-    in p≡refl ∙ q≡refl ⁻¹
-    -- The point of this function is that ●η ● p is refl no matter p.
-    -- This is similar to the proof of Hedberg theorem.
-    where ●η : (Θ : Con) (p : Θ ≡ ●) → Θ ≡ ●
-          ●η ● _ = refl
-          ●η (_ , _) p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊥; (_ , _) → ⊤}) p))
-  isSetCon {●} {_ , _} p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊤; (_ , _) → ⊥}) p))
-  isSetCon {_ , _} {●} p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊥; (_ , _) → ⊤}) p))
-  isSetCon {Γ , A} {Δ , B} p q =
-    let p1 : Γ ≡ Δ
-        p1 i = π₁C (p i) (λ j → p (i ∧ (1- j)))
-        p2 : A ≡[ ap Ty p1 ]≡ B
-        p2 i = π₂C (p i) (λ j → p (i ∧ (1- j)))
-        q1 : Γ ≡ Δ
-        q1 i = π₁C (q i) (λ j → q (i ∧ (1- j)))
-        q2 : A ≡[ ap Ty q1 ]≡ B
-        q2 i = π₂C (q i) (λ j → q (i ∧ (1- j)))
-        p≡p1p2 : p ≡ (λ i → (p1 i) , (p2 i))
-        p≡p1p2 i j = πηC (p j) (λ k → p (j ∧ (1- k))) (1- i)
-        q≡q1q2 : q ≡ (λ i → (q1 i) , (q2 i))
-        q≡q1q2 i j = πηC (q j) (λ k → q (j ∧ (1- k))) (1- i)
-        p1≡q1 : p1 ≡ q1
-        p1≡q1 = isSetCon {Γ} {Δ} p1 q1
-        p2≡q2 : p2 ≡[ ap (λ p → A ≡[ ap Ty p ]≡ B) p1≡q1 ]≡ q2
-        p2≡q2 = trfill (λ p → A ≡[ ap Ty p ]≡ B) p1≡q1 p2
-                d∙ isSetDependent {B = Ty} isSetTy (tr (λ p → A ≡[ ap Ty p ]≡ B) p1≡q1 p2) q2
-    in p≡p1p2 ∙ (λ i j → p1≡q1 i j , p2≡q2 i j) ∙ q≡q1q2 ⁻¹
-    -- Same remark as for the case of ●.
-    where π₁C : (Θ : Con) → Θ ≡ Γ , A → Con
-          π₁C ● p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊤; (_ , _) → ⊥}) p))
-          π₁C (Θ , _) _ = Θ
-          π₂C : (Θ : Con) (p : Θ ≡ Γ , A) → Ty (π₁C Θ p)
-          π₂C ● p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊤; (_ , _) → ⊥}) p))
-          π₂C (_ , C) _ = C
-          πηC : (Θ : Con) (p : Θ ≡ Γ , A) → (π₁C Θ p) , (π₂C Θ p) ≡ Θ
-          πηC ● p = ⊥-elim (⊤≢⊥ (ap (λ {● → ⊤; (_ , _) → ⊥}) p))
-          πηC (Θ , C) _ = refl
-
