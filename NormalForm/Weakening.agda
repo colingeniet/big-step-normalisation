@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --cubical #-}
+{-# OPTIONS --cubical #-}
 
 module NormalForm.Weakening where
 
@@ -15,30 +15,30 @@ open import NormalForm.NormalForm
 
 
 -- Weakening of normal forms
-_+N_ : {Γ Δ : Con} {A : Ty Δ} → Nf Δ A → (σ : Wk Γ Δ) → Nf Γ (A [ ⌜ σ ⌝w ]T)
-_+NN_ : {Γ Δ : Con} {A : Ty Δ} → NN Δ A → (σ : Wk Γ Δ) → NN Γ (A [ ⌜ σ ⌝w ]T)
+_+N_ : {Γ Δ : Con} {A : Ty Δ} → Nf Δ A → (σ : Wk Γ Δ) → Nf Γ (A [ ⌜ σ ⌝w ])
+_+NN_ : {Γ Δ : Con} {A : Ty Δ} → NN Δ A → (σ : Wk Γ Δ) → NN Γ (A [ ⌜ σ ⌝w ])
 
 -- Weakening commutes with embedding
 ⌜⌝+N : {Γ Δ : Con} {A : Ty Δ} {n : Nf Δ A} {σ : Wk Γ Δ} →
-       ⌜ n +N σ ⌝N ≡ ⌜ n ⌝N +t σ
+       ⌜ n +N σ ⌝N ≈ ⌜ n ⌝N +t σ
 ⌜⌝+NN : {Γ Δ : Con} {A : Ty Δ} {n : NN Δ A} {σ : Wk Γ Δ} →
-        ⌜ n +NN σ ⌝NN ≡ ⌜ n ⌝NN +t σ
+        ⌜ n +NN σ ⌝NN ≈ ⌜ n ⌝NN +t σ
 
 abstract
   [⌜↑⌝] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {σ : Wk Γ Δ} →
-          B [ ⌜ σ ↑w A ⌝w ]T ≡ B [ ⌜ σ ⌝w ↑ A ]T
-  [⌜↑⌝] {B = B} = ap (B [_]T) ⌜↑w⌝
+          B Ty.[ ⌜ σ ↑w A ⌝w ] ≡ B [ ⌜ σ ⌝w ↑ A ]
+  [⌜↑⌝] {B = B} = B [ ⌜↑w⌝ ]≈T
 
   private
     [<>][] : {Γ Δ : Con} {A : Ty Δ} {B : Ty (Δ , A)} {n : Nf Δ A} {σ : Wk Γ Δ} →
-             B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ n +N σ ⌝N > ]T ≡ B [ < ⌜ n ⌝N > ]T [ ⌜ σ ⌝w ]T
+             B [ ⌜ σ ⌝w ↑ A ] [ < ⌜ n +N σ ⌝N > ] ≡ B [ < ⌜ n ⌝N > ] [ ⌜ σ ⌝w ]
     [<>][] {Γ} {Δ} {A} {B} {n} {σ} =
-      B [ ⌜ σ ⌝w ↑ A ]T [ < ⌜ n +N σ ⌝N > ]T ≡⟨ [][]T ⁻¹ ⟩
-      B [ (⌜ σ ⌝w ↑ A) ∘ < ⌜ n +N σ ⌝N > ]T  ≡⟨ ap (λ x → B [ x ]T) ↑∘<> ⟩
-      B [ ⌜ σ ⌝w , ⌜ n +N σ ⌝N ]T            ≡⟨ ap (λ x → B [ _ , x ]T) ⌜⌝+N ⟩
-      B [ ⌜ σ ⌝w , ⌜ n ⌝N [ ⌜ σ ⌝w ] ]T      ≡⟨ ap (B [_]T) <>∘ ⁻¹ ⟩
-      B [ < ⌜ n ⌝N > ∘ ⌜ σ ⌝w ]T             ≡⟨ [][]T ⟩
-      B [ < ⌜ n ⌝N > ]T [ ⌜ σ ⌝w ]T          ∎
+      B [ ⌜ σ ⌝w ↑ A ] [ < ⌜ n +N σ ⌝N > ] ≡⟨ [][]T ⁻¹ ⟩
+      B [ (⌜ σ ⌝w ↑ A) ∘ < ⌜ n +N σ ⌝N > ] ≡⟨ B [ ↑∘<> ]≈T ⟩
+      B [ ⌜ σ ⌝w , ⌜ n +N σ ⌝N ]           ≡⟨ B [ refl≋ ,≋ ⌜⌝+N ]≈T ⟩
+      B [ ⌜ σ ⌝w , ⌜ n ⌝N [ ⌜ σ ⌝w ] ]     ≡⟨ B [ <>∘ ≋⁻¹ ]≈T ⟩
+      B [ < ⌜ n ⌝N > ∘ ⌜ σ ⌝w ]            ≡⟨ [][]T ⟩
+      B [ < ⌜ n ⌝N > ] [ ⌜ σ ⌝w ]          ∎
 
 
 (lam {A = A} {B} n) +N σ =
@@ -50,138 +50,112 @@ abstract
 (neuEl n) +N σ = 
   tr (Nf _) (El[] ⁻¹)
      (neuEl (tr (NN _) El[] (n +NN σ)))
-(isSetNf p q i j) +N σ =
-  isSetNf (λ k → p k +N σ) (λ k → q k +N σ) i j
 
 (var x) +NN σ = var (x +v σ)
 (app f n) +NN σ =
   tr (NN _) ([<>][] {n = n})
      (app (tr (NN _) Π[] (f +NN σ)) (n +N σ))
-(isSetNN p q i j) +NN σ =
-  isSetNN (λ k → p k +NN σ) (λ k → q k +NN σ) i j
-
 
 abstract
   ⌜⌝+N {Γ} {n = lam {A = A} {B} n} {σ} =
-    let p : ⌜ tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A)) ⌝N
-            ≅[ Tm (Γ , A [ ⌜ σ ⌝w ]T) ]
-            ⌜ n ⌝N [ ⌜ σ ⌝w ↑ A ]
+    let p : ⌜ tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A)) ⌝N ≈ ⌜ n ⌝N [ ⌜ σ ⌝w ↑ A ]
         p = ⌜ tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A)) ⌝N
-              ≅⟨ apd ⌜_⌝N (trfill (Nf _) [⌜↑⌝] (n +N (σ ↑w A))) ⁻¹ ⟩
+              ≈⟨ apd ⌜_⌝N (trfill (Nf _) [⌜↑⌝] (n +N (σ ↑w A))) ⁻¹ ⟩'
             ⌜ n +N (σ ↑w A) ⌝N
-              ≅⟨ ⌜⌝+N {n = n} ⟩
+              ≈⟨ ⌜⌝+N {n = n} ⟩
             ⌜ n ⌝N [ ⌜ σ ↑w A ⌝w ]
-              ≅⟨ apd (⌜ n ⌝N [_]) ⌜↑w⌝ ⟩
-            ⌜ n ⌝N [ ⌜ σ ⌝w ↑ A ] ≅∎
-    in ≅-to-≡ {B = Tm Γ} isSetTy (
-       ⌜ tr (Nf _) (Π[] ⁻¹) (lam (tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A)))) ⌝N
-         ≅⟨ apd ⌜_⌝N (trfill (Nf _) (Π[] ⁻¹) (lam (tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A))))) ⁻¹ ⟩
+              ≈⟨ refl≈ [ ⌜↑w⌝ ]≈ ⟩
+            ⌜ n ⌝N [ ⌜ σ ⌝w ↑ A ] ≈∎
+    in ⌜ tr (Nf _) (Π[] ⁻¹) (lam (tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A)))) ⌝N
+         ≈⟨ apd ⌜_⌝N (trfill (Nf _) (Π[] ⁻¹) (lam (tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A))))) ⁻¹ ⟩'
        lam ⌜ tr (Nf _) [⌜↑⌝] (n +N (σ ↑w A)) ⌝N
-         ≅⟨ ap≅ lam p ⟩'
+         ≈⟨ lam≈ p ⟩
        lam (⌜ n ⌝N [ ⌜ σ ⌝w ↑ A ])
-         ≅⟨ lam[] ≅⁻¹ ⟩'
-       (lam ⌜ n ⌝N) [ ⌜ σ ⌝w ] ≅∎)
-  ⌜⌝+N {Γ} {n = neuU n} {σ} = ≅-to-≡ {B = Tm Γ} isSetTy (
+         ≈⟨ lam[] ≈⁻¹ ⟩
+       (lam ⌜ n ⌝N) [ ⌜ σ ⌝w ] ≈∎
+  ⌜⌝+N {Γ} {n = neuU n} {σ} =
     ⌜ tr (Nf _) (U[] ⁻¹) (neuU (tr (NN _) U[] (n +NN σ))) ⌝N
-      ≅⟨ apd ⌜_⌝N (trfill (Nf _) (U[] ⁻¹) (neuU (tr (NN _) U[] (n +NN σ)))) ⁻¹ ⟩
+      ≈⟨ apd ⌜_⌝N (trfill (Nf _) (U[] ⁻¹) (neuU (tr (NN _) U[] (n +NN σ)))) ⁻¹ ⟩'
     ⌜ tr (NN _) U[] (n +NN σ) ⌝NN
-      ≅⟨ apd ⌜_⌝NN (trfill (NN _) U[] (n +NN σ)) ⁻¹ ⟩
+      ≈⟨ apd ⌜_⌝NN (trfill (NN _) U[] (n +NN σ)) ⁻¹ ⟩'
     ⌜ n +NN σ ⌝NN
-      ≅⟨ ⌜⌝+NN {n = n} ⟩
-    ⌜ n ⌝NN +t σ ≅∎)
-  ⌜⌝+N {Γ} {n = neuEl n} {σ} = ≅-to-≡ {B = Tm Γ} isSetTy (
+      ≈⟨ ⌜⌝+NN {n = n} ⟩
+    ⌜ n ⌝NN +t σ ≈∎
+  ⌜⌝+N {Γ} {n = neuEl n} {σ} =
     ⌜ tr (Nf _) (El[] ⁻¹) (neuEl (tr (NN _) El[] (n +NN σ))) ⌝N
-      ≅⟨ apd ⌜_⌝N (trfill (Nf _) (El[] ⁻¹) (neuEl (tr (NN _) El[] (n +NN σ)))) ⁻¹ ⟩
+      ≈⟨ apd ⌜_⌝N (trfill (Nf _) (El[] ⁻¹) (neuEl (tr (NN _) El[] (n +NN σ)))) ⁻¹ ⟩'
     ⌜ tr (NN _) El[] (n +NN σ) ⌝NN
-      ≅⟨ apd ⌜_⌝NN (trfill (NN _) El[] (n +NN σ)) ⁻¹ ⟩
+      ≈⟨ apd ⌜_⌝NN (trfill (NN _) El[] (n +NN σ)) ⁻¹ ⟩'
     ⌜ n +NN σ ⌝NN
-      ≅⟨ ⌜⌝+NN {n = n} ⟩
-    ⌜ n ⌝NN +t σ ≅∎)
-  ⌜⌝+N {n = isSetNf p q i j} {σ} k =
-    ouc (isSetPartial isSetTm
-                      (λ j → ⌜⌝+N {n = p j} {σ} k)
-                      (λ j → ⌜⌝+N {n = q j} {σ} k)
-                      (λ {(k = i0) → λ i j →
-                          ⌜ isSetNf (λ j → p j +N σ) (λ j → q j +N σ) i j ⌝N;
-                          (k = i1) → λ i j →
-                          ⌜ isSetNf p q i j ⌝N +t σ}))
-        i j
-    
+      ≈⟨ ⌜⌝+NN {n = n} ⟩
+    ⌜ n ⌝NN +t σ ≈∎
+
   ⌜⌝+NN {n = var x} = ⌜⌝+v 
   ⌜⌝+NN {Γ} {Δ} {A} {app {B = B} f n} {σ} =
-    let p : ⌜ tr (NN Γ) Π[] (f +NN σ) ⌝NN ≅[ Tm Γ ] tr (Tm Γ) Π[] ⌜ f +NN σ ⌝NN
-        p = ⌜ tr (NN Γ) Π[] (f +NN σ) ⌝NN ≅⟨ apd ⌜_⌝NN (trfill (NN Γ) Π[] (f +NN σ)) ⁻¹ ⟩
-            ⌜ f +NN σ ⌝NN                 ≅⟨ trfill (Tm Γ) Π[] ⌜ f +NN σ ⌝NN ⟩
-            tr (Tm Γ) Π[] ⌜ f +NN σ ⌝NN   ≅∎
-    in ≅-to-≡ {B = Tm Γ} isSetTy (
-    ⌜ tr (NN Γ) ([<>][] {n = n}) (app (tr (NN Γ) Π[] (f +NN σ)) (n +N σ)) ⌝NN
-      ≅⟨ apd ⌜_⌝NN (trfill (NN Γ) ([<>][] {n = n})
-                           (app (tr (NN Γ) Π[] (f +NN σ)) (n +N σ))) ⁻¹ ⟩
-    ⌜ tr (NN Γ) Π[] (f +NN σ) ⌝NN $ ⌜ n +N σ ⌝N
-      ≅⟨ (λ i → ≅-to-≡ isSetTy p i $ ⌜ n +N σ ⌝N) ⟩
-    (tr (Tm Γ) Π[] ⌜ f +NN σ ⌝NN) $ ⌜ n +N σ ⌝N
-      ≅⟨ apd (λ x → tr (Tm Γ) Π[] x $ ⌜ n +N σ ⌝N) (⌜⌝+NN {n = f}) ⟩
-    (tr (Tm Γ) Π[] (⌜ f ⌝NN [ ⌜ σ ⌝w ])) $ ⌜ n +N σ ⌝N
-      ≅⟨ apd ((tr (Tm Γ) Π[] (⌜ f ⌝NN [ ⌜ σ ⌝w ])) $_) (⌜⌝+N {n = n}) ⟩
-    (tr (Tm Γ) Π[] (⌜ f ⌝NN [ ⌜ σ ⌝w ])) $ (⌜ n ⌝N [ ⌜ σ ⌝w ])
-      ≅⟨ $[] ≅⁻¹ ⟩'
-    (⌜ f ⌝NN $ ⌜ n ⌝N) [ ⌜ σ ⌝w ] ≅∎)
-  ⌜⌝+NN {n = isSetNN p q i j} {σ} k =
-    ouc (isSetPartial isSetTm
-                      (λ j → ⌜⌝+NN {n = p j} {σ} k)
-                      (λ j → ⌜⌝+NN {n = q j} {σ} k)
-                      (λ {(k = i0) → λ i j →
-                          ⌜ isSetNN (λ j → p j +NN σ) (λ j → q j +NN σ) i j ⌝NN;
-                          (k = i1) → λ i j →
-                          ⌜ isSetNN p q i j ⌝NN +t σ}))
-        i j
-
-
+    let p : ⌜ tr (NN Γ) Π[] (f +NN σ) ⌝NN ≈ tr (Tm Γ) Π[] (⌜ f ⌝NN +t σ)
+        p = ⌜ tr (NN Γ) Π[] (f +NN σ) ⌝NN ≈⟨ apd ⌜_⌝NN (trfill (NN Γ) Π[] (f +NN σ)) ⁻¹ ⟩'
+            ⌜ f +NN σ ⌝NN                 ≈⟨ ⌜⌝+NN {n = f} ⟩
+            ⌜ f ⌝NN +t σ                  ≈⟨ trfill (Tm Γ) Π[] (⌜ f ⌝NN +t σ) ⟩'
+            tr (Tm Γ) Π[] (⌜ f ⌝NN +t σ)  ≈∎
+        q : tr (Tm Γ) ([id]T ⁻¹) ⌜ n +N σ ⌝N ≈ tr (Tm Γ) ([id]T ⁻¹) (⌜ n ⌝N +t σ)
+        q = tr (Tm Γ) ([id]T ⁻¹) ⌜ n +N σ ⌝N ≈⟨ trfill (Tm Γ) ([id]T ⁻¹) ⌜ n +N σ ⌝N ⁻¹ ⟩'
+            ⌜ n +N σ ⌝N                      ≈⟨ ⌜⌝+N {n = n} ⟩
+            ⌜ n ⌝N +t σ                      ≈⟨ trfill (Tm Γ) ([id]T ⁻¹) (⌜ n ⌝N +t σ) ⟩'
+            tr (Tm Γ) ([id]T ⁻¹) (⌜ n ⌝N +t σ) ≈∎
+    in ⌜ tr (NN Γ) ([<>][] {n = n}) (app (tr (NN Γ) Π[] (f +NN σ)) (n +N σ)) ⌝NN
+         ≈⟨ apd ⌜_⌝NN (trfill (NN Γ) ([<>][] {n = n})
+                              (app (tr (NN Γ) Π[] (f +NN σ)) (n +N σ))) ⁻¹ ⟩'
+       ⌜ tr (NN Γ) Π[] (f +NN σ) ⌝NN $ ⌜ n +N σ ⌝N
+         ≈⟨ (app≈ p) [ refl≋ ,≋ q ]≈ ⟩
+       (tr (Tm Γ) Π[] (⌜ f ⌝NN +t σ)) $ (⌜ n ⌝N +t σ)
+         ≈⟨ $[] ≈⁻¹ ⟩
+       (⌜ f ⌝NN $ ⌜ n ⌝N) +t σ ≈∎
+{-
   private
-    [⌜id⌝]T : {Γ : Con} {A : Ty Γ} → A [ ⌜ idw ⌝w ]T ≡ A
+    [⌜id⌝]T : {Γ : Con} {A : Ty Γ} → A [ ⌜ idw ⌝w ] ≡ A
     [⌜id⌝]T {Γ} {A} =
-      A [ ⌜ idw ⌝w ]T ≡⟨ ap (A [_]T) ⌜idw⌝ ⟩
-      A [ id ]T      ≡⟨ [id]T ⟩
+      A [ ⌜ idw ⌝w ] ≡⟨ ap (A [_]T) ⌜idw⌝ ⟩
+      A [ id ]      ≡⟨ [id]T ⟩
       A              ∎
     [⌜∘⌝]T : {Γ Δ Θ : Con} {A : Ty Θ} {σ : Wk Δ Θ} {ν : Wk Γ Δ} →
-             A [ ⌜ σ ∘w ν ⌝w ]T ≡ A [ ⌜ σ ⌝w ]T [ ⌜ ν ⌝w ]T
+             A [ ⌜ σ ∘w ν ⌝w ] ≡ A [ ⌜ σ ⌝w ] [ ⌜ ν ⌝w ]
     [⌜∘⌝]T {Γ} {Δ} {Θ} {A} {σ} {ν} =
-      A [ ⌜ σ ∘w ν ⌝w ]T       ≡⟨ ap (A [_]T) ⌜∘⌝w ⟩
-      A [ ⌜ σ ⌝w ∘ ⌜ ν ⌝w ]T    ≡⟨ [][]T ⟩
-      A [ ⌜ σ ⌝w ]T [ ⌜ ν ⌝w ]T ∎
+      A [ ⌜ σ ∘w ν ⌝w ]       ≡⟨ ap (A [_]T) ⌜∘⌝w ⟩
+      A [ ⌜ σ ⌝w ∘ ⌜ ν ⌝w ]    ≡⟨ [][]T ⟩
+      A [ ⌜ σ ⌝w ] [ ⌜ ν ⌝w ] ∎
 
   -- Functoriality of weakening
   +Nid : {Γ : Con} {A : Ty Γ} {n : Nf Γ A} → n +N idw ≡[ ap (Nf Γ) [⌜id⌝]T ]≡ n
   +NNid : {Γ : Con} {A : Ty Γ} {n : NN Γ A} → n +NN idw ≡[ ap (NN Γ) [⌜id⌝]T ]≡ n
 
   +Nid {Γ} {n = lam {A = A} {B} n} =
-    let p : A [ ⌜ idw ⌝w ]T ≡ A
-        p = A [ ⌜ idw ⌝w ]T ≡⟨ ap (A [_]T) ⌜idw⌝ ⟩
-            A [ id ]T      ≡⟨ [id]T ⟩
+    let p : A [ ⌜ idw ⌝w ] ≡ A
+        p = A [ ⌜ idw ⌝w ] ≡⟨ ap (A [_]T) ⌜idw⌝ ⟩
+            A [ id ]      ≡⟨ [id]T ⟩
             A              ∎
-        q : Γ , A [ ⌜ idw ⌝w ]T ≡ Γ , A
+        q : Γ , A [ ⌜ idw ⌝w ] ≡ Γ , A
         q = ap (Γ ,_) p
-        r : B [ ⌜ idw ⌝w ↑ A ]T ≡[ ap Ty q ]≡ B
+        r : B [ ⌜ idw ⌝w ↑ A ] ≡[ ap Ty q ]≡ B
         r = ≅-to-≡[] {B = Ty} isSetCon (
-            B [ ⌜ idw ⌝w ↑ A ]T ≅⟨ apd (λ x → B [ x ↑ A ]T) ⌜idw⌝ ⟩
-            B [ id ↑ A ]T      ≅⟨ ap≅ (B [_]T) ↑id ⟩'
-            B [ id ]T          ≅⟨ [id]T ⟩
+            B [ ⌜ idw ⌝w ↑ A ] ≅⟨ apd (λ x → B [ x ↑ A ]) ⌜idw⌝ ⟩
+            B [ id ↑ A ]      ≅⟨ ap≅ (B [_]T) ↑id ⟩'
+            B [ id ]          ≅⟨ [id]T ⟩
             B ≅∎)
-        r' : B [ ⌜ idw ↑w A ⌝w ]T ≡[ ap Ty q ]≡ B [ ⌜ idw ⌝w ]T
+        r' : B [ ⌜ idw ↑w A ⌝w ] ≡[ ap Ty q ]≡ B [ ⌜ idw ⌝w ]
         r' = ≅-to-≡[] {B = Ty} isSetCon (
-             B [ ⌜ idw ↑w A ⌝w ]T ≅⟨ ap≅ (λ x → B [ ⌜ x ⌝w ]T) ↑wid ⟩'
-             B [ ⌜ idw ⌝w ]T      ≅∎)
-        s : (Γ , A [ ⌜ idw ⌝w ]T ,, B [ ⌜ idw ↑w A ⌝w ]T) ≡ (Γ , A ,, B [ ⌜ idw ⌝w ]T)
+             B [ ⌜ idw ↑w A ⌝w ] ≅⟨ ap≅ (λ x → B [ ⌜ x ⌝w ]) ↑wid ⟩'
+             B [ ⌜ idw ⌝w ]      ≅∎)
+        s : (Γ , A [ ⌜ idw ⌝w ] ,, B [ ⌜ idw ↑w A ⌝w ]) ≡ (Γ , A ,, B [ ⌜ idw ⌝w ])
         s i = q i ,, r' i
         t : tr (Nf _) [⌜↑⌝] (n +N (idw ↑w A))
             ≅[ (λ (x : Σ Con Ty) → Nf (fst x) (snd x)) ] n
         t = tr (Nf _) [⌜↑⌝] (n +N (idw ↑w A))
-              ≅⟨ apd {B = λ _ → Σ Con Ty} ((Γ , A [ ⌜ idw ⌝w ]T) ,,_) ([⌜↑⌝] {B = B} {σ = idw} ⁻¹)
+              ≅⟨ apd {B = λ _ → Σ Con Ty} ((Γ , A [ ⌜ idw ⌝w ]) ,,_) ([⌜↑⌝] {B = B} {σ = idw} ⁻¹)
                ∣ trfill (Nf _) ([⌜↑⌝] {B = B} {σ = idw}) (n +N (idw ↑w A)) ⁻¹ ⟩
             n +N (idw ↑w A)
               ≅⟨ s ∣ change-underlying {B = λ (x : Σ Con Ty) → Nf (fst x) (snd x)}
                                        (isSetΣ isSetCon isSetTy)
-                                       {p = λ i → q i ,, B [ ⌜ ≅-to-≡[] isSetCon ↑wid {P = q} i ⌝w ]T} {s}
+                                       {p = λ i → q i ,, B [ ⌜ ≅-to-≡[] isSetCon ↑wid {P = q} i ⌝w ]} {s}
                                        (apd (n +N_) (≅-to-≡[] isSetCon ↑wid {P = q})) ⟩
             n +N idw
               ≅⟨ ap (Γ , A ,,_) [⌜id⌝]T ∣ +Nid {n = n} ⟩
@@ -238,13 +212,13 @@ abstract
         q : n +N idw ≅[ Nf Γ ] n
         q = n +N idw ≅⟨ +Nid ⟩
             n ≅∎
-        r : A [ ⌜ idw ⌝w ]T ≡ A
+        r : A [ ⌜ idw ⌝w ] ≡ A
         r = [⌜id⌝]T
-        s : B [ ⌜ idw ⌝w ↑ A ]T ≡[ ap (λ x → Ty (Γ , x)) r ]≡ B
+        s : B [ ⌜ idw ⌝w ↑ A ] ≡[ ap (λ x → Ty (Γ , x)) r ]≡ B
         s = ≅-to-≡[] {B = Ty} isSetCon (
-            B [ ⌜ idw ⌝w ↑ A ]T ≅⟨ apd (λ x → B [ x ↑ A ]T) ⌜idw⌝ ⟩
-            B [ id ↑ A ]T      ≅⟨ ap≅ (B [_]T) ↑id ⟩'
-            B [ id ]T          ≅⟨ [id]T ⟩
+            B [ ⌜ idw ⌝w ↑ A ] ≅⟨ apd (λ x → B [ x ↑ A ]) ⌜idw⌝ ⟩
+            B [ id ↑ A ]      ≅⟨ ap≅ (B [_]T) ↑id ⟩'
+            B [ id ]          ≅⟨ [id]T ⟩
             B                  ≅∎)
     in ≅-to-≡[] {B = NN Γ} isSetTy (
          tr (NN Γ) ([<>][] {n = n}) (app (tr (NN Γ) Π[] (f +NN idw)) (n +N idw))
@@ -278,4 +252,5 @@ abstract
   +N∘ {n = neu n} = ap neu +NN∘
   +NN∘ {n = var x} = ap var (+v∘ {x = x})
   +NN∘ {n = app f n} = ap2 app +NN∘ +N∘
+-}
 -}
