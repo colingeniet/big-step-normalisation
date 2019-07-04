@@ -52,6 +52,8 @@
 \newcommand{\Ra}{\Rightarrow}
 \newcommand{\Da}{\Downarrow}
 
+\newcommand{\Beq}{\simeq_{\beta\eta}}
+
 
 \bibliographystyle{plainurl} % Mandatory style
 
@@ -97,6 +99,108 @@
 \begin{abstract}
 TODO
 \end{abstract}
+
+\section{Introduction}
+\subsection{Normalisation}
+In the context of the simply-typed lambda-calculus, let $\Tm\ \Gamma\ A$ denote
+the set of terms of type $A$ in context $\Gamma$. A normalisation function can be
+defined as a family of sets $\Nf\ \Gamma\ A$ of \emph{normal forms} of type
+$A$ in context $\Gamma$, with computable maps
+\begin{align}
+  \cul \_ \cur &:\ \Nf\ \Gamma\ A → \Tm\ \Gamma\ A \tag{embedding} \\
+  \norm        &:\ \Tm\ \Gamma\ A → \Nf\ \Gamma\ A \tag{normalisation}
+\end{align}
+satisfying for all terms $u,v$ and normal form $n$
+\begin{align}
+  u \Beq v \ &\Rightarrow \ \norm u \equiv \norm v \tag{soundness} \\
+  u &\Beq \cul \norm\ u \cur \tag{completeness} \\
+  n &\equiv \norm\ \cul n \cur  \tag{stability}
+\end{align}
+where $\Beq$ denotes the $\beta\eta$-equivalence relation on terms.
+
+The traditional way of defining normalisation for the typed lambda calculus is
+through rewriting theory. The $\beta\eta$-reduction relation is proved to be
+confluent and strongly normalising. Normal forms are normal forms in the sense
+of rewriting, i.e.\ terms which can not be reduced. Normalisation is obtained by
+reducing a term until a normal form is reached. Termination and confluence
+ensure that the definition is correct, completeness and stability are immediate,
+while soundness follows from confluence. Cf.~\cite{girard1989proofs} for a
+detailed proof of this result for the simply-typed lambda-calculus and some of
+its variants (System T, System F).
+
+Unfortunately, this method fails for many other variants of lambda-calculi.
+E.g.\ the lambda-calculus with explicit substitutions is not strongly
+normalising~\cite{mellies1995explicit}, and the lambda-calculus with
+coproduct types (i.e.\ disjoint union) is not confluent~\cite{dougherty1995coproducts}.
+
+A more modern approach is \emph{normalisation by evaluation}~(NBE), introduced
+by Berger and Schwichtenberg~\cite{berger1991inverse} for the simply-typed
+lambda-calculus. The idea is to interpret terms into a semantic models,
+meaning that abstractions are interpreted by actual functions.
+A map from the model into normal forms is then defined, giving rise to the
+normalisation function. 
+This method was for instance used to prove decidability of equivalence for the
+lambda-calculus with coproducts~\cite{altenkirch2001normalization}.
+
+In~\cite{chapman2006tait}~\cite{chapman2009bsn}, J.~Chapman proposes
+\emph{big step normalisation}~(BSN) as yet another normalisation method.
+Unlike NBE, normalisation is here defined through a purely syntactic evaluator.
+This notably has the advantage that the the normalisation function enjoys a
+relatively simple definition.
+
+\subsection{BSN for the simple lambda-calculus}
+This section summarises BSN for the simply-typed lambda-calculus, as presented
+in~\cite{chapman2009bsn}.
+
+The normalisation function is defined in two parts. Firstly, terms are
+evaluated in an environment of values, yielding a value. This evaluator
+is defined mutually with an application function, which computes the application
+of a function value of type $A \Ra B$ to an argument value of type $A$.
+Finally, values are normalised to normal forms.
+Normalisation of terms is done by evaluating in the identity environment,
+and normalising the resulting value.
+
+Values are purely syntactic, and are very similar to the notion of values used
+in programming languages, notably terms are not evaluated under lambdas.
+
+Evaluation and normalisation both have fairly simple definition, but are
+not structurally recursive, meaning that their termination is not obvious.
+For that purpose, a predicate called \emph{strong computability} is defined
+on values as
+\begin{itemize}
+\item A value $v$ of base type is strongly computable if normalisation
+  terminates on $v$.
+\item A value $f$ of type $A \Ra B$ is strongly computable if for any $v$ strongly
+  computable of type $A$, the application of $f$ to $v$ terminates and the
+  result is strongly computable.
+\end{itemize}
+
+The following results can then be proved.
+\begin{itemize}
+\item Normalisation terminates on any strongly computable value,
+  and any \emph{neutral} value on which normalisation terminates
+  is strongly computable.
+\item Evaluation of a term in a strongly computable environment terminates
+  and the result is strongly computable.
+\end{itemize}
+Termination follows from those results.
+
+The proof of completeness is simple, and stability is proved by induction
+on values and normal forms.
+Soundness is more complicated, and requires a method similar to strong
+computability, only this time with a binary relation on values, defined as
+equality of normal forms at the base type.
+
+\subsection{BSN for type theory}
+J.~Chapman also considered BSN for dependent type theory
+in~\cite{chapman2009type}, but did not provide a proof of correctness,
+due in particular to the high complexity of working with the (unquotiented)
+syntax of type theory in a formal setting.
+
+We propose a few methods to simplify the previous proof in the case of type
+theory, allowing us to complete it in the theorem prover Agda.
+One of the most important change is the use of a quotiented syntax for type
+theory based on~\cite{kaposi2016type}.
 
 
 \section{Quotiented Syntax of the Lambda-Calculus}
@@ -148,7 +252,7 @@ and equality constructors on the right.
     & \id       && : \Tms\ \Gamma\ \Gamma \\
     & \_\circ\_ && : \Tms\ \Delta\ \Theta \to \Tms\ \Gamma\ \Delta\ \to \Tms\ \Gamma\ \Theta \\
     & \epsilon  && : \Tms\ \Gamma\ \bullet \\
-    & \_,\_     && : \Tms\ \Gamma\ \Delta \to \Tm \Gamma\ A \to \Tms\ \Gamma\ (\Delta,A) \quad \\
+    & \_,\_     && : \Tms\ \Gamma\ \Delta \to \Tm \Gamma\ A \to \Tms\ \Gamma\ (\Delta,A) \qquad \\
     & \pi_1     && : \Tms\ \Gamma\ (\Delta,A) \to \Tms\ \Gamma\ \Delta \\
     & && \\ & &&
   \end{alignedat}
@@ -797,6 +901,11 @@ computable, and so is the identity environment. Therefore evaluation in the
 identity environment terminates for any term, and gives a strongly computable
 result. By lemma~\ref{lem:scvqu} again, $\q$ terminates on said result.
 Therefore, normalisation terminates for every term.
+
+
+\section{Syntax of Type Theory}
+
+\section{BSN for Type Theory}
 
 \bibliography{types.bib}
 \end{document}
