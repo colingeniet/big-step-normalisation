@@ -1,7 +1,6 @@
-# λ-Calculus Normaliser
+# Big step normalisation
 
-This is an evaluator and a normalisation function for the 
-simply typed λ-calculus with explicit substitutions, following 
+This is an evaluator and a normalisation function for a simple type theory, following 
 [Big-Step Normalisation [Altenkirch, Chapman]]
 (http://www.cs.nott.ac.uk/~psztxa/publ/jtait07.pdf).
 
@@ -11,6 +10,6 @@ simply typed λ-calculus with explicit substitutions, following
 - Values:               definition of syntactic values and associated lemmas
 - Normal forms:         definition of normal forms and associated lemmas
 - Evaluator:            definition of the big step normalisation relation
-- TypeEvaluator:        definition of type values, and evaluation of type
+- TypeEvaluator:        definition of substitution-free types, and evaluation of type
 - StrongComputability:  definition of the strong computability predicate on values, with quote/unquote lemmas
 - BSN:                  main proofs of correction of BSN (termination, stability)
