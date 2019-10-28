@@ -1331,9 +1331,9 @@ implementation of QIIT, there are two problems to solve:
     $L : (x : A) \to f(x) \equiv g(x)$ by induction on a QIT $A$.
     Indeed, for a quotient constructor of type $a \equiv b$ in $A$, we need to
     provide an equality between equalities $L(a) \equiv L(b)$, which is trivial
-    with UIP, but is otherwise generally problematic.
-    This situation occurs e.g.\ when proving the coherence lemmas for weakening
-    of values.
+    with UIP --- hence why such cases are neglected in the proof --- but is
+    in general problematic in a non-strict metatheory.
+    An example is the coherence lemmas for weakening of values.
   }
   Since we lose this axiom in CTT, its uses must be replaced.
 \item The additional truncation constructors of QIIT must be taken into account
