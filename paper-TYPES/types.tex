@@ -1318,8 +1318,9 @@ the following constructors:
   & \isSet\Tms && : \{\sigma\ \nu : \Tms\ \Gamma\ \Delta\}\ (p\ q : \sigma \equiv \nu) \to p \equiv q \\
   & \isSet\Tm && : \{s\ t : \Tm\ \Gamma\ A\}\ (p\ q : s \equiv t) \to p \equiv q
 \end{alignat*}
-Note that the corresponding contexts is unnecessary, because it can be proved
-that contexts form a set from the assumption that types are a family of sets.
+Note that the corresponding constructor for contexts is unnecessary, because
+it can be proved that contexts form a set from the assumption that types are a
+family of sets.
 
 In order to adapt the proof of big step normalisation to CTT with this new
 implementation of QIIT, there are two problems to solve:
