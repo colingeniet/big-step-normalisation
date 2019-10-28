@@ -55,7 +55,7 @@
 \newcommand{\snd}{\agdaSymb{snd}}
 \newcommand{\U}{\agdaSymb{U}}
 \newcommand{\El}{\agdaSymb{El}}
-\newcommand{\TV}{\agdaSymb{TV}}
+\newcommand{\TV}{\agdaSymb{STy}}
 \newcommand{\Sk}{\agdaSymb{Sk}}
 \newcommand{\base}{\agdaSymb{base}}
 \newcommand{\skel}{\agdaSymb{skeleton}}
@@ -917,6 +917,9 @@ $\Pi$, forgetting both $\_[\_]$ and the quotient constructors. In this
 subsection, we show that this type of definition is in fact always correct, by
 defining substitution-free types, and proving that they are isomorphic to
 regular types.
+
+Substitution free types are defined together with their embedding into regular
+types.
 \begin{flalign*}
   & \data\ \TV : \Con \to \Set\ \where && \cul\_\cur : \TV\ \Gamma \to \Ty\ \Gamma && \\ & \ind
   \begin{alignedat}{2}
@@ -950,8 +953,8 @@ the syntax of regular types. The remaining equations can be proved by induction.
 \begin{align*}
   \AXC{$A : \TV\ \Gamma$}\UIC{$A[\id] \equiv A$}\DP
   && \AXC{$A : \TV\ \Theta$}
-  \AXC{$\sigma : \TV\ \Delta\ \Theta$}
-  \AXC{$\nu : \TV\ \Gamma\ \Delta$}
+  \AXC{$\sigma : \Tms\ \Delta\ \Theta$}
+  \AXC{$\nu : \Tms\ \Gamma\ \Delta$}
   \TIC{$A[\sigma \circ \nu] \equiv A[\sigma][\nu]$}\DP
 \end{align*}
 
@@ -965,14 +968,9 @@ the embedding, therefore regular and substitution-free types are isomorphic.
 This gives an alternative, much simpler induction principle for types.
 \begin{lemma}
   \label{lem:typeInduction}
-  To define a function on types, it suffice to define it for the constructors
-  $\U$, $\El$, and $\Pi$.
+  To define a function on types, it suffice to define it inductively for the
+  constructors $\U$, $\El$, and $\Pi$.
 \end{lemma}
-\begin{proof}
-  If the function is defined on $\U$, $\El$, and $\Pi$, then it is correctly
-  defined on substitution-free types. Thus it can be extended to regular types
-  using the previously defined isomorphism.
-\end{proof}
 
 \subsection{Type Skeletons}
 If we were to immediately define strong computability, we would face a second
@@ -1020,7 +1018,7 @@ this subsection becomes valid.
 \end{lemma}
 \begin{proof}
   It suffice to define the function on substitution-free types by induction on
-  the skeleton of the type. The function can then be extended to regular type
+  the skeleton of the type. The function can then be extended to regular types
   using the isomorphism between regular and substitution-free types, as in
   lemma~\ref{lem:typeInduction}.
 \end{proof}
