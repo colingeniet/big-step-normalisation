@@ -1345,17 +1345,17 @@ can be replaced by the proof of UIP for the appropriate type, and when defining
 a function by induction on a QIIT, the set-truncation constructor can be mapped
 to the proof that the codomain is a set.
 
-Which types do we actually need to prove are sets ? QIIT are explicitly
-truncated to sets, hence there is nothing to prove. Propositional types (i.e.\
-in which any two elements are equal) such as the big step relations, or strong
-computability, are always sets. What remains are regular inductive types, such
-as variables, normal forms, substitution-free types\dots{} We will not detail
-The proofs of UIP for such types, as they are fairly repetitive. Hedberg's
-theorem is an extremely useful tool, as it for instance gives a simple proof
-that variables form a set, using that equality of variables is decidable.
-For types which do not a priori have decidable equality (e.g.\ normal forms),
-it is still possible to adapt the techniques and lemmas used for Hedberg's
-theorem to prove UIP.
+We will not detail all the proofs of UIP because they are fairly repetitive, but
+explain the general techniques used. There are some trivial cases: all QIIT are
+explicitly truncated to sets, hence there is nothing to prove, and propositional
+types (i.e.\ in which any two elements are equal) such as the big step
+relations, or strong computability, are always sets. What remains are regular
+inductive types, such as variables, normal forms, substitution-free types\dots{}
+For such types, Hedberg's theorem~\cite{hedberg1998coherence} is an extremely
+useful tool. For instance, it is easy to verify that equality of variables is
+decidable, which implies that they are a set. Even for types which do not a
+priori have decidable equality (e.g.\ normal forms), it is still possible to
+adapt the techniques and lemmas used for Hedberg's theorem to prove UIP.
 
 \section{Conclusion and Further Work}
 We have formalised big step normalisation for a simple dependent type theory,
