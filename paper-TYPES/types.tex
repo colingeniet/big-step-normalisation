@@ -259,9 +259,13 @@ normalisation by evaluation in this syntax~\cite{kaposi2016normalisation}.
 
 \section{Metatheory and Notations}
 \label{sec:theory}
-For simplicity, this paper is presented in a strict, intentional Martin-Löf Type
-Theory, extended with quotient inductive inductive types (QIIT,
-cf.~\cite{kaposi2016type}). 
+The present work has been formalised using a cubical metatheory~\cite{cchm}
+implemented by Agda~\cite{norell2007agda}. This cubical theory provides a simple
+way to define quotient inductive inductive types (QIIT, cf.~\cite{kaposi2016type})
+as a special case of higher inductive types. However, for simplicity, this paper
+is presented in a strict, intentional Martin-Löf Type Theory, extended with
+QIIT. See section~\ref{sec:cubical} for for more details on the implementation
+of the proof in a cubical metatheory.
 
 Our metatheoretic notations are loosely based on the syntax of Agda. Function
 types are written as $(x : A) \to B$, or simply $A \to B$ for non-dependent
