@@ -1,9 +1,5 @@
 \documentclass[a4paper,english]{lipics-v2019}
 
-% overfull boxes debug
-\overfullrule=1mm
-
-\nolinenumbers
 
 \usepackage{bussproofs}
 \EnableBpAbbreviations
@@ -22,7 +18,7 @@
 \newcommand{\Prop}{\agdaSymb{Prop}}
 \newcommand{\Ty}{\agdaSymb{Ty}}
 \newcommand{\Con}{\agdaSymb{Con}}
-\newcommand{\Tms}{\agdaSymb{Tms}}
+\newcommand{\Tms}{\agdaSymb{Sub}}
 \newcommand{\Tm}{\agdaSymb{Tm}}
 \newcommand{\id}{\agdaSymb{id}}
 \newcommand{\app}{\agdaSymb{app}}
@@ -30,7 +26,7 @@
 \newcommand{\vz}{\agdaSymb{vz}}
 \newcommand{\vs}{\agdaSymb{vs}}
 \newcommand{\Var}{\agdaSymb{Var}}
-\newcommand{\Vars}{\agdaSymb{Vars}}
+\newcommand{\Vars}{\agdaSymb{Wk}}
 \newcommand{\wk}{\agdaSymb{wk}}
 %\newcommand{\Ne}{\agdaSymb{Ne}}
 \newcommand{\Val}{\agdaSymb{Val}}
@@ -66,7 +62,10 @@
 \newcommand{\Ra}{\Rightarrow}
 \newcommand{\Da}{\Downarrow}
 \newcommand{\Beq}{\simeq_{\beta\eta}}
+\newcommand{\lift}{\!\uparrow\!}
 
+
+\nolinenumbers
 
 \bibliographystyle{plainurl} % Mandatory style
 
@@ -87,7 +86,7 @@
 % mandatory: Please choose ACM 2012 classifications from https://dl.acm.org/ccs/ccs_flat.cfm 
 \ccsdesc[500]{Theory of computation~Type theory}
 
-\keywords{Normalisation, type theory}
+\keywords{Normalisation, big step normalisation, type theory, dependent types, Agda}
 
 \supplement{https://github.com/colingeniet/big-step-normalisation}
 
@@ -110,12 +109,15 @@
 
 \begin{abstract}
   Big step normalisation is a normalisation method for typed lambda-calculi
-  which relies on a purely syntactic, inductively defined evaluator. We
-  generalise big step normalisation to a minimalist dependent type theory.
-  Compared to previous presentations of big step normalisation for e.g.\
-  the simply typed lambda-calculus, we use a quotiented syntax, which reduces
-  the syntactic complexity introduced by dependent types. Most of the proof has
-  been formalised using Agda.
+  which relies on a purely syntactic recursive evaluator. Termination of that
+  evaluator is proved using a predicate called strong computability, similar to
+  the techniques used to prove strong normalisation of $\beta$-reduction for
+  typed lambda-calculi. We generalise big step normalisation to a minimalist
+  dependent type theory. Compared to previous presentations of big step
+  normalisation for e.g.\ the simply-typed lambda-calculus, we use a quotiented
+  syntax of type theory, which crucially reduces the syntactic complexity
+  introduced by dependent types. Most of the proof has been formalised using
+  Agda.
 \end{abstract}
 
 \section{Introduction}
@@ -151,7 +153,7 @@ A more modern approach is normalisation by evaluation~(NBE), introduced
 by Berger and Schwichtenberg~\cite{berger1991inverse} for the simply-typed
 lambda-calculus. The idea is to evaluate terms into a semantic models,
 meaning for instance that $\lambda$-abstractions (syntactic functions) are interpreted
-by true (semantic) functions. A map from the model into normal forms is then
+by actual (semantic) functions. A map from the model into normal forms is then
 defined, giving rise to the normalisation function by composition with evaluation.
 This method was for instance used to prove decidability of equivalence for the
 lambda-calculus with coproducts~\cite{altenkirch2001normalization}.
@@ -161,7 +163,6 @@ Big step normalisation~(BSN) is an alternative, purely syntactic
 normalisation method, proposed in~\cite{chapman2009bsn} by Chapman and the
 first author for the simply-typed lambda-calculus. It can be summarized as
 follows.
-
 The normalisation function is defined in two parts. First, terms are
 evaluated by an environment machine, yielding syntactic values. Then, values are
 mapped to normal forms by a function named $\q$. Normalisation of terms is done
@@ -174,22 +175,22 @@ To prove termination, a Tait-style predicate~\cite{tait1967} called
 \begin{itemize}
 \item A value $v$ of the base type is strongly computable if normalisation
   terminates on $v$.
-\item A value $f$ of type $A \Ra B$ is strongly computable if for any $v$ strongly
-  computable of type $A$, the application of $f$ to $v$ terminates and the
-  result is strongly computable.
+\item A value $f$ of type $A \Ra B$ is strongly computable if it preserves
+  strong computability when applied to an argument.
 \end{itemize}
 The following results can then be proved.
 \begin{itemize}
-\item $\q$ terminates on any strongly computable value, and conversly any
+\item $\q$ terminates on any strongly computable value, and conversely any
   neutral value for which $\q$ terminates is strongly computable.
-\item Evaluation of a term in a strongly computable environment terminates
-  and the result is strongly computable.
+\item In a strongly computable environment, evaluation terminates and yields
+  strongly computable results.
 \end{itemize}
 Termination of normalisation follows from those results. Completeness and
-stability are straight forward. The proof of soundness relies on a binary
-relation on values, somewhat similar to strong computability.
+stability are straight forward. The proof of soundness is more involved, and
+shares some similarities with the proof of termination, but replaces strong
+computability with a binary relation on values.
 
-\subsection{BSN for Type Theory}
+\subsection{BSN for Type Theory and Quotiented Syntax}
 Chapman also considered BSN for dependent type theory in~\cite{chapman2009type},
 but did not provide a full proof of correctness, owing to the important
 syntactic complexity added by the introduction of dependent types.
@@ -214,7 +215,8 @@ which we use in this work: a normalisation function is simply an isomorphism
 between quotiented terms and normal forms. Obviously, this definition requires
 a sensible notion of normal forms --- the identity should not be considered as
 a normalisation function. Generally, normal forms are expected to have a simple
-inductive definition, which ensures decidability of equality.\footnote{
+inductive definition, which ensures decidability of equality.%
+\footnote{%
   In the unquotiented case, the embedding of normal forms into terms (which can
   be proved to be injective) ensures that equality of normal forms is decidable,
   hence why no such restriction was required.
@@ -222,7 +224,7 @@ inductive definition, which ensures decidability of equality.\footnote{
 
 \subsection{Structure of the Paper}
 Section~\ref{sec:theory} summarises the metatheory in which this paper is
-presented, and some of the notations and conventions we use.
+presented, and some of the notations and conventions used.
 
 Section~\ref{sec:syntax} presents the quotiented syntax of type theory.
 
@@ -231,7 +233,7 @@ Section~\ref{sec:weakening} introduces a notion of weakening of contexts.
 Section~\ref{sec:normalisation} defines big step normalisation itself. Because
 it is not a priori clear that BSN defines a correct function (termination for
 instance is problematic) we formally define normalisation by its big step
-semantics, i.e.\ as a relation between inputs and outputs.
+semantics, i.e.\ as a relation between inputs and output.
 
 Section~\ref{sec:correctness} focuses on the two major correctness proofs:
 termination and soundness. The proof of termination remains similar to the case
@@ -246,26 +248,43 @@ adapted to a cubical metatheory, using higher inductive types to encode
 quotient inductive types.
 
 \subsection{Related Work}
-Big step normalisation was developed by Chapman and the first author for a
-combinatory calculus~\cite{chapman2006tait}, and for the simply-typed
+Big step semantics have previously been used for the purpose of normalisation.
+For instance T.~Coquand uses a big step relation to decide conversion in type
+theory~\cite{coquand1991conversion}, but relies on considerations on untyped
+terms, and focuses on deciding conversion, rather than fully normalising terms.
+P.B.~Levy uses Tait's method to prove termination of a big step semantics in
+the case of a simple programming language~\cite{levy2001call}. Big step
+normalisation was developed by Chapman and the first author for a combinatory
+calculus~\cite{chapman2006tait}, and for the simply-typed
 lambda-calculus~\cite{chapman2009bsn}. A generalisation to type theory was
-also proposed~\cite{chapman2009type}, but without proof of correctness.
+proposed~\cite{chapman2009type}, but without a full proof of correctness.
 The present paper can be seen as a continuation of these works.
 
-It is also interesting to consider the relation with the more recent work by
-Kaposi and the first author which provides a concise, quotiented syntax of
-type theory within (a larger) type theory~\cite{kaposi2016type}, and formalises
+An important difference compared to previous works on big step normalisation
+is that we use a quotiented syntax of type theory. This builds upon the work by
+Kaposi and the first author which provides a concise, quotiented syntax of type
+theory within (a larger) type theory~\cite{kaposi2016type}, and formalises
 normalisation by evaluation in this syntax~\cite{kaposi2016normalisation}.
+This quotiented syntax is closely related to categories with
+families~\cite{dybjer1995cwf,hofmann1997syntax}, in that the syntax is
+essentially an initial category with families. The syntax is formalised using
+quotient inductive-inductive types (QIIT), which were previously used in~\cite{hott}
+--- although not under that name --- to e.g.\ define Cauchy reals in type theory.
+More recently, the precise notion and semantics of QIIT has been the subject of
+work such as~\cite{altenkirch2018quotient,dijkstra2017quotient,kaposi2019quotient}.
+
 
 \section{Metatheory and Notations}
 \label{sec:theory}
 The present work has been formalised using a cubical metatheory~\cite{cchm}
 implemented by Agda~\cite{norell2007agda}. This cubical theory provides a simple
 way to define quotient inductive inductive types (QIIT, cf.~\cite{kaposi2016type})
-as a special case of higher inductive types. However, for simplicity, this paper
-is presented in a strict, intentional Martin-Löf Type Theory, extended with
-QIIT. See section~\ref{sec:cubical} for for more details on the implementation
-of the proof in a cubical metatheory.
+as a special case of higher inductive types. However, the use of a cubical
+metatheory also adds some minor technical complications. Thus, for simplicity,
+this paper is instead presented in a strict, intentional Martin-Löf Type Theory,
+extended with QIIT. Functional extensionality is assumed, and can in fact be
+proved using the interval quotient type. See section~\ref{sec:cubical} for more
+details on the implementation of the proof in a cubical metatheory.
 
 Our metatheoretic notations are loosely based on the syntax of Agda. Function
 types are written as $(x : A) \to B$, or simply $A \to B$ for non-dependent
@@ -276,27 +295,45 @@ argument can be either omitted, or given in subscript as $f_x$. Sum types
 (dependent pairs) are denoted by $\Sigma(x : A),\ B$. Omitted arguments are
 implicitly universally quantified, e.g.\ $(y : A\ x) \to B$ is understood as
 $\forall\,x, (y : A\ x) \to B$. The universe of types is denoted by $\Set$.
-Inductive types are introduced by $\data$, followed by the sort of the defined
-type, and the types the constructors. Inductive functions are defined by
-pattern-matching. For instance:
+The equality type is denoted by $x \equiv y$, while $=$ is only used in
+definitions. The transport of $x : P\ a$ along an equality $p : a \equiv b$ is
+denoted by $_{p*}x : P\ b$. If $p : a \equiv b$, the type of dependent
+equalities between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by
+$x \equiv^p y$. For simplicity and readability, transports and dependent
+equality types will be omitted starting from section~\ref{sec:weakening}.
+
+Finally, inductive types are introduced by $\data$, followed by the sort of the
+defined type, and the signatures of the constructors. Inductive functions are
+defined by pattern-matching. For instance:
 \begin{flalign*}
   & \data\ \mathbb{N} : \Set\ \where
   && \_+\_ : \mathbb{N} \to \mathbb{N} \to \mathbb{N} && \\ & \ind
   \begin{alignedat}{2}
-    & 0 : && \mathbb{N} \\
-    & S : && \mathbb{N} \to \mathbb{N}
+    & 0 && : \mathbb{N} \\
+    & S && : \mathbb{N} \to \mathbb{N}
   \end{alignedat} &&
   \begin{alignedat}{2}
     & n + 0 && = n \\
     & n + (S\ m) && = S\ (n + m)
   \end{alignedat}
 \end{flalign*}
-Finally, the equality type is denoted by $x \equiv y$, while $=$ is only used in
-definitions. The transport of $x : P\ a$ along an equality $p : a \equiv b$ is
-denoted by $_{p*}x : P\ b$. If $p : a \equiv b$, the type of dependent equalities
-between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by $x \equiv^p y$.
-For simplicity and readability, transports and dependent equality types will
-be omitted starting from section~\ref{sec:weakening}.
+Definitions of QIIT are similar, but allow \emph{equality} or \emph{quotient}
+constructors, which build elements of equality types. For instance, the interval
+type can be defined as follows.
+\begin{flalign*}
+  & \data\ \mathbb{I} : \Set\ \where \\ & \ind
+  \begin{alignedat}{2}
+    & a && : \mathbb{I} \\
+    & b && : \mathbb{I} \\
+    & p && : a \equiv b
+  \end{alignedat}
+\end{flalign*}
+A function defined by induction on a QIIT must be defined inductively on
+regular constructors, and must respect all quotient constructors, meaning that
+it must map the elements equated by a quotient constructors to images which are
+provably equal. For instance, to define a function on $\mathbb{I}$ by induction,
+one must specify the images $f(a)$ and $f(b)$, then prove that $f(a) \equiv f(b)$.
+The reader may refer to~\cite{kaposi2016type} for more details on QIIT.
 
 \section{Quotiented Syntax of Type Theory}
 \label{sec:syntax}
@@ -315,18 +352,16 @@ substitutions by $\sigma,\nu,\delta$, and terms by $s,t,u$.
 \end{align*}
 
 Syntax constructors follow closely the definition of a category with
-families~\cite{dybjer1995cwf} with product types. Contexts and substitutions
-form a category, types are a presheaf, and terms are a family of presheaves over
-types. There are three additional types constructors: the abstract base type
-$\U$, the abstract base dependent family $\El$,\footnotemark{} and the  function
-types $\Pi$. Each of these type constructors comes with an equation describing
-its interaction with substitutions.
-
-\footnotetext{%
+families~\cite{dybjer1995cwf,hofmann1997syntax} with product types. Contexts
+and substitutions form a category, types are a presheaf, and terms are a family
+of presheaves over types. There are three additional type constructors: the
+abstract base type $\U$, the abstract base dependent family $\El$,\footnote{%
   The names $\U$ and $\El$ reflect that $\U$ is an universe, in a sense of a
   type whose elements are themselves types (through $\El$). However, it is an
-  abstract universe, in which no element can be built in an empty context.
+  abstract universe, in which no explicit element can be built.
 }
+and the  function types $\Pi$. Each of these type constructors comes with an
+equation describing its interaction with substitutions.
 
 The constructors are listed below, with regular constructors on the left, and
 equality constructors on the right.
@@ -344,26 +379,25 @@ equality constructors on the right.
     & \U && : \Ty\ \Gamma \\
     & \El && : \Tm\ \Gamma\ \U \to \Ty\ \Gamma \\
     & \Pi && : (A : \Ty\ \Gamma) \to \Ty\ (\Gamma,A) \to \Ty\ \Gamma \\ &
-  \end{alignedat} &&
+  \end{alignedat} && \ind
   \begin{alignedat}{2}
     & [\id] && : A [ \id ] \equiv A \\
     & [\circ] && : A [ \sigma \circ \nu ] \equiv A [ \sigma ] [ \nu ] \\
     & \U[] && : \U [ \sigma ] \equiv \U \\
     & \El[] && : (\El\ u) [ \sigma ] \equiv \El(_{\U[] *} u [ \sigma ]) \\
-    & \Pi[] && : (\Pi\ A\ B) [ \sigma ] \equiv \Pi\ A[\sigma]\ B[\sigma \uparrow A]
+    & \Pi[] && : (\Pi\ A\ B) [ \sigma ] \equiv \Pi (A[\sigma]) (B[\sigma \lift A])
   \end{alignedat}
   \displaybreak[0] \\
   % Substitutions
   & \data\ \Tms\ \where && \data\ \Tms\ \where \\ & \ind
   \begin{alignedat}{3}
     & \id       && :\ && \Tms\ \Gamma\ \Gamma \\
-    & \_\circ\_ && : && \Tms\ \Delta\ \Theta \to \Tms\ \Gamma\ \Delta\ \to \\
-    &           &&   && \Tms\ \Gamma\ \Theta \\
+    & \_\circ\_ && : && \Tms\ \Delta\ \Theta \to \Tms\ \Gamma\ \Delta\ \to \Tms\ \Gamma\ \Theta \\
     & \epsilon  && : && \Tms\ \Gamma\ \bullet \\
-    & \_,\_     && : && (\sigma : \Tms\ \Gamma\ \Delta) \to \Tm\ \Gamma\ A[\sigma] \to \\
-    &           &&   && \Tms\ \Gamma\ (\Delta,A) \\
-    & \pi_1     && : && \Tms\ \Gamma\ (\Delta,A) \to \Tms\ \Gamma\ \Delta
-  \end{alignedat} &&
+    & \_,\_     && : && (\sigma : \Tms\ \Gamma\ \Delta) \to \Tm\ \Gamma\ (A[\sigma]) \\
+    &           &&   && \to \Tms\ \Gamma\ (\Delta,A) \\
+    & \pi_1     && : && \Tms\ \Gamma\ (\Delta,A) \to \Tms\ \Gamma\ \Delta \\ &
+  \end{alignedat} && \ind
   \begin{alignedat}{2}
     & \id\circ && : \id \circ \sigma \equiv \sigma \\
     & \circ\id && : \sigma \circ \id \equiv \sigma \\
@@ -377,45 +411,45 @@ equality constructors on the right.
   % Terms
   & \data\ \Tm\ \where && \data\ \Tm\ \where \\ & \ind
   \begin{alignedat}{3}
-    & \pi_2     && :\ && (\sigma : \Tms\ \Gamma\ (\Delta,A)) \to \Tm\ \Gamma\ A[\pi_1 \sigma] \\
-    & \_[\_]    && : && \Tm\ \Delta\ A \to (\sigma : \Tms\ \Gamma\ \Delta) \to \\
-    &           &&   && \Tm\ \Gamma\ A[\sigma] \\
+    & \pi_2     && :\ && (\sigma : \Tms\ \Gamma\ (\Delta,A)) \to \Tm\ \Gamma\ (A[\pi_1 \sigma]) \\
+    & \_[\_]    && : && \Tm\ \Delta\ A \to (\sigma : \Tms\ \Gamma\ \Delta) \\
+    &           &&   && \to \Tm\ \Gamma\ (A[\sigma]) \\
     & \lam      && : && \Tm\ (\Gamma,A)\ B \to \Tm\ \Gamma\ (\Pi\ A\ B) \\
     & \app      && : && \Tm\ \Gamma\ (\Pi\ A\ B) \to \Tm\ (\Gamma,A)\ B
-  \end{alignedat} &&
+  \end{alignedat} && \ind
   \begin{alignedat}{2}
     & \pi_2\beta && : \pi_2(\sigma,u) \equiv^{\pi_1\beta} u \\
     & \beta    && : \app\ (\lam u) \equiv u \\
     & \eta     && : \lam (\app\, u) \equiv u \\
-    & \lam[]   && : (\lam u)[\sigma] \equiv^{\Pi[]} \lam(u[\sigma\uparrow A]) \\ &
+    & \lam[]   && : (\lam u)[\sigma] \equiv^{\Pi[]} \lam(u[\sigma \lift A]) \\ &
   \end{alignedat}
 \end{flalign*}
 Equations $\Pi[]$ and $\lambda[]$ use the lifting of a substitution by a type,
 defined as follows.
 \begin{align*}
-  & \_\uparrow\_      : (\sigma : \Tms\ \Gamma\ \Delta) \to (A:\Ty) \to
+  & \_\lift\_      : (\sigma : \Tms\ \Gamma\ \Delta) \to (A:\Ty) \to
                         \Tms\ (\Gamma,A[\sigma])\ (\Delta,A) \\
-  & \sigma \uparrow A = (\sigma \circ \pi_1\,\id) , (_{[\circ]*}\pi_2\,\id)
+  & \sigma \lift A = (\sigma \circ \pi_1\,\id) , (_{[\circ]*}\pi_2\,\id)
 \end{align*}
 
-While this syntax does not contain the usual application of the lambda-calculus,
-it can reconstructed by combining the categorical application and with the
-substitution of a single term $<\_>$.
+While this syntax does not contain the usual application operator of the
+lambda-calculus, it can reconstructed by combining the categorical application
+and the substitution of a single term $<\_>$.
 \begin{alignat*}{2}
   & <\_> && : \Tm\ \Gamma\ A \to \Tms\ \Gamma\ (\Gamma,A) \\
   & <u> && = \id\,,\,_{[\id]^{-1} *}u \\
-  & \_\$\_ && : \Tm\ \Gamma\ (\Pi\ A\ B) \to (u : \Tm\ \Gamma\ A) \to \Tm\ \Gamma\ B[<u>] \\
+  & \_\$\_ && : \Tm\ \Gamma\ (\Pi\ A\ B) \to (u : \Tm\ \Gamma\ A) \to \Tm\ \Gamma\ (B[<u>]) \\
   & f\ \$\ u && = (\app\, f)[<u>]
 \end{alignat*}
 
 
 \section{Weakenings}
 \label{sec:weakening}
-The proof of BSN requires a notion of weakening of a context. For this purpose,
-we use renamings, i.e.\ lists of variables. This section defines variables and
-renamings, as presented in~\cite{kaposi2016normalisation}.
+In this section, we introduce a notion of weakening of contexts. For this
+purpose, we use renamings, i.e.\ lists of variables. The following presentation
+of variables and renamings comes from~\cite{kaposi2016normalisation}.
 
-Variables, denoted by $x,y,z$ are defined as typed De Bruijn indices. There is
+Variables, denoted by $x,y,z$, are defined as typed De Bruijn indices. There is
 an embedding of variables into terms.
 \begin{flalign*}
   & \data\ \Var\ : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
@@ -429,8 +463,8 @@ an embedding of variables into terms.
     & \cul \vs\,x \cur && = \cul x \cur [\pi_1\,\id]
   \end{alignedat}
 \end{flalign*}
-Renamings, denoted by $\alpha,\beta,\gamma$, and their embedding into
-substitutions are mutually defined.
+Renamings (or weakenings), denoted by $\alpha,\beta,\gamma$, and their embedding
+into substitutions are mutually defined.
 \begin{flalign*}
   & \data\ \Vars\ : \Con \to \Con \to \Set\ \where
   && \cul\_\cur : \Vars\ \Gamma\ \Delta \to \Tms\ \Gamma\ \Delta \\ & \ind
@@ -445,21 +479,21 @@ substitutions are mutually defined.
   \end{alignedat}
 \end{flalign*}
 
-Definitions of identity and composition require the appropriate auxiliary
-functions. The identity uses the weakening $\wk$ of a renaming by a type,
-and composition uses the application $\_[\_]$ of a renaming to a variable.
+The definitions of identity and composition of renamings require the appropriate
+auxiliary functions. The identity uses the weakening $\wk$ of a renaming by a
+type, and composition uses the application $\_[\_]$ of a renaming to a variable.
 These functions all commute with embeddings of variables and renamings.
 We omit the definitions, which are relatively simple.
 \begin{flalign*} &
   \begin{alignedat}{2}
     & \wk && : (A : \Ty\ \Gamma) \to \Vars\ \Gamma\ \Delta \to \Vars\ (\Gamma,A)\ \Delta \\
     & \id && : \{\Gamma : \Con\} \to \Vars\ \Gamma\ \Gamma \\
-    & \_[\_] && : \Var\ \Delta\ A \to (\alpha : \Vars\ \Gamma\ \Delta) \to \Var\ \Gamma\ A[\cul\alpha\cur] \\
+    & \_[\_] && : \Var\ \Delta\ A \to (\alpha : \Vars\ \Gamma\ \Delta) \to \Var\ \Gamma\ (A[\cul\alpha\cur]) \\
     & \_\circ\_ && : \Vars\ \Delta\ \Theta \to \Vars\ \Gamma\ \Delta \to \Vars\ \Gamma\ \Theta
   \end{alignedat} &&
   \begin{alignedat}{2}
-    & \cul\wk\cur && : \cul \wk\,\alpha \cur \equiv \cul \alpha \cur [ \pi_1\,\id ] \\
-    & \cul\id\cur && : \cul \id \cur \equiv \id \\
+    & \cul\wk\cur && : \cul \wk\ A\ \alpha \cur \equiv \cul \alpha \cur \circ (\pi_1\,\id) \\
+    & \cul\id\cur && : \cul \,\id\, \cur \equiv \id \\
     & \cul[]\cur && : \cul x [ \alpha ] \cur \equiv \cul x \cur [ \cul \alpha \cur ] \\
     & \cul\circ\cur && : \cul \alpha \circ \beta \cur \equiv \cul \alpha \cur \circ \cul \beta \cur
   \end{alignedat}
@@ -468,7 +502,7 @@ With these operations, it can be verified that contexts and renamings form a
 category.
 
 Types, terms, and substitutions can be weakened by renamings by applying the
-renaming seen as a substitution through its embedding. It is easy to verify that
+renaming, seen as a substitution through its embedding. It is easy to verify that
 weakening respects identity and composition of renamings. Precisely, types and
 substitutions are presheaves on the category of renamings, while terms are a
 family of presheaves over types.
@@ -482,48 +516,47 @@ family of presheaves over types.
     & \sigma^{+\alpha} && = \sigma \circ \cul\alpha\cur
   \end{alignedat} &&
   \begin{alignedat}{2}
-  & +\id && : A^{+\id} \equiv A \\
-  & +\circ && : A^{+ (\alpha \circ \beta)} \equiv (A^{+\alpha})^{+\beta} \\
-  & +\id && : u^{+\id} \equiv u \\
-  & +\circ && : u^{+ (\alpha \circ \beta)} \equiv (u^{+\alpha})^{+\beta} \\
-  & +\id && : \sigma^{+\id} \equiv \sigma \\
-  & +\circ && : \sigma^{+ (\alpha \circ \beta)} \equiv (\sigma^{+\alpha})^{+\beta}
+    & +\!\id && : A^{+\id} \equiv A \\
+    & +\!\circ && : A^{+ (\alpha \circ \beta)} \equiv (A^{+\alpha})^{+\beta} \\
+    & +\!\id && : u^{+\id} \equiv u \\
+    & +\!\circ && : u^{+ (\alpha \circ \beta)} \equiv (u^{+\alpha})^{+\beta} \\
+    & +\!\id && : \sigma^{+\id} \equiv \sigma \\
+    & +\!\circ && : \sigma^{+ (\alpha \circ \beta)} \equiv (\sigma^{+\alpha})^{+\beta}
   \end{alignedat}
 \end{flalign*}
 
 This will be a general pattern in later constructions and proofs: families of
-sets that will be defined (e.g.\ values, normal forms) have a presheaf-like
+sets that will be defined (e.g.\ values, normal forms, \dots) have a presheaf-like
 structure, which simply means that the elements can be weakened coherently.
-Similarly, functions are natural transformations, i.e.\ are compatible
-with weakening, and predicates are sub-presheaves, meaning that they are stable
-under weakening. The corresponding proofs are typically straight forward, and
-we will often not mention them. We abusively denote all weakenings by $\_\ ^{+\_}$.
+Similarly, functions are natural transformations, i.e.\ commute with weakening,
+and predicates are sub-presheaves, meaning that they are stable under weakening.
+The corresponding definitions and proofs are typically straight forward, and we
+will often not mention them. We abusively denote all weakenings by $\_\ ^{+\_}$.
 
 Finally, given a type $A$, one may consider $\wk\ A\ \id : \Vars\ (\Gamma,A)\ \Gamma$,
-the weakening of a context $\Gamma$ by $A$. We abuse notations and write
+the weakening of the context $\Gamma$ by $A$. We abuse notations and write
 $u^{+A}$ for $u^{+ (\wk\ A\ \id)}$.
 
 
 \section{Normalisation Relation}
 \label{sec:normalisation}
 This section defines big step normalisation for the previous quotiented syntax
-of type theory. We will first define values, and the evaluation from terms to
-values, then normal forms, and the function $\q$ mapping values to normal
-forms.
+of type theory. We will first define values and the evaluation from terms to
+values, then normal forms and the function $\q$ mapping values to normal forms.
 
 \subsection{Values}
 A value is either a closure, corresponding to the delayed evaluation of a
 lambda-abstraction, or a neutral value, that is the stuck application of a
 variable to values. This suggests the following mutual definition of values
 (denoted by $v,w$), neutral values (denoted by $n$), and environments (lists of
-values, denoted by $\rho,\omega$) --- together with the associated embeddings.
+values, denoted by $\rho,\omega$), together with the associated embeddings.
 \begin{flalign*}
   & \data\ \Val : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \Val\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
-  \begin{alignedat}{2}
-    & \neu   && : \NV\ \Gamma\ A \to \Val\ \Gamma\ A \\
-    & \clos  && : \Tm\ (\Delta,A)\ B \to (\rho : \Env\ \Gamma\ \Delta) \to \\
-    &        && \quad \Val\ \Gamma\ (\Pi\ A\ B)[\cul \rho \cur]
+  \begin{alignedat}{3}
+    & \neu   && :\ && \NV\ \Gamma\ A \to \Val\ \Gamma\ A \\
+    & \clos  && : && \Tm\ (\Delta,A)\ B \to (\rho : \Env\ \Gamma\ \Delta) \\
+    &        &&   && \to \Val\ \Gamma\ ((\Pi\ A\ B)[\cul \rho \cur])
   \end{alignedat} &&
   \begin{alignedat}{2}
     & \cul \neu\ n \cur && = \cul n \cur \\
@@ -532,10 +565,10 @@ values, denoted by $\rho,\omega$) --- together with the associated embeddings.
   \displaybreak[0] \\
   & \data\ \NV : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \NV\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
-  \begin{alignedat}{2}
-    & \var && : \Var\ \Gamma\ A \to \NV\ \Gamma\ A \\
-    & \app && : \NV\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \to \\
-    &      && \quad \NV\ \Gamma\ B[<\cul v \cur>]
+  \begin{alignedat}{3}
+    & \var && :\ && \Var\ \Gamma\ A \to \NV\ \Gamma\ A \\
+    & \app && : && \NV\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \\
+    &      &&   && \to \NV\ \Gamma\ (B[<\cul v \cur>])
   \end{alignedat} &&
   \begin{alignedat}{2}
     & \cul \var\ x \cur && = \cul x \cur \\
@@ -544,24 +577,25 @@ values, denoted by $\rho,\omega$) --- together with the associated embeddings.
   \displaybreak[0] \\
   & \data\ \Env : \Con \to \Con \to \Set\ \where
   && \cul\_\cur : \Env\ \Gamma\ \Delta \to \Tms\ \Gamma\ \Delta \\ & \ind
-  \begin{alignedat}{2}
-    & \epsilon && : \Env\ \Gamma\ \bullet \\
-    & \_,\_ && : (\rho : \Env\ \Gamma\ \Delta) \to \Val\ \Gamma\ A[\cul\rho\cur] \to \Env\ \Gamma\ (\Delta,A)
+  \begin{alignedat}{3}
+    & \epsilon && :\ && \Env\ \Gamma\ \bullet \\
+    & \_,\_ && : && (\rho : \Env\ \Gamma\ \Delta) \to \Val\ \Gamma\ (A[\cul\rho\cur]) \\
+    &       &&   && \to \Env\ \Gamma\ (\Delta,A)
   \end{alignedat} &&
   \begin{alignedat}{2}
     & \cul \epsilon \cur && = \epsilon \\
-    & \cul \rho,v \cur && = \cul \rho \cur\,\cul v \cur
+    & \cul \rho,v \cur && = \cul \rho \cur , \cul v \cur \\ &
   \end{alignedat}
 \end{flalign*}
 
 This definition would be used with an unquotiented syntax such as in~\cite{chapman2009bsn},
 but is inappropriate for the quotiented syntax because some values are
-equivalent when seen as terms (formally, have equal embeddings), but are not
-equal. For instance, if one considers a closure $\clos\ u\ \rho$ in which the
-body $u$ never refers to the environment $\rho$, then modifying $\rho$ will
-yield a distinct, yet equivalent value. Consequently, the evaluation function
-may map equivalent terms to distinct values, hence can not be defined on the
-quotiented syntax.
+equivalent as terms (formally, have equal embeddings), but are not equal. For
+instance, if one considers a closure $\clos\ u\ \rho$ in which the body $u$
+never refers to the environment $\rho$, then modifying $\rho$ yields a
+distinct, yet equivalent value. Consequently, the evaluation function may map
+equivalent terms to distinct values, hence can not be defined on the quotiented
+syntax.
 
 To avoid this, values are quotiented, ensuring that their embedding is injective.
 \begin{flalign*}
@@ -571,7 +605,6 @@ To avoid this, values are quotiented, ensuring that their embedding is injective
 The corresponding result for environments can be proved by induction on contexts.
 \[ \qEnv : (\rho\ \omega : \Env\ \Gamma\ \Delta) \to
   \cul \rho \cur \equiv \cul \omega \cur \to \rho \equiv \omega \]
-
 To complete this definition, weakening is defined by induction on values,
 neutral values, and environments. We omit the definitions and the associated lemmas.
 
@@ -638,10 +671,10 @@ substitutions, which are QIIT, but we did not bother to verify that the equality
 constructors are respected. Perhaps more worryingly, the function is not
 structurally recursive, hence it is not clear that the evaluator terminates.
 
-Proving that the definition of the evaluator as a function is correct is
+Proving that this definition of the evaluator as a function is correct is
 non-trivial, but this issue can be delayed by considering its big step
 semantics, which means that we redefine the evaluator as a relation between
-inputs and outputs. For instance, we denote by $\eval\ t\ \rho \Da v$ the
+inputs and output. For instance, we denote by $\eval\ t\ \rho \Da v$ the
 proposition `$t$ evaluates to $v$ in environment $\rho$'. As an example, we
 define the relation corresponding to $\eval$, the other cases being similar.
 \begin{flalign*}
@@ -663,13 +696,14 @@ the type of $\eval$ does not give any information on the type of the return
 value --- it is a value of some unknown type $B$ --- whereas we know that
 it should have type $A[<\cul \rho \cur>]$ when evaluating in environment $\rho$.
 Similarly, we do not even require the first argument of $@$ to be a function.
-While stricter types would be theoretically possible, this choice of loose types
-simplifies the formal proofs by reducing the need for transports.
-This is similar to the way using heterogeneous equality instead of the more
-restrictive dependent equality types can be simplify matters.
+It would be possible to define the evaluation relation with more restrictive
+types, but this would only complicate later proofs by requiring many additional
+transports. This choice may be compared to heterogeneous equality, which can
+similarly simplify proofs merely by being less restrictive than dependent
+equality types.
 
-Furthermore, nothing is lost by using these loose types, because the following
-lemma implies that the expected restrictions are indeed satisfied.
+Of course, the expected type restrictions on evaluation can still be proved as
+lemmas.
 \begin{lemma}
   \label{lem:evalCompl}
   \[
@@ -687,7 +721,6 @@ lemma implies that the expected restrictions are indeed satisfied.
 \begin{proof}
   By induction on the evaluation relation.
 \end{proof}
-
 A soundness property follows.
 \begin{lemma}
   \label{lem:evalSound}
@@ -710,20 +743,20 @@ A soundness property follows.
 \end{lemma}
 \begin{proof}
   Using lemma~\ref{lem:evalCompl}, and that embeddings of values and
-  environments are injective.
+  environments are injective by $\qVal$ and $\qEnv$.
 \end{proof}
 
 \subsection{Normal Forms}
 Having defined the evaluator, we continue with the function $\q$ which maps
 values to normal forms. The classic notion of \emph{$\eta$-long $\beta$-normal forms}
-is used, which interestingly is shared with normalisation by evaluation
-(cf.~\cite{kaposi2016normalisation}).
+(see for instance~\cite{jouannaud1998rewrite}) is used, which interestingly is
+shared with normalisation by evaluation (cf.~\cite{kaposi2016normalisation}).
 
-In common with values, normal forms are defined mutually with neutral normal
-forms, i.e.\ the application of a variable to normal forms. An important
-difference is that neutral normal forms are normal forms only for the base types
-$\U$ and $\El$. This restriction ensures that normal forms are sufficiently
-$\eta$-expanded.
+Like values, normal forms are defined mutually with neutral normal forms,
+i.e.\ the application of a variable to normal forms. An important difference
+is that not all neutral normal forms are normal forms: it is only true for
+neutral normal forms of the base types $\U$ and $\El$. This restriction ensures
+that normal forms are sufficiently $\eta$-expanded.
 \begin{flalign*}
   & \data\ \Nf : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \Nf\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
@@ -739,18 +772,18 @@ $\eta$-expanded.
   \end{alignedat} \\
   & \data\ \NN : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \NN\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
-  \begin{alignedat}{2}
-    & \var && : \Var\ \Gamma\ A \to \NN\ \Gamma\ A \\
-    & \app && : \NN\ \Gamma\ (\Pi\ A\ B) \to (n : \NN\ \Gamma\ A) \to \\
-    &      && \quad \NN\ \Gamma\ B[<\cul n \cur>]
+  \begin{alignedat}{3}
+    & \var && :\ && \Var\ \Gamma\ A \to \NN\ \Gamma\ A \\
+    & \app && : && \NN\ \Gamma\ (\Pi\ A\ B) \to (n : \NN\ \Gamma\ A) \\
+    &      &&   && \to \NN\ \Gamma\ (B[<\cul n \cur>])
   \end{alignedat} &&
   \begin{alignedat}{2}
     & \cul \var\ x \cur && = \cul x \cur \\
     & \cul \app\ m\ n \cur && = \cul m \cur\,\$\,\cul n \cur \\ &
   \end{alignedat}
 \end{flalign*}
-Note that normal forms are indexed by regular types, and not a notion of normal
-types. Indeed, normalising types and terms simultaneously only seems to
+Note that normal forms are indexed by regular types, we do not use a notion of
+normal types. Indeed, normalising types and terms simultaneously only seems to
 complicate matters, and it is easier to first normalise a term without worrying
 about its type, then recursively normalise the type. A disadvantage of this
 choice is that equality of normal forms is not a priori decidable, because it
@@ -782,17 +815,17 @@ $\qn$ in that case. For function types, the definition of normal forms
 requires the result to be an abstraction. This is done by $\eta$-expending the
 value, and applying $\q$ to the body of the resulting abstraction.
 The $\eta$-expansion is somewhat technical to define. First, the function is
-weakened ($f^{+A}$) to allow the introduction of a new variable represented
-by the De Bruijn index $\vz$. This variable is turned into a value by the
-$\var$ and $\neu$ constructors, and the weakened function is applied
+weakened as $f^{+A}$ to allow the introduction of a new variable of type $A$
+represented by the De Bruijn index $\vz$. This variable is turned into a value
+by the $\var$ and $\neu$ constructors, and the weakened function is applied
 using $@$, giving the body of the $\eta$-expansion.
 
 Beside the problems of termination and correctness with regards to quotient
-constructors which are shared with the evaluator, one may note that $\q$ is
-not defined on the $\_[\_]$ type constructor. We will later show that
-it can be inferred from the remaining cases and equality constraints. For now
-we again ignore all issues by considering the big step semantics of $\q$,
-with the following signature.
+constructors which already appeared in the evaluator, one may note that $\q$ is
+not defined on the $\_[\_]$ type constructor. We will later show that the
+definition for $\_[\_]$ can in fact be inferred from the other cases and the
+equality constraints. For now we again ignore all issues by considering the big
+step semantics of $\q$, with the following signature.
 \begin{align*}
   & \q : \Val\ \Gamma\ A \to \Nf\ \Gamma\ A \to \Prop \\
   & \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop
@@ -818,19 +851,19 @@ applying $\q$.
 \[ \norm\ u \Da n = \Sigma(v : \Val\ \Gamma\ A)\ \eval\ u\ \idenv \Da v \ \land \ \q\ v \Da n \]
 
 With this definition, stability and completeness of BSN can already be proved.
-\begin{proposition}[Completeness]
-  \label{prop:completeness}
+\begin{theorem}[Completeness]
+  \label{thm:completeness}
   \[
     \AXC{$\norm\ u \Da n$}
     \UIC{$\cul n \cur \equiv u$}
     \DP
   \]
-\end{proposition}
+\end{theorem}
 \begin{proof}
   Immediate by lemmas~\ref{lem:evalCompl} and~\ref{lem:quoteCompl}.
 \end{proof}
-\begin{proposition}[Stability]
-  \label{prop:stability}
+\begin{theorem}[Stability]
+  \label{thm:stability}
   \[
     \AXC{$n : \Nf\ \Gamma\ A$}
     \UIC{$\norm\ \cul n \cur \Da n$}
@@ -839,7 +872,7 @@ With this definition, stability and completeness of BSN can already be proved.
     \UIC{$\Sigma(v : \NV\ \Gamma\ A)\ \eval\ \cul n \cur \Da (\neu\ v) \ \land \ \qn\ v \Da n$}
     \DP
   \]
-\end{proposition}
+\end{theorem}
 \begin{proof}
   By simultaneous induction on normal forms and neutral normal forms.
 \end{proof}
@@ -847,8 +880,7 @@ With this definition, stability and completeness of BSN can already be proved.
 
 \section{Correctness of BSN}
 \label{sec:correctness}
-Two main results must be proved in order to establish the correctness of BSN as
-previously defined.
+Two main results must be proved in order to establish the correctness of BSN.
 Termination states that the normalisation relation is defined on every term.
 \[ \forall (u : \Tm\ \Gamma\ A),\ \exists (n : \Nf\ \Gamma\ A),\ \norm\ u \Da n \]
 Soundness states that normalisation can only give one result for each term.
@@ -865,26 +897,26 @@ a function from terms to normal forms, and the remaining coherence properties
 In this section, we first provide a short proof of soundness using known results
 on NBE.
 
-Next, we define evaluation of types and the notion of skeleton of a type, which
-address two issues with the induction principle for types caused by the
-introduction of dependent types. 
-
-The rest of the proof of termination then closely follows the original
-one~\cite{chapman2009bsn}, using the strong computability predicate.
+Next, we define a partial normalisation of types, and the notion of skeleton of
+a type. Together, they give a very simple induction principle for the syntax of
+dependent types. Using this simplified induction principle, it is fairly straight
+forward to adapt the proof of termination for simple types~\cite{chapman2009bsn},
+based on the strong computability predicate.
 
 \subsection{Soundness, for free}
 The original presentation of BSN for the simply-typed lambda-calculus proves
-soundness using a logical relation, similar to the use of strong computability
-for termination, presented later in this section. Unfortunately, this proof
-seems hard to adapt to the quotiented syntax.
+soundness using a logical binary relation, similar to the use of strong
+computability for termination presented later in this section. Unfortunately,
+this proof seems hard to adapt to the quotiented syntax.
 
 However there is an alternative proof, much shorter if not as interesting.
 The key observation is that BSN uses the same notion of normal forms as
 normalisation by evaluation (cf.~\cite{kaposi2016normalisation} for a formal
-proof of NBE --- we use the very same syntax and normal forms). A direct
-consequence of the existence of a normalisation is that there is exactly one
-normal form in each equivalence class of terms, which in the quotiented syntax
-means that the embedding of normal forms is injective.
+proof of NBE for type theory --- we use the very same syntax and definition of
+normal forms). A direct consequence of the existence of a normalisation function
+such as NBE is that there is exactly one normal form in each equivalence class
+of terms, which in the quotiented syntax means that the embedding of normal
+forms is injective.
 \begin{theorem}
   \label{thm:nbe}
   \[ \AXC{$n,m : \Nf\ \Gamma\ A$}\AXC{$\cul n \cur \equiv \cul m \cur$}\BIC{$n \equiv m$}\DP \]
@@ -893,24 +925,24 @@ means that the embedding of normal forms is injective.
   By soundness and stability of normalisation by evaluation.
 \end{proof}
 
-\begin{proposition}[Soundness]
-  \label{prop:soundness}
+\begin{theorem}[Soundness]
+  \label{thm:soundness}
   \[ \AXC{$\norm\ u \Da n$}\AXC{$\norm\ u \Da m$}\BIC{$n \equiv m$}\DP \]
-\end{proposition}
+\end{theorem}
 \begin{proof}
-  Immediate by proposition~\ref{prop:completeness} and theorem~\ref{thm:nbe}.
+  Immediate theorems~\ref{thm:completeness} and~\ref{thm:nbe}.
 \end{proof}
 
 It can of course be argued that defining a normalisation function using another
-normalisation function defeats the object. However it may be interesting to
-consider BSN not so much as alternative normalisation function than as an
-alternative definition for the function obtained through NBE. This proof of
-soundness becomes more sensible from this point of view: as soon as we prove
-that the functions defined by NBE and BSN coincide (for which completeness of
-BSN is a key result), all correctness properties which are known to hold for NBE
---- in particular soundness --- transfer to BSN.
+normalisation function defeats the object. However we think that it is interesting
+to consider BSN not so much as alternative normalisation function than as an
+alternative definition for the function which can also be obtained through NBE.
+This proof of soundness becomes more sensible from this point of view: as soon
+as we prove that the functions defined by NBE and BSN coincide (for which
+completeness of BSN is a key result), all correctness properties which are known
+to hold for NBE --- in particular soundness --- transfer to BSN.
 
-\subsection{Evaluation of Types}
+\subsection{Substitution-Free Types}
 An interesting issue was mentioned while defining $\q$: the natural definition
 is by induction on types, but only considers the constructors $\U$, $\El$, and
 $\Pi$, forgetting both $\_[\_]$ and the quotient constructors. In this
@@ -945,7 +977,7 @@ inductively.
   \begin{alignedat}{2}
     & \U [\sigma] && = \U \\
     & (\El\ u) [\sigma] && = \El (u[\sigma]) \\
-    & (\Pi\ A\ B)[\sigma] && = \Pi\ (A[\sigma])\ (B[\sigma \uparrow \cul A \cur])
+    & (\Pi\ A\ B)[\sigma] && = \Pi\ (A[\sigma])\ (B[\sigma \lift \cul A \cur])
   \end{alignedat}
 \end{flalign*}
 The definition directly follows the equations $\U[]$, $\El[]$, and $\Pi[]$ from
@@ -962,7 +994,7 @@ Put together, this defines the evaluation function: $\U$, $\El$, and $\Pi$ are
 interpreted by the respective constructors, substitutions are applied using the
 previous recursive definition, the equations $\U[]$, $\El[]$, and $\Pi[]$ hold
 trivially, and we just verified that $[\id]$ and $[][]$ are respected.
-It is trivial to verify that this evaluation function is indeed the inverse of
+It is easy to verify that this evaluation function is indeed the inverse of
 the embedding, therefore regular and substitution-free types are isomorphic.
 
 This gives an alternative, much simpler induction principle for types.
@@ -971,19 +1003,22 @@ This gives an alternative, much simpler induction principle for types.
   To define a function on types, it suffice to define it inductively for the
   constructors $\U$, $\El$, and $\Pi$.
 \end{lemma}
+\begin{proof}
+  The hypothesis of the lemma corresponds exactly to a definition of the
+  function on substitution-free types. This function is then extended to regular
+  types through the isomorphism previously defined.
+\end{proof}
 
 \subsection{Type Skeletons}
 If we were to immediately define strong computability, we would face a second
 issue regarding the induction principle for types: it will often be the case
-that when proving a result by induction on types, and considering a type
+that when proving a result by induction on types and considering a type
 $\Pi\ A\ B$, we need to apply the induction hypothesis not on $B$, but instead
 on $B[\sigma]$ for some substitution $\sigma$, which is not allowed by the
-induction principle of types.
-
-However, if we were to forget substitutions altogether, then $B$ or $B[\sigma]$
-would be the same. This is exactly the idea behind the skeleton of a type:
-by deleting all substitutions, we obtain a well-founded notion of size of types,
-for which $B$ and $B[\sigma]$ are equivalent.
+induction principle of types. However, if we were to forget substitutions
+altogether, then $B$ or $B[\sigma]$ would be the same. This is exactly the idea
+behind the skeleton of a type: by deleting all substitutions, we obtain a
+well-founded notion of size of types, for which $B$ and $B[\sigma]$ are equivalent.
 
 Formally, a type skeleton correspond to the non-dependent structure of types:
 either a base type or a function type.
@@ -1006,10 +1041,8 @@ constructors are clearly respected.
   \end{alignedat}
 \end{align*}
 
-Using the skeleton of types as size indicators for induction --- which formally
-means proceeding by induction on the skeleton, then by pattern matching on the
-type itself --- the example of problematic induction given at the beginning of
-this subsection becomes valid.
+Using the skeleton of types as size indicators for induction, the example of
+problematic induction given at the beginning of this subsection becomes valid.
 \begin{lemma}
   \label{lem:typeInduction2}
   To define a function on types, it suffice to define it on the base types $\U$
@@ -1017,10 +1050,11 @@ this subsection becomes valid.
   defined on any type $C$ with the same skeleton as either $A$ or $B$.
 \end{lemma}
 \begin{proof}
-  It suffice to define the function on substitution-free types by induction on
-  the skeleton of the type. The function can then be extended to regular types
-  using the isomorphism between regular and substitution-free types, as in
-  lemma~\ref{lem:typeInduction}.
+  The proof is the same as for lemma~\ref{lem:typeInduction}, but additionally
+  uses the skeletons as size indicators to ensure that the inductive definition
+  is well-founded. Formally, this means that the function is defined by
+  induction on type skeletons, then by pattern matching on the types of a given
+  skeleton.
 \end{proof}
 
 \subsection{Strong Computability}
@@ -1042,6 +1076,7 @@ generalised induction principle of lemma~\ref{lem:typeInduction2} is used.
     & && && (f^{+\alpha}\ @\ v \Da w) \ \land\ (\scv\ w) \ \land\ (\skel\ C \equiv \skel\ B)
   \end{alignedat}
 \end{flalign*}
+
 Some remarks can be made regarding the case of function types.
 Firstly, stability under application is understood up to weakening, i.e.\
 the argument $v$ need not be in the same context $\Gamma$ as the function $f$,
@@ -1051,9 +1086,9 @@ $\alpha : \Vars\ \Delta\ \Gamma$ expresses that $\Delta$ is weaker than $\Gamma$
 Secondly, as in the definition of the evaluation relation, we prefer not to
 restrict the result type to simplify the upcoming proofs, hence we merely
 require that there exist a value $w$ of some type $C$. However, the definition
-would not be sound without any restriction on $C$, which is why we ask for $C$
-to have the same skeleton as $B$. In this way, strong computability for
-$\Pi\ A\ B$ is defined based on strong computability of types with the same
+would not be well-founded without any restriction on $C$, which is why we ask
+for $C$ to have the same skeleton as $B$. In this way, strong computability for
+$\Pi\ A\ B$ is defined based on strong computability for types with the same
 skeleton as either $A$ or $B$.
 
 Strong computability is extended to environments pointwise.
@@ -1223,16 +1258,16 @@ elements of the same mere proposition.
   \label{lem:evalProp}
   For any $u : \Tm\ \Gamma\ A$, $\sigma : \Tms\ \Gamma\ \Theta$ and
   $\rho : \Env\ \Delta\ \Gamma$, the following types are mere propositions.
-  \[ \Sigma(B : \Ty\ \Delta)\Sigma(v : \Val\ \Delta\ B)\ \eval\ u\ \rho \Da v\ \land\ \scv\ v \qquad
-  \Sigma(\nu : \Env\ \Gamma\ \Theta)\ \evals\ \sigma\ \rho \Da \nu\ \land\ \sce\ \nu \]
+  \begin{align*}
+    & \Sigma(B : \Ty\ \Delta)\Sigma(v : \Val\ \Delta\ B)\ \eval\ u\ \rho \Da v\ \land\ \scv\ v \\
+    & \Sigma(\nu : \Env\ \Gamma\ \Theta)\ \evals\ \sigma\ \rho \Da \nu\ \land\ \sce\ \nu
+  \end{align*}
 \end{lemma}
 \begin{proof}
   By lemma~\ref{lem:evalSound}, a term can only evaluate to a single value $v$.
   Furthermore, the types $\eval\ u\ \rho \Da v$ and $\scv\ v$ are mere
   propositions, by definition and by lemma~\ref{lem:scvProp} respectively.
-  The result follows.
-
-  The proof is similar in the case of substitutions.
+  The result follows. The proof is similar in the case of substitutions.
 \end{proof}
 
 \begin{proof}[Proof of Theorem~\ref{thm:eval}]
@@ -1244,7 +1279,7 @@ elements of the same mere proposition.
     evaluation is obtained by following the definition of the evaluator and
     applying the induction hypotheses, and strong computability of the result
     comes directly from the hypotheses. The exceptions to this pattern are $\lam$
-    and $\app$, for which we give detailed proofs below.
+    and $\app$, for which we give more detailed proofs below.
   \item For an abstraction $\lam u$ of type $\Pi\ A\ B$ evaluated in a strongly
     computable environment $\rho : \Env\ \Delta\ \Gamma$, evaluation is trivial
     since it simply yields the closure $\clos\ u\ \rho$. Let us show that this
@@ -1262,7 +1297,7 @@ elements of the same mere proposition.
     evaluated in a strongly computable environment $(\rho,v) : \Env\ \Delta\ (\Gamma,A)$.
     By induction hypothesis, there exists $f$ strongly computable such that
     $\eval\ u\ \rho \Da f$. It can be verified using lemma~\ref{lem:evalCompl}
-    that $f$ has type $\Pi\ (A[\cul \rho \cur])\ (B[\cul \rho \cur \uparrow A])$.
+    that $f$ has type $\Pi\ (A[\cul \rho \cur])\ (B[\cul \rho \cur \lift A])$.
     Hence, because $f$ and $v$ are strongly computable, there exist $w$ strongly
     computable such that $f\ @\ v \Da w$. Then we obtain by the definition of
     the evaluation relation that $\eval\ (\app\ u)\ (\rho,v) \Da w$, proving
@@ -1270,11 +1305,11 @@ elements of the same mere proposition.
   \end{itemize}
 \end{proof}
 
-\begin{proposition}[Termination]
-  \label{prop:termination}
+\begin{theorem}[Termination]
+  \label{thm:termination}
   Normalisation terminates.
   \[ \AXC{$u : \Tm\ \Gamma\ A$}\UIC{$\Sigma(n : \Nf\ \Gamma\ A),\ \norm\ u \Da n$}\DP \]
-\end{proposition}
+\end{theorem}
 \begin{proof}
   Let $u : \Tm\ \Gamma\ A$. By lemma~\ref{lem:idenvsc} and theorem~\ref{thm:eval},
   there exist $v$ strongly computable such that $\eval\ u\ \idenv \Da v$.
@@ -1283,11 +1318,11 @@ elements of the same mere proposition.
   $\q\ v \Da n$. It follows that $\norm\ u \Da n$.
 \end{proof}
 
-By propositions~\ref{prop:soundness} and~\ref{prop:termination}, $\norm$ defines a
-function from terms to normal forms, and by propositions~\ref{prop:completeness}
-and~\ref{prop:stability}, it is the inverse of the embedding of normal forms.
-Therefore, we have proved that big step normalisation defines a normalisation
-function.
+By theorems~\ref{thm:soundness} and~\ref{thm:termination}, $\norm$ defines a
+function from quotiented terms to normal forms, and by
+theorems~\ref{thm:completeness} and~\ref{thm:stability}, it is the inverse of
+the embedding of normal forms. Therefore, we have proved that big step
+normalisation defines a normalisation function.
 
 \section{Formalisation of BSN in a Cubical Type Theory}
 \label{sec:cubical}
@@ -1295,10 +1330,10 @@ For simplicity, we have presented this paper in a strict type theory. However,
 our formalisation of big step normalisation was instead done in a cubical type
 theory (CTT, cf.~\cite{cchm}) using the cubical mode of Agda~\cite{norell2007agda}.
 This choice allows to easily express QIIT as a special case of higher inductive
-types (HIT, see~\cite{hott}), which from the technical point of view is a
+types (HIT, cf.~\cite{hott}), which from the technical point of view is a
 notable improvement over previous implementations of QIIT in non-cubical Agda,
 which had to introduce all quotient constructors as additional axioms
-(e.g.~\cite{kaposi2016normalisation}).
+(e.g.~\cite{kaposi2016normalisation,kaposi2016type}).
 
 As explained in~\cite{kaposi2016type}, simply considering a QIT as a special
 case of HIT leads to unexpected results. For instance, in the case of the
@@ -1347,7 +1382,7 @@ We will not detail all the proofs of UIP because they are fairly repetitive, but
 explain the general techniques used. There are some trivial cases: all QIIT are
 explicitly truncated to sets, hence there is nothing to prove, and propositional
 types (i.e.\ in which any two elements are equal) such as the big step
-relations, or strong computability, are always sets. What remains are regular
+relations and strong computability, are always sets. What remains are regular
 inductive types, such as variables, normal forms, substitution-free types\dots{}
 For such types, Hedberg's theorem~\cite{hedberg1998coherence} is an extremely
 useful tool. For instance, it is easy to verify that equality of variables is
@@ -1367,8 +1402,8 @@ of types.
 This proof is an important step for big step normalisation, as it shows that
 this method is not limited to simple cases of typed lambda calculus, but can
 also be generalised to dependent types. Of course, much remains to do in that
-line of work. We have only proved big step normalisation in the context of a
-minimal type theory, and it could be interesting to consider some extension.
+line of work. We have only generalised big step normalisation to a minimalist
+type theory, and it could be interesting to consider some extension.
 The addition of dependent sum types for instance, would probably be fairly
 straight forward. Introducing equality types and universes may be a more subtle
 problem.
