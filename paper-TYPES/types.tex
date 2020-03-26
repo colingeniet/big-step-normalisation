@@ -130,9 +130,9 @@ More formally, a normalisation function can be defined as a set of normal forms,
 together with two (computable) maps, $\norm$ from terms to normal forms, and the
 embedding $\cul\_\cur$ of normal forms into terms, satisfying
 \begin{description}
-\item[soundness] If $u \Beq v$, then $\norm\ u \equiv \norm\ v$
+\item[soundness] If $u \Beq v$, then $\norm\ u = \norm\ v$
 \item[completeness] For every term $u$, $\cul \norm\ u \cur \Beq u$
-\item[stability] For every normal form $n$, $\norm\ \cul n \cur \equiv n$
+\item[stability] For every normal form $n$, $\norm\ \cul n \cur = n$
 \end{description}
 
 The traditional way to define a normalisation function is through rewriting
