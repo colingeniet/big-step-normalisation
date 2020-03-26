@@ -151,7 +151,7 @@ confluent~\cite{dougherty1995coproducts}.
 
 A more modern approach is normalisation by evaluation~(NBE), introduced
 by Berger and Schwichtenberg~\cite{berger1991inverse} for the simply-typed
-lambda-calculus. The idea is to evaluate terms into a semantic models,
+lambda-calculus. The idea is to evaluate terms into a semantic model,
 meaning for instance that $\lambda$-abstractions (syntactic functions) are interpreted
 by actual (semantic) functions. A map from the model into normal forms is then
 defined, giving rise to the normalisation function by composition with evaluation.
@@ -186,7 +186,7 @@ The following results can then be proved.
   strongly computable results.
 \end{itemize}
 Termination of normalisation follows from those results. Completeness and
-stability are straight forward. The proof of soundness is more involved, and
+stability are straightforward. The proof of soundness is more involved, and
 shares some similarities with the proof of termination, but replaces strong
 computability with a binary relation on values.
 
@@ -294,7 +294,9 @@ Functions with implicit arguments are defined as $f : \{x : A\} \to B$, and the
 argument can be either omitted, or given in subscript as $f_x$. Sum types
 (dependent pairs) are denoted by $\Sigma(x : A),\ B$. Omitted arguments are
 implicitly universally quantified, e.g.\ $(y : A\ x) \to B$ is understood as
-$\forall\,x, (y : A\ x) \to B$. The universe of types is denoted by $\Set$.
+$\forall\,x, (y : A\ x) \to B$. We denote by $\Set$ the universe of types,
+and by $\Prop$ the universe of mere propositions, i.e.\ the types in which all
+elements are axiomatically equal.
 The equality type is denoted by $x \equiv y$, while $=$ is only used in
 definitions. The transport of $x : P\ a$ along an equality $p : a \equiv b$ is
 denoted by $_{p*}x : P\ b$. If $p : a \equiv b$, the type of dependent
@@ -427,9 +429,9 @@ equality constructors on the right.
 Equations $\Pi[]$ and $\lambda[]$ use the lifting of a substitution by a type,
 defined as follows.
 \begin{align*}
-  & \_\lift\_      : (\sigma : \Tms\ \Gamma\ \Delta) \to (A:\Ty) \to
+  & \_\lift\_      : (\sigma : \Tms\ \Gamma\ \Delta) \to (A:\Ty\ \Delta) \to
                         \Tms\ (\Gamma,A[\sigma])\ (\Delta,A) \\
-  & \sigma \lift A = (\sigma \circ \pi_1\,\id) , (_{[\circ]*}\pi_2\,\id)
+  & \sigma \lift A = (\sigma \circ \pi_1\,\id) , (_{[\circ]^{-1}*}\pi_2\,\id)
 \end{align*}
 
 While this syntax does not contain the usual application operator of the
@@ -530,7 +532,7 @@ sets that will be defined (e.g.\ values, normal forms, \dots) have a presheaf-li
 structure, which simply means that the elements can be weakened coherently.
 Similarly, functions are natural transformations, i.e.\ commute with weakening,
 and predicates are sub-presheaves, meaning that they are stable under weakening.
-The corresponding definitions and proofs are typically straight forward, and we
+The corresponding definitions and proofs are typically straightforward, and we
 will often not mention them. We abusively denote all weakenings by $\_\ ^{+\_}$.
 
 Finally, given a type $A$, one may consider $\wk\ A\ \id : \Vars\ (\Gamma,A)\ \Gamma$,
@@ -622,7 +624,7 @@ weakening of environments.
   & \idenv : \{\Gamma : \Con\} \to \Env\ \Gamma\ \Gamma \\ &
   \begin{alignedat}{2}
     & \idenv_{\bullet} && = \epsilon \\
-    & \idenv_{\Gamma,A} && = {\idenv_{\Gamma}}^{+A} \,,\, \neu\,(\var\ z)
+    & \idenv_{\Gamma,A} && = {\idenv_{\Gamma}}^{+A} \,,\, \neu\,(\var\ \vz)
   \end{alignedat}
 \end{flalign*}
 
@@ -659,7 +661,7 @@ The evaluator could be presented as follows.
     & (\neu\ n)\ @\ v && = \neu\ (\app\ n\ v)
   \end{alignedat}
 \end{flalign*}
-Most cases are very straight forward. Note how evaluation of a lambda does
+Most cases are very straightforward. Note how evaluation of a lambda does
 nothing, and merely returns a closure, delaying the evaluation of the body.
 The latter occurs in the first case of $\_@\_$, as the application of
 a closure to a value is computed by evaluating the body of the closure in the
@@ -1029,7 +1031,7 @@ either a base type or a function type.
     & \Pi && : \Sk \to \Sk \to \Sk
   \end{alignedat}
 \end{align*}
-Defining the skeleton of a type is straight forward, and all quotient
+Defining the skeleton of a type is straightforward, and all quotient
 constructors are clearly respected.
 \begin{align*}
   & \skel : \Ty\ \Gamma \to \Sk \\ &
@@ -1275,7 +1277,7 @@ elements of the same mere proposition.
   groups:
   \begin{itemize}
   \item All quotient constructors are respected by lemma~\ref{lem:evalProp}.
-  \item Almost all regular constructors are very straight forward: the result of
+  \item Almost all regular constructors are very straightforward: the result of
     evaluation is obtained by following the definition of the evaluator and
     applying the induction hypotheses, and strong computability of the result
     comes directly from the hypotheses. The exceptions to this pattern are $\lam$
@@ -1393,7 +1395,7 @@ adapt the techniques and lemmas used for Hedberg's theorem to prove UIP.
 \section{Conclusion and Further Work}
 We have formalised big step normalisation for a simple dependent type theory,
 and proved its correctness. Crucially, a quotiented syntax of type theory based
-on QIIT is used to reduces the complexity of this proof. While the proof of BSN
+on QIIT is used to reduce the complexity of this proof. While the proof of BSN
 for type theory shares many similarities with the case of the simply-typed
 lambda-calculus, we have developed some new techniques specifically for
 dependent types, for instance a simplified induction principle for the syntax
@@ -1405,7 +1407,7 @@ also be generalised to dependent types. Of course, much remains to do in that
 line of work. We have only generalised big step normalisation to a minimalist
 type theory, and it could be interesting to consider some extension.
 The addition of dependent sum types for instance, would probably be fairly
-straight forward. Introducing equality types and universes may be a more subtle
+straightforward. Introducing equality types and universes may be a more subtle
 problem.
 
 This work is also an interesting application of the QIIT syntax of type theory,
