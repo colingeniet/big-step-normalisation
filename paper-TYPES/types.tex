@@ -360,7 +360,9 @@ of presheaves over types. There are three additional type constructors: the
 abstract base type $\U$, the abstract base dependent family $\El$,\footnote{%
   The names $\U$ and $\El$ reflect that $\U$ is an universe, in a sense of a
   type whose elements are themselves types (through $\El$). However, it is an
-  abstract universe, in which no explicit element can be built.
+  abstract universe, i.e.\ no element of $\U$ can be built in a closed context.
+  Of course, one can still use the context to postulate the existence of type
+  constructors in $\U$.
 }
 and the  function types $\Pi$. Each of these type constructors comes with an
 equation describing its interaction with substitutions.
