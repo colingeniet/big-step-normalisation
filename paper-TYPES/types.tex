@@ -1337,11 +1337,11 @@ notable improvement over previous implementations of QIIT in non-cubical Agda,
 which had to introduce all quotient constructors as additional axioms
 (e.g.~\cite{kaposi2016normalisation,kaposi2016type}).
 
-As explained in~\cite{kaposi2016type}, simply considering a QIT as a special
+As explained in~\cite{kaposi2016type}, simply considering a QIIT as a special
 case of HIT leads to unexpected results. For instance, in the case of the
 quotiented syntax, $\U[]$ and $[\id]$ give two proofs of $\U[\id] \equiv \U$,
 and these proofs are distinct in a non-strict type theory. Therefore, this naive
-implementation of QIT leads to a syntax which is not a set in the type theoretic
+implementation of QIIT leads to a syntax which is not a set in the type theoretic
 sense, i.e.\ uniqueness of identity proofs (UIP) does not holds.
 It follows by Hedberg's theorem~\cite{hedberg1998coherence} that equality is
 undecidable in this syntax, which is definitively not what was expected.
@@ -1363,7 +1363,7 @@ implementation of QIIT, there are two problems to solve:
 \item The proof of BSN uses the UIP axiom of the strict type theory.\footnote{%
     While we never explicitly refer to the UIP axiom in this presentation of the
     proof, it is used whenever we prove a lemma of the form
-    $L : (x : A) \to f(x) \equiv g(x)$ by induction on a QIT $A$.
+    $L : (x : A) \to f(x) \equiv g(x)$ by induction on a QIIT $A$.
     Indeed, for a quotient constructor of type $a \equiv b$ in $A$, we need to
     provide an equality between equalities $L(a) \equiv L(b)$, which is trivial
     with UIP --- hence why such cases are neglected in the proof --- but is
