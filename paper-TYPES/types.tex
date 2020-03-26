@@ -679,8 +679,7 @@ Proving that this definition of the evaluator as a function is correct is
 non-trivial, but this issue can be delayed by considering its big step
 semantics, which means that we redefine the evaluator as a relation between
 inputs and output. For instance, we denote by $\eval\ t\ \rho \Da v$ the
-proposition `$t$ evaluates to $v$ in environment $\rho$'. As an example, we
-define the relation corresponding to $\eval$, the other cases being similar.
+proposition `$t$ evaluates to $v$ in environment $\rho$'.
 \begin{flalign*}
   & \data\ \eval\_\,\_\Da\_ : \Tm\ \Delta\ A \to \Env\ \Gamma\ \Delta \to
                               \Val\ \Gamma\ B \to \Prop\ \where \\ & \ind
@@ -690,10 +689,25 @@ define the relation corresponding to $\eval$, the other cases being similar.
                       \eval\ (u[\sigma])\ \rho \Da v \\
     & \eval\lam  && : \eval\ (\lam u)\ \rho \Da (\clos\ u\ \rho) \\
     & \eval\app  && : \eval\ f\ \rho \Da g \to g\ @\ v \Da w \to \eval\ (\app\ f)\ (\rho,v) \Da w
-  \end{alignedat} \\
+  \end{alignedat}
+  \displaybreak[0] \\
   & \data\ \evals\_\,\_\Da\_ : \Tms\ \Delta\ \Theta \to \Env\ \Gamma\ \Delta \to
-                               \Env\ \Gamma\ \Theta \to \Prop \\
-  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop
+                               \Env\ \Gamma\ \Theta \to \Prop \\ & \ind
+  \begin{alignedat}{2}
+    & \evals\id      && : \evals\ \id\ \rho \Da \rho \\
+    & \evals\circ    && : \evals\ \nu\ \rho \Da \omega \to \evals\ \sigma\ \omega \Da \xi \to
+                          \evals\ (\sigma \circ \nu)\ \rho \Da \xi \\
+    & \evals\epsilon && : \evals\ \epsilon\ \rho \Da \epsilon \\
+    & \evals,        && : \evals\ \sigma\ \rho \Da \omega \to \eval\ u\ \rho \Da v \to
+                          \evals\ (\sigma, u)\ \rho \Da (\omega, v) \\
+    & \evals\pi_1    && : \evals\ \sigma\ \rho \Da (\omega,v) \to \eval\ (\pi_1\ \sigma)\ \rho \Da \omega
+  \end{alignedat}
+  \displaybreak[0] \\
+  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop \\ & \ind
+  \begin{alignedat}{2}
+    & @\clos && : \eval\ u\ (\rho,v) \Da w \to (\clos\ u\ \rho)\ @\ v \Da w \\
+    & @\neu  && : (\neu\ n)\ @\ v \Da (\neu\ (\app\ n\ v))
+  \end{alignedat}
 \end{flalign*}
 The types of the above relations may seem surprisingly imprecise. For instance,
 the type of $\eval$ does not give any information on the type of the return
