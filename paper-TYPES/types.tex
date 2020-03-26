@@ -136,20 +136,20 @@ embedding $\cul\_\cur$ of normal forms into terms, satisfying
 \end{description}
 
 The traditional way to define a normalisation function is through rewriting
-theory. One proves that $\beta\eta$-reduction is confluent, and strongly normalising
+theory. One proves that $\beta\eta$-reduction is confluent, and terminates
 on typed terms. Normal forms are defined as terms which can not be
 $\beta\eta$-reduced, and normalisation is done by repetitively reducing a term
-until a normal form is reached. Strong normalisation and confluence ensure the
-correctness of the definition. Soundness also follows from confluence, while
-completeness and stability are immediate. See for instance~\cite{girard1989proofs}
+until a normal form is reached. Termination and confluence ensure the correctness
+of the definition. Soundness also follows from confluence, while completeness
+and stability are immediate. See for instance~\cite{girard1989proofs}
 for a detailed proof of this result for the simply-typed lambda-calculus and some
 variants (System F, System T). Unfortunately, this method fails for some other
-variants of the lambda-calculus. For instance, the lambda-calculus with explicit
-substitutions is not strongly normalising~\cite{mellies1995explicit}, and the
+variants of the lambda-calculus. For instance, termination is problematic for the
+lambda-calculus with explicit substitutions~\cite{mellies1995explicit}, and the
 lambda-calculus with coproduct types (i.e.\ disjoint union) is not
 confluent~\cite{dougherty1995coproducts}.
 
-A more modern approach is normalisation by evaluation~(NBE), introduced
+A more modern approach is \emph{normalisation by evaluation}~(NBE), introduced
 by Berger and Schwichtenberg~\cite{berger1991inverse} for the simply-typed
 lambda-calculus. The idea is to evaluate terms into a semantic model,
 meaning for instance that $\lambda$-abstractions (syntactic functions) are interpreted
@@ -159,7 +159,7 @@ This method was for instance used to prove decidability of equivalence for the
 lambda-calculus with coproducts~\cite{altenkirch2001normalization}.
 
 \subsection{Big Step Normalisation}
-Big step normalisation~(BSN) is an alternative, purely syntactic
+\emph{Big step normalisation}~(BSN) is an alternative, purely syntactic
 normalisation method, proposed in~\cite{chapman2009bsn} by Chapman and the
 first author for the simply-typed lambda-calculus. It can be summarized as
 follows.
