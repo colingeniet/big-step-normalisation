@@ -126,9 +126,9 @@ In the context of typed lambda-calculi, normalisation refers to the process of
 computing a canonical representative, called normal form, in each
 $\beta\eta$-equivalence class of terms.
 
-More formally, a normalisation function can be defined as a set of normal forms,
-together with two (computable) maps, $\norm$ from terms to normal forms, and the
-embedding $\cul\_\cur$ of normal forms into terms, satisfying
+In the most general sense, a normalisation function is given by a set of normal
+forms, together with two (computable) maps, $\norm$ from terms to normal forms,
+and an embedding $\cul\_\cur$ of normal forms into terms, satisfying
 \begin{description}
 \item[soundness] If $u \Beq v$, then $\norm\ u = \norm\ v$
 \item[completeness] For every term $u$, $\cul \norm\ u \cur \Beq u$
@@ -136,20 +136,27 @@ embedding $\cul\_\cur$ of normal forms into terms, satisfying
 \end{description}
 
 The traditional way to define a normalisation function is through rewriting
-theory. One proves that $\beta\eta$-reduction is confluent, and terminates
+theory. One proves that $\beta\eta$-reduction is confluent, and terminates%
+\footnote{%
+  We do not use the words strong or weak normalisation to refer to termination
+  of the rewriting process, so as to avoid ambiguity with the generalised notion
+  of normalisation introduced.
+}
 on typed terms. Normal forms are defined as terms which can not be
-$\beta\eta$-reduced, and normalisation is done by repetitively reducing a term
-until a normal form is reached. Termination and confluence ensure the correctness
+$\beta\eta$-reduced, and normalisation is done by reducing a term until reaching
+a normal form. Termination and confluence ensure the correctness
 of the definition. Soundness also follows from confluence, while completeness
-and stability are immediate. See for instance~\cite{girard1989proofs}
-for a detailed proof of this result for the simply-typed lambda-calculus and some
-variants (System F, System T). Unfortunately, this method fails for some other
-variants of the lambda-calculus. For instance, termination is problematic for the
-lambda-calculus with explicit substitutions~\cite{mellies1995explicit}, and the
-lambda-calculus with coproduct types (i.e.\ disjoint union) is not
-confluent~\cite{dougherty1995coproducts}.
+and stability are immediate. See for instance~\cite{girard1989proofs} for a
+detailed proof of this result for the simply-typed lambda-calculus and some
+variants (System F, System T). Unfortunately, problems arise for some other
+variants of the lambda-calculus. For instance, the lambda-calculus with explicit
+substitutions does not terminate in the strong sense~\cite{mellies1995explicit},
+and the lambda-calculus with coproduct types (i.e.\ disjoint union) is not
+confluent~\cite{dougherty1995coproducts}. While some of these issues can be worked
+around, for instance by using weak termination and more restrictive reductions,
+these problems have lead to the development of other methods.
 
-A more modern approach is \emph{normalisation by evaluation}~(NBE), introduced
+One of them is \emph{normalisation by evaluation}~(NBE), introduced
 by Berger and Schwichtenberg~\cite{berger1991inverse} for the simply-typed
 lambda-calculus. The idea is to evaluate terms into a semantic model,
 meaning for instance that $\lambda$-abstractions (syntactic functions) are interpreted
@@ -161,31 +168,32 @@ lambda-calculus with coproducts~\cite{altenkirch2001normalization}.
 \subsection{Big Step Normalisation}
 \emph{Big step normalisation}~(BSN) is an alternative, purely syntactic
 normalisation method, proposed in~\cite{chapman2009bsn} by Chapman and the
-first author for the simply-typed lambda-calculus. It can be summarized as
-follows.
+first author for the simply-typed lambda-calculus.
 The normalisation function is defined in two parts. First, terms are
 evaluated by an environment machine, yielding syntactic values. Then, values are
-mapped to normal forms by a function named $\q$. Normalisation of terms is done
+mapped to normal forms by a function named $\q$. Normalisation $\norm$ is done
 by evaluating in the identity environment, then applying $\q$ on the resulting value.
+The embedding $\cul\_\cur$ is simply the inclusion of normal forms into terms.
 
-Evaluation and normalisation both have fairly simple definitions, but are
-not structurally recursive, meaning that their termination is not obvious.
+Evaluation and $\q$ both have fairly simple definitions, but are
+not structurally recursive, hence their termination is not obvious.
 To prove termination, a Tait-style predicate~\cite{tait1967} called
 \emph{strong computability} is defined on values:
 \begin{itemize}
 \item A value $v$ of the base type is strongly computable if normalisation
   terminates on $v$.
-\item A value $f$ of type $A \Ra B$ is strongly computable if it preserves
+\item A value $f$ of a function type is strongly computable if it preserves
   strong computability when applied to an argument.
 \end{itemize}
 The following results can then be proved.
 \begin{itemize}
 \item $\q$ terminates on any strongly computable value, and conversely any
-  neutral value for which $\q$ terminates is strongly computable.
+  neutral value (i.e.\ a value which is not a $\lambda$-abstraction) on which
+  $\q$ terminates is strongly computable.
 \item In a strongly computable environment, evaluation terminates and yields
   strongly computable results.
 \end{itemize}
-Termination of normalisation follows from those results. Completeness and
+Termination of $\norm$ follows from those results. Completeness and
 stability are straightforward. The proof of soundness is more involved, and
 shares some similarities with the proof of termination, but replaces strong
 computability with a binary relation on values.
