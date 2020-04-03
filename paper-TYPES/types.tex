@@ -557,16 +557,19 @@ $u^{+A}$ for $u^{+ (\wk\ A\ \id)}$.
 
 \section{Normalisation Relation}
 \label{sec:normalisation}
-This section defines big step normalisation for the previous quotiented syntax
-of type theory. We will first define values and the evaluation from terms to
-values, then normal forms and the function $\q$ mapping values to normal forms.
+This section defines the big step normalisation algorithm using the previous
+syntax of type theory. As further explained below, this algorithm can not yet
+be formally defined as a function, and we instead define it as a relation.
+
+We first define values and the evaluation from terms to values, then normal
+forms and the function $\q$ mapping values to normal forms.
 
 \subsection{Values}
 A value is either a closure, corresponding to the delayed evaluation of a
 lambda-abstraction, or a neutral value, that is the stuck application of a
-variable to values. This suggests the following mutual definition of values
-(denoted by $v,w$), neutral values (denoted by $n$), and environments (lists of
-values, denoted by $\rho,\omega$), together with the associated embeddings.
+variable to values. We define mutually values (denoted by $v,w$), neutral
+values (denoted by $n$), and environments (substitutions composed of values,
+denoted by $\rho,\omega$), together with the associated embeddings.
 \begin{flalign*}
   & \data\ \Val : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \Val\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
@@ -606,15 +609,13 @@ values, denoted by $\rho,\omega$), together with the associated embeddings.
 \end{flalign*}
 
 This definition would be used with an unquotiented syntax such as in~\cite{chapman2009bsn},
-but is inappropriate for the quotiented syntax because some values are
-equivalent as terms (formally, have equal embeddings), but are not equal. For
-instance, if one considers a closure $\clos\ u\ \rho$ in which the body $u$
-never refers to the environment $\rho$, then modifying $\rho$ yields a
-distinct, yet equivalent value. Consequently, the evaluation function may map
-equivalent terms to distinct values, hence can not be defined on the quotiented
-syntax.
-
-To avoid this, values are quotiented, ensuring that their embedding is injective.
+but does not work with the quotiented syntax because values can be equivalent
+as terms (formally, have equal embeddings), but not equal. For instance, in a
+closure $\clos\ u\ \rho$, if the body $u$ never refers to the environment $\rho$,
+then modifying $\rho$ yields a distinct but equivalent value. Then, evaluation
+would map equivalent terms to distinct values, hence could not be defined on the
+quotiented syntax. This is fixed by the following quotient constructor,
+which forces embedding of values to be injective.
 \begin{flalign*}
   & \data\ \Val\ \where \\
   & \ind \qVal : (v\ w : \Val\ \Gamma\ A) \to \cul v \cur \equiv \cul w \cur \to v \equiv w
@@ -625,7 +626,7 @@ The corresponding result for environments can be proved by induction on contexts
 To complete this definition, weakening is defined by induction on values,
 neutral values, and environments. We omit the definitions and the associated lemmas.
 
-Finally, we introduce two useful constructions on environments.
+Finally, let us introduce two useful constructions on environments.
 Projections are simply defined by pattern matching.
 \begin{flalign*}
   & \fst : \Env\ \Gamma\ (\Delta,A) \to \Env\ \Gamma\ \Delta
@@ -648,10 +649,9 @@ weakening of environments.
 The first stage of normalisation is an environment machine, which evaluate
 terms in an environment, and returns values. It consists of three mutually
 defined functions: $\eval$ and $\evals$ evaluate terms and substitutions
-respectively in an environment, while $\_@\_$ computes the application of an
+respectively in an environment, while $\_@\_$ computes the application of a
 value to another.
 
-The evaluator could be presented as follows.
 \begin{flalign*}
   & \eval : \Tm\ \Delta\ A \to (\rho : \Env\ \Gamma\ \Delta) \to \Val\ \Gamma\ A[\cul \rho \cur] \\ &
   \begin{alignedat}{2}
@@ -676,17 +676,18 @@ The evaluator could be presented as follows.
     & (\neu\ n)\ @\ v && = \neu\ (\app\ n\ v)
   \end{alignedat}
 \end{flalign*}
-Most cases are very straightforward. Note how evaluation of a lambda does
-nothing, and merely returns a closure, delaying the evaluation of the body.
-The latter occurs in the first case of $\_@\_$, as the application of
-a closure to a value is computed by evaluating the body of the closure in the
-extended environment.
+Most cases are straightforward. Note how evaluation of a lambda simply returns
+a closure, delaying the evaluation of the body. The latter occurs in the first
+case of $\_@\_$, as the application of a closure to a value is computed by
+evaluating the body of the closure in the extended environment.
 
-However, there are several problems with the previous presentation of the
-evaluator. For a start, the functions are defined by recursion on terms and
-substitutions, which are QIIT, but we did not bother to verify that the equality
-constructors are respected. Perhaps more worryingly, the function is not
-structurally recursive, hence it is not clear that the evaluator terminates.
+However, there are several problems with this presentation of the evaluator.
+Firstly, the functions are defined by recursion on terms and substitutions,
+which are QIIT, but we did not bother to verify that equality constructors
+are respected. Perhaps more worryingly, the function is not structurally
+recursive: the last case of $\eval$ applies $\_@\_$ to $\eval\ u\ p$, which
+is an a priori arbitrary term. Thus it is not clear that the evaluator
+terminates.
 
 Proving that this definition of the evaluator as a function is correct is
 non-trivial, but this issue can be delayed by considering its big step
@@ -750,7 +751,7 @@ lemmas.
   \]
 \end{lemma}
 \begin{proof}
-  By induction on the evaluation relation.
+  By simultaneous induction on the definition of the evaluation relation.
 \end{proof}
 A soundness property follows.
 \begin{lemma}
