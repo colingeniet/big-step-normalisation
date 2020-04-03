@@ -457,12 +457,14 @@ and the substitution of a single term $<\_>$.
 
 \section{Weakenings}
 \label{sec:weakening}
-In this section, we introduce a notion of weakening of contexts. For this
-purpose, we use renamings, i.e.\ lists of variables. The following presentation
-of variables and renamings comes from~\cite{kaposi2016normalisation}.
+In this section, we introduce variables and weakenings of contexts. The
+presentation is the same as in~\cite{kaposi2016normalisation}, except that the
+latter uses the name `renamings' instead.
 
-Variables, denoted by $x,y,z$, are defined as typed De Bruijn indices. There is
-an embedding of variables into terms.
+Variables, denoted by $x,y,z$, are defined as typed De Bruijn indices, with
+constructors $\vz$ and $\vs$ standing for `0' and successor.
+Variables can be embedded into terms by applying projections to $\id$ ---
+intuitively, $\id$ is the substitution formed by all the variables in context.
 \begin{flalign*}
   & \data\ \Var\ : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \Var\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
@@ -475,8 +477,12 @@ an embedding of variables into terms.
     & \cul \vs\,x \cur && = \cul x \cur [\pi_1\,\id]
   \end{alignedat}
 \end{flalign*}
-Renamings (or weakenings), denoted by $\alpha,\beta,\gamma$, and their embedding
-into substitutions are mutually defined.
+Weakening substitutions (or simply weakenings), denoted by
+$\alpha,\beta,\gamma$, are substitutions composed only of variables.
+This regroups the usual notions of weakening (i.e.\ forgetting a variable),
+contraction, and reordering of independent variables.
+Note that constructors $\epsilon$ and $\_,\_$ are overloaded due
+to the similarity with substitutions.
 \begin{flalign*}
   & \data\ \Vars\ : \Con \to \Con \to \Set\ \where
   && \cul\_\cur : \Vars\ \Gamma\ \Delta \to \Tms\ \Gamma\ \Delta \\ & \ind
@@ -491,11 +497,12 @@ into substitutions are mutually defined.
   \end{alignedat}
 \end{flalign*}
 
-The definitions of identity and composition of renamings require the appropriate
-auxiliary functions. The identity uses the weakening $\wk$ of a renaming by a
-type, and composition uses the application $\_[\_]$ of a renaming to a variable.
-These functions all commute with embeddings of variables and renamings.
-We omit the definitions, which are relatively simple.
+Unlike regular substitutions, identity and composition of weakenings are not
+constructors, but inductive definitions. Some auxiliary functions are required:
+$\wk$ weakens the context of a weakening substitution by a type $A$, and $\_[\_]$
+applies a weakening substitution to a variable. These functions all commute with
+embeddings of variables and weakenings. We omit the inductive definitions and
+proofs, which are simple.
 \begin{flalign*} &
   \begin{alignedat}{2}
     & \wk && : (A : \Ty\ \Gamma) \to \Vars\ \Gamma\ \Delta \to \Vars\ (\Gamma,A)\ \Delta \\
@@ -510,14 +517,12 @@ We omit the definitions, which are relatively simple.
     & \cul\circ\cur && : \cul \alpha \circ \beta \cur \equiv \cul \alpha \cur \circ \cul \beta \cur
   \end{alignedat}
 \end{flalign*}
-With these operations, it can be verified that contexts and renamings form a
-category.
-
-Types, terms, and substitutions can be weakened by renamings by applying the
-renaming, seen as a substitution through its embedding. It is easy to verify that
-weakening respects identity and composition of renamings. Precisely, types and
-substitutions are presheaves on the category of renamings, while terms are a
-family of presheaves over types.
+Contexts and weakenings form a category with these operations.
+Types, terms, and substitutions can be weakened by applying a weakening
+substitution, seen as a regular substitution through embedding.
+These operations respects identity and composition, that is types and substitutions
+are presheaves on the category of weakenings, while terms are a family of presheaves
+over types. Definitions are below, with the lemmas on the right (proofs omitted).
 \begin{flalign*} &
   \begin{alignedat}{2}
     & \_\ ^{+\_} && : \Ty\ \Delta \to \Vars\ \Gamma\ \Delta \to \Ty\ \Gamma \\
@@ -538,17 +543,17 @@ family of presheaves over types.
 \end{flalign*}
 
 This will be a general pattern in later constructions and proofs: families of
-sets that will be defined (e.g.\ values, normal forms, \dots) have a presheaf-like
-structure, which simply means that the elements can be weakened coherently.
+sets (e.g.\ values, normal forms, \dots) have a presheaf-like structure, which
+simply means that the elements can be weakened coherently.
 Similarly, functions are natural transformations, i.e.\ commute with weakening,
-and predicates are sub-presheaves, meaning that they are stable under weakening.
+and predicates are sub-presheaves, i.e.\ are stable under weakening.
 The corresponding definitions and proofs are typically straightforward, and we
-will often not mention them. We abusively denote all weakenings by $\_\ ^{+\_}$.
+will often not mention them. We abusively denote all applications of weakenings
+by $\_\ ^{+\_}$.
 
 Finally, given a type $A$, one may consider $\wk\ A\ \id : \Vars\ (\Gamma,A)\ \Gamma$,
 the weakening of the context $\Gamma$ by $A$. We abuse notations and write
 $u^{+A}$ for $u^{+ (\wk\ A\ \id)}$.
-
 
 \section{Normalisation Relation}
 \label{sec:normalisation}
