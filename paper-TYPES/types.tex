@@ -300,17 +300,19 @@ functions. For ease of notations, we sometimes use infix arguments, denoted by
 underscores, e.g.\ $\_,\_$ applied to $x$ and $y$ is written as $x,y$.
 Functions with implicit arguments are defined as $f : \{x : A\} \to B$, and the
 argument can be either omitted, or given in subscript as $f_x$. Sum types
-(dependent pairs) are denoted by $\Sigma(x : A),\ B$. Omitted arguments are
-implicitly universally quantified, e.g.\ $(y : A\ x) \to B$ is understood as
-$\forall\,x, (y : A\ x) \to B$. We denote by $\Set$ the universe of types,
-and by $\Prop$ the universe of mere propositions, i.e.\ the types in which all
-elements are axiomatically equal.
+(dependent pairs) are denoted by $\Sigma(x : A),\ B$.
+We denote by $\Set$ the universe of types, and by $\Prop$ the universe of mere
+propositions, i.e.\ the types in which all elements are equal.
 The equality type is denoted by $x \equiv y$, while $=$ is only used in
 definitions. The transport of $x : P\ a$ along an equality $p : a \equiv b$ is
 denoted by $_{p*}x : P\ b$. If $p : a \equiv b$, the type of dependent
 equalities between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by
 $x \equiv^p y$. For simplicity and readability, transports and dependent
 equality types will be omitted starting from section~\ref{sec:weakening}.
+
+In definitions and lemmas, any free variable is implicitly universally
+quantified, and its type can be inferred from the context, and the name
+conventions.
 
 Finally, inductive types are introduced by $\data$, followed by the sort of the
 defined type, and the signatures of the constructors. Inductive functions are
