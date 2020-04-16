@@ -1,4 +1,4 @@
-\documentclass[a4paper,english]{lipics-v2019}
+\documentclass[a4paper,UKenglish,cleveref]{lipics-v2019}
 
 
 \usepackage{bussproofs}
@@ -231,19 +231,19 @@ inductive definition, which ensures decidability of equality.%
 }
 
 \subsection{Structure of the Paper}
-Section~\ref{sec:theory} summarises the metatheory in which this paper is
+\Cref{sec:theory} summarises the metatheory in which this paper is
 presented, and some of the notations and conventions used.
 
-Section~\ref{sec:syntax} presents the quotiented syntax of type theory.
+\Cref{sec:syntax} presents the quotiented syntax of type theory.
 
-Section~\ref{sec:weakening} introduces a notion of weakening of contexts.
+\Cref{sec:weakening} introduces a notion of weakening of contexts.
 
-Section~\ref{sec:normalisation} defines big step normalisation itself. Because
+\Cref{sec:normalisation} defines big step normalisation itself. Because
 it is not a priori clear that BSN defines a correct function (termination for
 instance is problematic) we formally define normalisation by its big step
 semantics, i.e.\ as a relation between inputs and output.
 
-Section~\ref{sec:correctness} focuses on the two major correctness proofs:
+\Cref{sec:correctness} focuses on the two major correctness proofs:
 termination and soundness. The proof of termination remains similar to the case
 of simple types. The main difference is that we develop a simplified and
 generalised induction principle for types, which allows us to manipulate
@@ -251,7 +251,7 @@ dependent types in almost the same way as simple types during the proof.
 The proof of soundness for an unquotiented syntax seems much harder to
 adapt, we instead provide a simple proof using soundness of NBE.
 
-Finally, section~\ref{sec:cubical} explains how the proof of BSN can be
+Finally, \cref{sec:cubical} explains how the proof of BSN can be
 adapted to a cubical metatheory, using higher inductive types to encode
 quotient inductive types.
 
@@ -291,7 +291,7 @@ as a special case of higher inductive types. However, the use of a cubical
 metatheory also adds some minor technical complications. Thus, for simplicity,
 this paper is instead presented in a strict, intentional Martin-Löf Type Theory,
 extended with QIIT. Functional extensionality is assumed, and can in fact be
-proved using the interval quotient type. See section~\ref{sec:cubical} for more
+proved using the interval quotient type. See \cref{sec:cubical} for more
 details on the implementation of the proof in a cubical metatheory.
 
 Our metatheoretic notations are loosely based on the syntax of Agda. Function
@@ -308,7 +308,7 @@ definitions. The transport of $x : P\ a$ along an equality $p : a \equiv b$ is
 denoted by $_{p*}x : P\ b$. If $p : a \equiv b$, the type of dependent
 equalities between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by
 $x \equiv^p y$. For simplicity and readability, transports and dependent
-equality types will be omitted starting from section~\ref{sec:weakening}.
+equality types will be omitted starting from \cref{sec:weakening}.
 
 In definitions and lemmas, any free variable is implicitly universally
 quantified, and its type can be inferred from the context, and the name
@@ -753,7 +753,7 @@ lemmas.
   \]
 \end{lemma}
 \begin{proof}
-  By simultaneous induction on the definition of the evaluation relation.
+  By simultaneous induction on the definitions of the relations $\eval$, $\evals$, and $@$.
 \end{proof}
 A soundness property follows.
 \begin{lemma}
@@ -776,7 +776,7 @@ A soundness property follows.
   \]
 \end{lemma}
 \begin{proof}
-  Using lemma~\ref{lem:evalCompl}, and that embeddings of values and
+  Using \autoref{lem:evalCompl}, and that embeddings of values and
   environments are injective by $\qVal$ and $\qEnv$.
 \end{proof}
 
@@ -789,8 +789,8 @@ shared with normalisation by evaluation (cf.~\cite{kaposi2016normalisation}).
 Like values, normal forms are defined mutually with neutral normal forms,
 i.e.\ the application of a variable to normal forms. An important difference
 is that not all neutral normal forms are normal forms: it is only true for
-neutral normal forms of the base types $\U$ and $\El$. This restriction ensures
-that normal forms are sufficiently $\eta$-expanded.
+neutral normal forms of the base types (i.e.\ $\U$ and $\El$). This restriction
+ensures that normal forms are sufficiently $\eta$-expanded.
 \begin{flalign*}
   & \data\ \Nf : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \Nf\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
@@ -822,7 +822,7 @@ complicate matters, and it is easier to first normalise a term without worrying
 about its type, then recursively normalise the type. A disadvantage of this
 choice is that equality of normal forms is not a priori decidable, because it
 would require to test equality of types, and in turn equality of terms.
-However, this issue can be solved after the normalisation function is defined
+This issue can be solved once the normalisation function is defined
 by proving decidability of equality for terms, normal forms, and types
 simultaneously, as shown in~\cite{kaposi2016normalisation}.
 
@@ -865,7 +865,7 @@ step semantics of $\q$, with the following signature.
   & \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop
 \end{align*}
 
-A coherence result in the style of lemma~\ref{lem:evalCompl} is proved by
+A coherence result in the style of \cref{lem:evalCompl} is proved by
 induction on the relation.
 \begin{lemma}
   \label{lem:quoteCompl}
@@ -894,7 +894,7 @@ With this definition, stability and completeness of BSN can already be proved.
   \]
 \end{theorem}
 \begin{proof}
-  Immediate by lemmas~\ref{lem:evalCompl} and~\ref{lem:quoteCompl}.
+  Immediate by \cref{lem:evalCompl,lem:quoteCompl}.
 \end{proof}
 \begin{theorem}[Stability]
   \label{thm:stability}
@@ -937,7 +937,7 @@ dependent types. Using this simplified induction principle, it is fairly straigh
 forward to adapt the proof of termination for simple types~\cite{chapman2009bsn},
 based on the strong computability predicate.
 
-\subsection{Soundness, for free}
+\subsection{Soundness, by NBE}
 The original presentation of BSN for the simply-typed lambda-calculus proves
 soundness using a logical binary relation, similar to the use of strong
 computability for termination presented later in this section. Unfortunately,
@@ -964,7 +964,7 @@ forms is injective.
   \[ \AXC{$\norm\ u \Da n$}\AXC{$\norm\ u \Da m$}\BIC{$n \equiv m$}\DP \]
 \end{theorem}
 \begin{proof}
-  Immediate theorems~\ref{thm:completeness} and~\ref{thm:nbe}.
+  Immediate by \cref{thm:completeness,thm:nbe}.
 \end{proof}
 
 It can of course be argued that defining a normalisation function using another
@@ -1084,7 +1084,7 @@ problematic induction given at the beginning of this subsection becomes valid.
   defined on any type $C$ with the same skeleton as either $A$ or $B$.
 \end{lemma}
 \begin{proof}
-  The proof is the same as for lemma~\ref{lem:typeInduction}, but additionally
+  The proof is the same as for \cref{lem:typeInduction}, but additionally
   uses the skeletons as size indicators to ensure that the inductive definition
   is well-founded. Formally, this means that the function is defined by
   induction on type skeletons, then by pattern matching on the types of a given
@@ -1098,7 +1098,7 @@ computability, together with some important lemmas.
 
 Strong computability is defined by induction on types, as termination of $\q$
 for base types, and stability by application for function types. The
-generalised induction principle of lemma~\ref{lem:typeInduction2} is used.
+generalised induction principle of \cref{lem:typeInduction2} is used.
 \begin{flalign*}
   & \scv : \{A : \Ty\} \to \Val\ \Gamma\ A \to \Set \\ &
   \begin{alignedat}{3}
@@ -1135,7 +1135,7 @@ Strong computability is extended to environments pointwise.
 \end{flalign*}
 
 Let us now prove some lemma on strong computability. Throughout this subsection,
-we implicitly use lemma~\ref{lem:typeInduction2} when proceeding by induction on
+we implicitly use \cref{lem:typeInduction2} when proceeding by induction on
 types.
 \begin{lemma}
   \label{lem:scvWk}
@@ -1163,7 +1163,7 @@ types.
 
 \begin{lemma}
   Strong computability is a mere proposition, i.e.\ any two proofs of strong
-  computability are computationally equivalent.
+  computability are equal.
   \label{lem:scvProp}
   \[
     \AXC{$p,q : \scv\ v$}\UIC{$p \equiv q$}\DP \qquad
@@ -1179,8 +1179,8 @@ types.
     \BIC{$n \equiv m$}
     \DP
   \]
-  which follows easily from lemma~\ref{lem:quoteCompl} and theorem~\ref{thm:nbe}.
-  For function types, lemma~\ref{lem:evalSound} is used.
+  which follows easily from \cref{lem:quoteCompl,thm:nbe}.
+  For function types, \cref{lem:evalSound} is used.
 
   For environments, the proof is trivial by induction.
 \end{proof}
@@ -1219,7 +1219,7 @@ simultaneously.
   $\neu\ (\var\ \vz)$ is strongly computable by induction hypothesis.
   Then by definition of strong computability $f^{+A}\ @\ \neu\ (\var\ \vz) \Da v$
   holds for some strongly computable $v$, and we may verify using
-  lemma~\ref{lem:evalCompl} that $v$ has type $B$. Since $v$ is strongly
+  \cref{lem:evalCompl} that $v$ has type $B$. Since $v$ is strongly
   computable of type $B$, there exist by induction hypothesis
   $n : \Nf\ (\Gamma,A)\ B$ such that $\q\ v \Da n$.
   Therefore, $\q\ f \Da (\lam\ n)$.
@@ -1250,9 +1250,9 @@ simultaneously.
   \[ \AXC{$\Gamma : \Con$}\UIC{$\sce\ \idenv_{\Gamma}$}\DP \]
 \end{lemma}
 \begin{proof}
-  Lemma~\ref{lem:quote} implies that all variables are strongly computable
+  \Cref{lem:quote} implies that all variables are strongly computable
   because they are neutral values for which $\qn$ trivially terminates. The
-  result follows by induction on $\Gamma$, using lemma~\ref{lem:scvWk}.
+  result follows by induction on $\Gamma$, using \cref{lem:scvWk}.
 \end{proof}
 
 \subsection{Termination}
@@ -1281,12 +1281,12 @@ constructors are unproblematic, in the sense that the proofs does not change
 significantly compared to the case of an unquotiented syntax. However, we also
 need to verify that quotient constructors are respected, i.e.\ that for every
 equality constructor $u \equiv v$, the proof (seen as a function) of
-theorem~\ref{thm:eval} gives equal results on $u$ and $v$.
+\cref{thm:eval} gives equal results on $u$ and $v$.
 
 A simple way to ensure this is to prove that the types corresponding to
-theorem~\ref{thm:eval} are mere propositions. In that case, when considering
+\cref{thm:eval} are mere propositions. In that case, when considering
 an equality constructor $u \equiv v$, the result of a proof of
-theorem~\ref{thm:eval} on $u$ and $v$ will necessarily be equal since both are
+\cref{thm:eval} on $u$ and $v$ will necessarily be equal since both are
 elements of the same mere proposition.
 \begin{lemma}
   \label{lem:evalProp}
@@ -1298,17 +1298,17 @@ elements of the same mere proposition.
   \end{align*}
 \end{lemma}
 \begin{proof}
-  By lemma~\ref{lem:evalSound}, a term can only evaluate to a single value $v$.
+  By \cref{lem:evalSound}, a term can only evaluate to a single value $v$.
   Furthermore, the types $\eval\ u\ \rho \Da v$ and $\scv\ v$ are mere
-  propositions, by definition and by lemma~\ref{lem:scvProp} respectively.
+  propositions, by definition and by \cref{lem:scvProp} respectively.
   The result follows. The proof is similar in the case of substitutions.
 \end{proof}
 
-\begin{proof}[Proof of Theorem~\ref{thm:eval}]
+\begin{proof}[Proof of \cref{thm:eval}]
   By induction on terms and substitutions. We split the constructors into three
   groups:
   \begin{itemize}
-  \item All quotient constructors are respected by lemma~\ref{lem:evalProp}.
+  \item All quotient constructors are respected by \cref{lem:evalProp}.
   \item Almost all regular constructors are very straightforward: the result of
     evaluation is obtained by following the definition of the evaluator and
     applying the induction hypotheses, and strong computability of the result
@@ -1320,17 +1320,17 @@ elements of the same mere proposition.
     closure is strongly computable.
 
     Let $\alpha : \Vars\ \Theta\ \Delta$, and $v : \Val\ \Theta\ (A[\cul \rho \cur]^{+\alpha})$
-    strongly computable. Then by lemma~\ref{lem:scvWk}, $(\rho^{+\alpha},v)$ is
+    strongly computable. Then by \cref{lem:scvWk}, $(\rho^{+\alpha},v)$ is
     a strongly computable environment, hence by induction hypothesis there exists
     $w$ strongly computable such that $\eval\ u\ (\rho^{+\alpha},v) \Da w$.
     It follows that $(\clos\ u\ \rho)^{+\alpha}\ @\ v \Da w$. Finally, we
-    may verify using lemma~\ref{lem:evalCompl} that the type of $w$ must have
+    may verify using \cref{lem:evalCompl} that the type of $w$ must have
     the same skeleton as $B$. It follows that $\clos\ u\ \rho$ is strongly
     computable.
   \item Consider an application $\app\ u$ with $u : \Tm\ \Gamma\ (\Pi\ A\ B)$
     evaluated in a strongly computable environment $(\rho,v) : \Env\ \Delta\ (\Gamma,A)$.
     By induction hypothesis, there exists $f$ strongly computable such that
-    $\eval\ u\ \rho \Da f$. It can be verified using lemma~\ref{lem:evalCompl}
+    $\eval\ u\ \rho \Da f$. It can be verified using \cref{lem:evalCompl}
     that $f$ has type $\Pi\ (A[\cul \rho \cur])\ (B[\cul \rho \cur \lift A])$.
     Hence, because $f$ and $v$ are strongly computable, there exist $w$ strongly
     computable such that $f\ @\ v \Da w$. Then we obtain by the definition of
@@ -1345,16 +1345,16 @@ elements of the same mere proposition.
   \[ \AXC{$u : \Tm\ \Gamma\ A$}\UIC{$\Sigma(n : \Nf\ \Gamma\ A),\ \norm\ u \Da n$}\DP \]
 \end{theorem}
 \begin{proof}
-  Let $u : \Tm\ \Gamma\ A$. By lemma~\ref{lem:idenvsc} and theorem~\ref{thm:eval},
+  Let $u : \Tm\ \Gamma\ A$. By \cref{lem:idenvsc,thm:eval},
   there exist $v$ strongly computable such that $\eval\ u\ \idenv \Da v$.
-  By lemma~\ref{lem:evalCompl}, one may verify that $v$ has type $A$.
-  Finally, by lemma~\ref{lem:quote}, there exist $n : \Nf\ \Gamma\ A$ such that
+  By \cref{lem:evalCompl}, one may verify that $v$ has type $A$.
+  Finally, by \cref{lem:quote}, there exist $n : \Nf\ \Gamma\ A$ such that
   $\q\ v \Da n$. It follows that $\norm\ u \Da n$.
 \end{proof}
 
-By theorems~\ref{thm:soundness} and~\ref{thm:termination}, $\norm$ defines a
+By \cref{thm:soundness,thm:termination}, $\norm$ defines a
 function from quotiented terms to normal forms, and by
-theorems~\ref{thm:completeness} and~\ref{thm:stability}, it is the inverse of
+\cref{thm:completeness,thm:stability}, it is the inverse of
 the embedding of normal forms. Therefore, we have proved that big step
 normalisation defines a normalisation function.
 
