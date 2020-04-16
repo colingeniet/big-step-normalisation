@@ -88,7 +88,7 @@
 
 \keywords{Normalisation, big step normalisation, type theory, dependent types, Agda}
 
-\supplement{https://github.com/colingeniet/big-step-normalisation}
+\supplement{\url{https://github.com/colingeniet/big-step-normalisation}}
 
 %Editor-only macros:: begin (do not touch as author)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \EventEditors{}
@@ -1360,14 +1360,17 @@ normalisation defines a normalisation function.
 
 \section{Formalisation of BSN in a Cubical Type Theory}
 \label{sec:cubical}
-For simplicity, we have presented this paper in a strict type theory. However,
-our formalisation of big step normalisation was instead done in a cubical type
-theory (CTT, cf.~\cite{cchm}) using the cubical mode of Agda~\cite{norell2007agda}.
-This choice allows to easily express QIIT as a special case of higher inductive
-types (HIT, cf.~\cite{hott}), which from the technical point of view is a
-notable improvement over previous implementations of QIIT in non-cubical Agda,
-which had to introduce all quotient constructors as additional axioms
-(e.g.~\cite{kaposi2016normalisation,kaposi2016type}).
+Most of the present work has been formalised~\cite{formalisation} using
+Agda~\cite{norell2007agda}. Precisely, \cref{sec:syntax,sec:weakening,sec:normalisation}
+have been fully formalised, and \cref{sec:correctness} partially so---what
+remains to do in the latter is equality reasoning.
+This formalisation is expressed in a cubical type theory (CTT, cf.~\cite{cchm})
+using the cubical mode of Agda. This differs from the the present paper, which
+uses a strict type theory for simplicity. The choice of CTT allows to easily
+express QIIT as a special case of higher inductive types (HIT, cf.~\cite{hott}),
+which from the technical point of view is a notable improvement over previous
+implementations of QIIT in non-cubical Agda, which had to introduce all quotient
+constructors as additional axioms (e.g.~\cite{kaposi2016normalisation,kaposi2016type}).
 
 As explained in~\cite{kaposi2016type}, simply considering a QIIT as a special
 case of HIT leads to unexpected results. For instance, in the case of the
@@ -1398,7 +1401,7 @@ implementation of QIIT, there are two problems to solve:
     $L : (x : A) \to f(x) \equiv g(x)$ by induction on a QIIT $A$.
     Indeed, for a quotient constructor of type $a \equiv b$ in $A$, we need to
     provide an equality between equalities $L(a) \equiv L(b)$, which is trivial
-    with UIP --- hence why such cases are neglected in the proof --- but is
+    with UIP---hence why such cases are neglected in the proof---but is
     in general problematic in a non-strict metatheory.
     An example is the coherence lemmas for weakening of values.
   }
