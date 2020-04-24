@@ -310,13 +310,9 @@ equalities between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by
 $x \equiv^p y$. For simplicity and readability, transports and dependent
 equality types will be omitted starting from \cref{sec:weakening}.
 
-In definitions and lemmas, any free variable is implicitly universally
-quantified, and its type can be inferred from the context, and the name
-conventions.
-
-Finally, inductive types are introduced by $\data$, followed by the sort of the
-defined type, and the signatures of the constructors. Inductive functions are
-defined by pattern-matching. For instance:
+Inductive types are introduced by $\data$, followed by the sort of the defined
+type, and the signatures of the constructors. Inductive functions are defined
+by pattern-matching. For instance:
 \begin{flalign*}
   & \data\ \mathbb{N} : \Set\ \where
   && \_+\_ : \mathbb{N} \to \mathbb{N} \to \mathbb{N} && \\ & \ind
@@ -346,6 +342,10 @@ it must map the elements equated by a quotient constructors to images which are
 provably equal. For instance, to define a function on $\mathbb{I}$ by induction,
 one must specify the images $f(a)$ and $f(b)$, then prove that $f(a) \equiv f(b)$.
 The reader may refer to~\cite{kaposi2016type} for more details on QIIT.
+
+Finally, we use the convention that free variables in definitions and lemmas are
+implicitly universally quantified. When this is the case, the type can be
+inferred from the context and the naming conventions.
 
 \section{Quotiented Syntax of Type Theory}
 \label{sec:syntax}
