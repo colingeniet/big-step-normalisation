@@ -169,7 +169,7 @@ lambda-calculus with coproducts~\cite{altenkirch2001normalization}.
 \emph{Big step normalisation}~(BSN) is an alternative, purely syntactic
 normalisation method, proposed in~\cite{chapman2009bsn} by Chapman and the
 first author for the simply-typed lambda-calculus.
-The normalisation function is defined in two parts. First, terms are
+The normalisation algorithm is defined in two parts. First, terms are
 evaluated by an environment machine, yielding syntactic values. Then, values are
 mapped to normal forms by a function named $\q$. Normalisation $\norm$ is done
 by evaluating in the identity environment, then applying $\q$ on the resulting value.
@@ -560,11 +560,13 @@ $u^{+A}$ for $u^{+ (\wk\ A\ \id)}$.
 \section{Normalisation Relation}
 \label{sec:normalisation}
 This section defines the big step normalisation algorithm using the previous
-syntax of type theory. As further explained below, this algorithm can not yet
-be formally defined as a function, and we instead define it as a relation.
+syntax of type theory. As further explained in \cref{sec:evaluation}, this
+algorithm can not yet be formally defined as a function. Thus, it is defined
+as a relation in order to carry out the correctness proof.
 
 We first define values and the evaluation from terms to values, then normal
-forms and the function $\q$ mapping values to normal forms.
+forms and the function $\q$ mapping values to normal forms. Normalisation is
+done by applying evaluation followed by $\q$.
 
 \subsection{Values}
 A value is either a closure, corresponding to the delayed evaluation of a
@@ -648,6 +650,7 @@ weakening of environments.
 
 
 \subsection{Evaluation}
+\label{sec:evaluation}
 The first stage of normalisation is an environment machine, which evaluate
 terms in an environment, and returns values. It consists of three mutually
 defined functions: $\eval$ and $\evals$ evaluate terms and substitutions
@@ -691,11 +694,15 @@ recursive: the last case of $\eval$ applies $\_@\_$ to $\eval\ u\ p$, which
 is an a priori arbitrary term. Thus it is not clear that the evaluator
 terminates.
 
-Proving that this definition of the evaluator as a function is correct is
-non-trivial, but this issue can be delayed by considering its big step
-semantics, which means that we redefine the evaluator as a relation between
-inputs and output. For instance, we denote by $\eval\ t\ \rho \Da v$ the
-proposition `$t$ evaluates to $v$ in environment $\rho$'.
+The proof of correctness of this algorithm is not trivial, and is the subject
+of \cref{sec:correctness}. For now, we will only define the algorithm, i.e.\
+we consider the previous definition as a \emph{programming} function, rather
+than an (incorrect) mathematical function. However, a program in itself is not
+an object with a formal definition in type theory. In order to transform the
+algorithm into a formal object which we will manipulate in later proofs, we
+redefine it as its big step semantics, that is the relation between inputs and
+outputs of the evaluator. For instance, we denote by $\eval\ t\ \rho \Da v$
+the proposition `$t$ evaluates to $v$ in environment $\rho$'.
 \begin{flalign*}
   & \data\ \eval\_\,\_\Da\_ : \Tm\ \Delta\ A \to \Env\ \Gamma\ \Delta \to
                               \Val\ \Gamma\ B \to \Prop\ \where \\ & \ind
