@@ -1,5 +1,6 @@
-\documentclass[a4paper,UKenglish,cleveref]{lipics-v2019}
+\documentclass[a4paper,UKenglish,cleveref,draft]{lipics-v2019}
 
+\overfullrule=1mm
 
 \usepackage{bussproofs}
 \EnableBpAbbreviations
@@ -47,8 +48,6 @@
 \newcommand{\norm}{\agdaSymb{norm}}
 \newcommand{\scv}{\agdaSymb{scv}}
 \newcommand{\sce}{\agdaSymb{sce}}
-\newcommand{\fst}{\agdaSymb{fst}}
-\newcommand{\snd}{\agdaSymb{snd}}
 \newcommand{\U}{\agdaSymb{U}}
 \newcommand{\El}{\agdaSymb{El}}
 \newcommand{\TV}{\agdaSymb{STy}}
@@ -603,12 +602,12 @@ denoted by $\rho,\omega$), together with the associated embeddings.
   && \cul\_\cur : \Env\ \Gamma\ \Delta \to \Tms\ \Gamma\ \Delta \\ & \ind
   \begin{alignedat}{3}
     & \epsilon && :\ && \Env\ \Gamma\ \bullet \\
-    & \_,\_ && : && (\rho : \Env\ \Gamma\ \Delta) \to \Val\ \Gamma\ (A[\cul\rho\cur]) \\
-    &       &&   && \to \Env\ \Gamma\ (\Delta,A)
+    & \_,\_ && : && (\rho : \Env\ \Gamma\ \Delta) \to \Val\ \Gamma\
+    (A[\cul\rho\cur]) \to \Env\ \Gamma\ (\Delta,A)
   \end{alignedat} &&
   \begin{alignedat}{2}
     & \cul \epsilon \cur && = \epsilon \\
-    & \cul \rho,v \cur && = \cul \rho \cur , \cul v \cur \\ &
+    & \cul \rho,v \cur && = \cul \rho \cur , \cul v \cur
   \end{alignedat}
 \end{flalign*}
 
@@ -619,7 +618,7 @@ closure $\clos\ u\ \rho$, if the body $u$ never refers to the environment $\rho$
 then modifying $\rho$ yields a distinct but equivalent value. Then, evaluation
 would map equivalent terms to distinct values, hence could not be defined on the
 quotiented syntax. This is fixed by the following quotient constructor,
-which forces embedding of values to be injective.
+which forces equivalent values to be equal.
 \begin{flalign*}
   & \data\ \Val\ \where \\
   & \ind \qVal : (v\ w : \Val\ \Gamma\ A) \to \cul v \cur \equiv \cul w \cur \to v \equiv w
@@ -627,19 +626,10 @@ which forces embedding of values to be injective.
 The corresponding result for environments can be proved by induction on contexts.
 \[ \qEnv : (\rho\ \omega : \Env\ \Gamma\ \Delta) \to
   \cul \rho \cur \equiv \cul \omega \cur \to \rho \equiv \omega \]
-To complete this definition, weakening is defined by induction on values,
-neutral values, and environments. We omit the definitions and the associated lemmas.
-
-Finally, let us introduce two useful constructions on environments.
-Projections are simply defined by pattern matching.
-\begin{flalign*}
-  & \fst : \Env\ \Gamma\ (\Delta,A) \to \Env\ \Gamma\ \Delta
-  && \snd : (\rho : \Env\ \Gamma\ (\Delta,A)) \to \Val\ \Gamma\ A[\cul \fst\ \rho \cur] \\
-  & \fst\ (\rho,v) = \rho
-  && \snd\ (\rho,v) = v
-\end{flalign*}
-The identity environment is defined by induction on the context, and uses
-weakening of environments.
+Weakening is defined by induction on values, neutral values, and environments,
+we omit the definitions and the associated lemmas. Finally, the identity
+environment is defined by induction on the context, and uses weakening of
+environments.
 \begin{flalign*}
   & \idenv : \{\Gamma : \Con\} \to \Env\ \Gamma\ \Gamma \\ &
   \begin{alignedat}{2}
@@ -647,7 +637,6 @@ weakening of environments.
     & \idenv_{\Gamma,A} && = {\idenv_{\Gamma}}^{+A} \,,\, \neu\,(\var\ \vz)
   \end{alignedat}
 \end{flalign*}
-
 
 \subsection{Evaluation}
 \label{sec:evaluation}
@@ -660,7 +649,7 @@ value to another.
 \begin{flalign*}
   & \eval : \Tm\ \Delta\ A \to (\rho : \Env\ \Gamma\ \Delta) \to \Val\ \Gamma\ A[\cul \rho \cur] \\ &
   \begin{alignedat}{2}
-    & \eval\ (\pi_2\, \sigma)\ \rho && = \snd\ (\evals\ \sigma\ \rho) \\
+    & \eval\ (\pi_2\, \sigma)\ \rho && = \Alet\ (\omega,v) = (\evals\ \sigma\ \rho)\ \Ain\ v\ \\
     & \eval\ (u[\sigma])\ \rho && = \eval\ u\ (\evals\ \sigma\ \rho) \\
     & \eval\ (\lam u)\ \rho && = \clos\ u\ \rho \\
     & \eval\ (\app\ u)\ (\rho,v) && = (\eval\ u\ \rho)\ @\ v
@@ -672,7 +661,7 @@ value to another.
     & \evals\ (\sigma \circ \nu)\ \rho && = \evals\ \sigma\ (\evals\ \nu\ \rho) \\
     & \evals\ \epsilon\ \rho && = \epsilon \\
     & \evals\ (\sigma,u)\ \rho && = (\evals\ \sigma\ \rho) , (\eval\ u\ \rho) \\
-    & \evals\ (\pi_1\, \sigma)\ \rho && = \fst\ (\evals\ \sigma\ \rho)
+    & \evals\ (\pi_1\, \sigma)\ \rho && = \Alet\ (\omega,v) = (\evals\ \sigma\ \rho)\ \Ain\ \omega\ \\
   \end{alignedat}
   \displaybreak[0] \\
   & \_@\_ : \Val\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \to \Val\ \Gamma\ B[<\cul v \cur>] \\ &
@@ -685,6 +674,9 @@ Most cases are straightforward. Note how evaluation of a lambda simply returns
 a closure, delaying the evaluation of the body. The latter occurs in the first
 case of $\_@\_$, as the application of a closure to a value is computed by
 evaluating the body of the closure in the extended environment.
+Evaluation of the projections $\pi_1$, $\pi_2$ performs a projection on an
+environment, expressed through the $\Alet \dots \Ain$ construct with an
+obvious meaning.
 
 However, there are several problems with this presentation of the evaluator.
 Firstly, the functions are defined by recursion on terms and substitutions,
