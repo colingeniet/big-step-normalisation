@@ -1,4 +1,4 @@
-\documentclass[a4paper,UKenglish,cleveref,draft]{lipics-v2019}
+\documentclass[a4paper,UKenglish,cleveref]{lipics-v2019}
 
 \overfullrule=1mm
 
@@ -348,36 +348,37 @@ inferred from the context and the naming conventions.
 
 \section{Quotiented Syntax of Type Theory}
 \label{sec:syntax}
-This section introduces the QIIT syntax of type theory used for this proof, as
-proposed by Kaposi and the first author in~\cite{kaposi2016type}. It is an
-intrinsically typed syntax, with De Bruijn indices, and explicit substitutions.
+This section introduces the syntax of type theory based on QIIT proposed by
+Kaposi and the first author in~\cite{kaposi2016type,kaposi2016normalisation}.
+The reader should refer to the former for further details.
 
-Contexts, types, substitutions and terms are mutually defined.
+It is an intrinsically typed syntax, with De Bruijn indices, and explicit
+substitutions. Contexts, types, substitutions and terms are mutually defined.
 We denote contexts by $\Gamma,\Delta,\Theta,\Phi$, types by $A,B,C$,
 substitutions by $\sigma,\nu,\delta$, and terms by $s,t,u$.
 \begin{align*}
-  & \data\ \Con : \Set \\
-  & \data\ \Ty : \Con \to \Set \\
-  & \data\ \Tms : \Con \to \Con \to \Set \\
+  & \data\ \Con : \Set
+  && \text{$\Con$ is the set of contexts} \\
+  & \data\ \Ty : \Con \to \Set
+  && \text{$\Ty\ \Gamma$ are the types in context $\Gamma$} \\
+  & \data\ \Tms : \Con \to \Con \to \Set
+  && \text{$\Ty\ \Gamma\ \Delta$ are the substitutions from $\Delta$ to $\Gamma$}\\
   & \data\ \Tm : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set
+  && \text{$\Tm\ \Gamma\ A$ are the terms of type $A$ in $\Gamma$}
 \end{align*}
 
 Syntax constructors follow closely the definition of a category with
 families~\cite{dybjer1995cwf,hofmann1997syntax} with product types. Contexts
 and substitutions form a category, types are a presheaf, and terms are a family
-of presheaves over types. There are three additional type constructors: the
-abstract base type $\U$, the abstract base dependent family $\El$,\footnote{%
-  The names $\U$ and $\El$ reflect that $\U$ is an universe, in a sense of a
-  type whose elements are themselves types (through $\El$). However, it is an
-  abstract universe, i.e.\ no element of $\U$ can be built in a closed context.
-  Of course, one can still use the context to postulate the existence of type
-  constructors in $\U$.
-}
-and the  function types $\Pi$. Each of these type constructors comes with an
-equation describing its interaction with substitutions.
-
-The constructors are listed below, with regular constructors on the left, and
-equality constructors on the right.
+of presheaves over types. The constructor for dependent function types is
+denoted by $\Pi$. There is a base type $\U$, and a base dependent family $\El$
+indexed by $\U$. One may see $\U$ as a universe, i.e.\ a type whose elements
+are types, when interpreted through $\El$---this is reflected by the names of
+the constructors. However, because we only consider a minimalist type theory,
+it is solely an abstract universe, meaning that no element of $\U$ can be
+built in a closed context. Nonetheless, one may use the contexts to postulate
+some type constructors in $\U$. The constructors are listed below, with
+regular constructors on the left, and equality constructors on the right.
 \begin{flalign*}
   % Contexts
   & \data\ \Con\ \where \\ & \ind
@@ -407,7 +408,7 @@ equality constructors on the right.
     & \id       && :\ && \Tms\ \Gamma\ \Gamma \\
     & \_\circ\_ && : && \Tms\ \Delta\ \Theta \to \Tms\ \Gamma\ \Delta\ \to \Tms\ \Gamma\ \Theta \\
     & \epsilon  && : && \Tms\ \Gamma\ \bullet \\
-    & \_,\_     && : && (\sigma : \Tms\ \Gamma\ \Delta) \to \Tm\ \Gamma\ (A[\sigma]) \\
+    & \_,\_     && : && (\sigma : \Tms\ \Gamma\ \Delta) \to \Tm\ \Gamma\ A[\sigma] \\
     &           &&   && \to \Tms\ \Gamma\ (\Delta,A) \\
     & \pi_1     && : && \Tms\ \Gamma\ (\Delta,A) \to \Tms\ \Gamma\ \Delta \\ &
   \end{alignedat} && \ind
@@ -426,7 +427,7 @@ equality constructors on the right.
   \begin{alignedat}{3}
     & \pi_2     && :\ && (\sigma : \Tms\ \Gamma\ (\Delta,A)) \to \Tm\ \Gamma\ (A[\pi_1 \sigma]) \\
     & \_[\_]    && : && \Tm\ \Delta\ A \to (\sigma : \Tms\ \Gamma\ \Delta) \\
-    &           &&   && \to \Tm\ \Gamma\ (A[\sigma]) \\
+    &           &&   && \to \Tm\ \Gamma\ A[\sigma] \\
     & \lam      && : && \Tm\ (\Gamma,A)\ B \to \Tm\ \Gamma\ (\Pi\ A\ B) \\
     & \app      && : && \Tm\ \Gamma\ (\Pi\ A\ B) \to \Tm\ (\Gamma,A)\ B
   \end{alignedat} && \ind
@@ -445,16 +446,30 @@ defined as follows.
   & \sigma \lift A = (\sigma \circ \pi_1\,\id) , (_{[\circ]^{-1}*}\pi_2\,\id)
 \end{align*}
 
-While this syntax does not contain the usual application operator of the
-lambda-calculus, it can reconstructed by combining the categorical application
-and the substitution of a single term $<\_>$.
+This syntax uses a categorical application constructor $\app$, which is
+essentially the inverse of $\lam$. One may understand $\app\ f$ as the
+application of $f$ to a fresh variable. In order to obtain the usual
+application, denoted $\_\$\_$, this fresh variable must be substituted by the
+argument. We denote this substitution of the last variable in the context by
+$<\_>$.
 \begin{alignat*}{2}
-  & <\_> && : \Tm\ \Gamma\ A \to \Tms\ \Gamma\ (\Gamma,A) \\
-  & <u> && = \id\,,\,_{[\id]^{-1} *}u \\
+  & <\_> && : \Tm\ \Gamma\ A \to \Tms\ \Gamma\ (\Gamma,A) \\ & <u> && = \id\,,\,_{[\id]^{-1} *}u \\
   & \_\$\_ && : \Tm\ \Gamma\ (\Pi\ A\ B) \to (u : \Tm\ \Gamma\ A) \to \Tm\ \Gamma\ (B[<u>]) \\
   & f\ \$\ u && = (\app\, f)[<u>]
 \end{alignat*}
 
+As a simple example, let us translate the lambda term $\lambda x^A . \lambda
+y^B . x$ to this syntax. We assume that $A$ is type in context $\Gamma$, and
+$B$ a type in context $\Gamma,A$ (or in short $\Gamma:\Con$, $A:\Ty\ \Gamma$,
+$B:\Ty\ (\Gamma,A)$), so that $\Gamma,A,B$ is a context.
+We start with $\id$, intuitively the substitution containing all variables in
+context.
+\[ \id : \Tms\ (\Gamma,A,B)\ (\Gamma,A,B) \]
+The second to last variable in the context, corresponding to $x$, is retrieved
+through projections.
+\[ \pi_2 (\pi_1\,\id) : \Tm\ (\Gamma,A,B)\ A[\pi_1\,\id] \]
+All that remains is to add the abstractions.
+\[ \lam (\lam (\pi_2 (\pi_1\,\id))) : \Tm\ \Gamma\ (\Pi\ A\ (\Pi\ B\ A[\pi_1\,\id])) \]
 
 \section{Weakenings}
 \label{sec:weakening}
