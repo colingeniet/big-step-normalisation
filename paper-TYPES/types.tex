@@ -74,6 +74,10 @@
 {School for Computer Science, University of Nottingham, United Kingdom}
 {txa@cs.nott.ac.uk}{}{}
 
+\funding{The first author was supported by COST Action
+    EUTypes CA15123 and USAF, Airforce office for scientific research,
+    award FA9550-16-1-0029}
+
 \author{Colin Geniet}
 {Computer Science Department, ENS Paris-Saclay, France}
 {colin.geniet@ens-paris-saclay.fr}{}{}
@@ -109,7 +113,7 @@
 \begin{abstract}
   Big step normalisation is a normalisation method for typed lambda-calculi
   which relies on a purely syntactic recursive evaluator. Termination of that
-  evaluator is proved using a predicate called strong computability, similar to
+  evaluator is proven using a predicate called strong computability, similar to
   the techniques used to prove strong normalisation of $\beta$-reduction for
   typed lambda-calculi. We generalise big step normalisation to a minimalist
   dependent type theory. Compared to previous presentations of big step
@@ -133,6 +137,8 @@ and an embedding $\cul\_\cur$ of normal forms into terms, satisfying
 \item[completeness] For every term $u$, $\cul \norm\ u \cur \Beq u$
 \item[stability] For every normal form $n$, $\norm\ \cul n \cur = n$
 \end{description}
+\footnote{The choice of the words \emph{soundness} and
+  \emph{completeness} comes from viewing normal forms as a model.}
 
 The traditional way to define a normalisation function is through rewriting
 theory. One proves that $\beta\eta$-reduction is confluent, and terminates%
