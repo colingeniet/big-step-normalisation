@@ -191,7 +191,7 @@ The following results can then be proved.
   $\q$ terminates is SC.
 \item In a SC environment, evaluation terminates and yields SC results.
 \end{itemize}
-Termination of $\norm$ follows from those results. Completeness and
+Termination of $\norm$ follows from these results. Completeness and
 stability are straightforward. The proof of soundness is more involved, and
 shares some similarities with the proof of termination, but replaces strong
 computability with a binary relation on values.
@@ -272,10 +272,11 @@ normalisation by evaluation in this syntax~\cite{kaposi2016normalisation}.
 This quotiented syntax is closely related to categories with
 families~\cite{dybjer1995cwf,hofmann1997syntax}, in that the syntax is
 essentially an initial category with families. The syntax is formalised using
-quotient inductive-inductive types (QIIT), which were previously used in~\cite{hott}
---- although not under that name --- to e.g.\ define Cauchy reals in type theory.
-More recently, the precise notion and semantics of QIIT has been the subject of
-work such as~\cite{altenkirch2018quotient,dijkstra2017quotient,kaposi2019quotient}.
+quotient inductive-inductive types (QIIT), which were previously used
+in~\cite{hott}---although not under that name---to e.g.\ define Cauchy reals
+in type theory. More recently, the precise notion and semantics of QIIT has
+been the subject of work such
+as~\cite{altenkirch2018quotient,dijkstra2017quotient,kaposi2019quotient}.
 
 
 \section{Metatheory and Notations}
@@ -306,8 +307,8 @@ equalities between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by
 $x \equiv^p y$. For simplicity and readability, transports and dependent
 equality types will be omitted starting from \cref{sec:weakening}.
 
-Inductive types are introduced by $\data$, followed by the sort of the defined
-type, and the signatures of the constructors. Inductive functions are by
+Inductive types are introduced by $\data$, the sort of the defined type, and
+the signatures of the constructors. Inductive functions are defined by
 pattern-matching. For instance:
 \begin{flalign*}
   & \data\ \mathbb{N} : \Set\ \where
@@ -349,7 +350,7 @@ This section introduces the syntax of type theory based on QIIT proposed by
 Kaposi and the first author in~\cite{kaposi2016type,kaposi2016normalisation}.
 The reader should refer to the former for further details.
 
-It is an intrinsically typed syntax, with De Bruijn indices, and explicit
+This syntax is intrinsically typed, with De Bruijn indices, and explicit
 substitutions. Contexts, types, substitutions and terms are mutually defined.
 We denote contexts by $\Gamma,\Delta,\Theta,\Phi$, types by $A,B,C$,
 substitutions by $\sigma,\nu,\delta$, and terms by $s,t,u$.
@@ -478,9 +479,9 @@ latter uses the name `renamings' instead.
 
 Variables, denoted by $x,y,z$, are defined as typed De Bruijn indices, with
 constructors $\vz$ and $\vs$ standing for `0' and successor.
-Variables can be embedded into terms by applying projections to $\id$ ---
-intuitively, $\id$ is the substitution formed by all the variables in context.
-\begin{flalign*}
+Variables can be embedded into terms by applying projections to
+$\id$---intuitively, $\id$ is the substitution formed by all the variables in
+context.  \begin{flalign*}
   & \data\ \Var\ : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \Var\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
   \begin{alignedat}{2}
@@ -740,7 +741,7 @@ the proposition `$t$ evaluates to $v$ in environment $\rho$'.
 \end{flalign*}
 The types of the above relations may seem surprisingly imprecise. For instance,
 the type of $\eval$ does not give any information on the type of the return
-value --- it is a value of some unknown type $B$ --- whereas we know that
+value---it is a value of some unknown type $B$---whereas we know that
 it should have type $A[<\cul \rho \cur>]$ when evaluating in environment $\rho$.
 Similarly, we do not even require the first argument of $@$ to be a function.
 It would be possible to define the evaluation relation with more restrictive
@@ -959,7 +960,7 @@ this proof seems hard to adapt to the quotiented syntax.
 However there is an alternative proof, much shorter if not as interesting.
 The key observation is that BSN uses the same notion of normal forms as
 normalisation by evaluation (cf.~\cite{kaposi2016normalisation} for a formal
-proof of NBE for type theory --- we use the very same syntax and definition of
+proof of NBE for type theory---we use the very same syntax and definition of
 normal forms). A direct consequence of the existence of a normalisation function
 such as NBE is that there is exactly one normal form in each equivalence class
 of terms, which in the quotiented syntax means that the embedding of normal
@@ -987,7 +988,7 @@ alternative definition for the function which can also be obtained through NBE.
 This proof of soundness becomes more sensible from this point of view: as soon
 as we prove that the functions defined by NBE and BSN coincide (for which
 completeness of BSN is a key result), all correctness properties which are known
-to hold for NBE --- in particular soundness --- transfer to BSN.
+to hold for NBE---in particular soundness---transfer to BSN.
 
 \subsection{Substitution-Free Types}
 An interesting issue was mentioned while defining $\q$: the natural definition
