@@ -165,32 +165,31 @@ This method was for instance used to prove decidability of equivalence for the
 lambda-calculus with coproducts~\cite{altenkirch2001normalization}.
 
 \subsection{Big Step Normalisation}
-\emph{Big step normalisation}~(BSN) is an alternative, purely syntactic
-normalisation method, proposed in~\cite{chapman2009bsn} by Chapman and the
-first author for the simply-typed lambda-calculus.
-The normalisation algorithm is defined in two parts. First, terms are
-evaluated by an environment machine, yielding syntactic values. Then, values are
-mapped to normal forms by a function named $\q$. Normalisation $\norm$ is done
-by evaluating in the identity environment, then applying $\q$ on the resulting value.
-The embedding $\cul\_\cur$ is simply the inclusion of normal forms into terms.
+\emph{Big step normalisation}~(BSN) is a purely syntactic normalisation
+method, proposed in~\cite{chapman2009bsn} by Chapman and the first author for
+the simply-typed lambda-calculus.  The normalisation algorithm is in two
+parts. First, terms are evaluated by an environment machine, yielding
+syntactic values. Then, values are mapped to normal forms by a function named
+$\q$. Normalisation $\norm$ is done by evaluating in the identity environment,
+then applying $\q$ on the resulting value.  The embedding $\cul\_\cur$ is the
+inclusion of normal forms into terms.
 
 Evaluation and $\q$ both have fairly simple definitions, but are
 not structurally recursive, hence their termination is not obvious.
 To prove termination, a Tait-style predicate~\cite{tait1967} called
-\emph{strong computability} is defined on values:
+\emph{strong computability} (SC) is defined on values:
 \begin{itemize}
 \item A value $v$ of the base type is strongly computable if normalisation
   terminates on $v$.
-\item A value $f$ of a function type is strongly computable if it preserves
-  strong computability when applied to an argument.
+\item A value $f$ of a function type is SC if it preserves SC when applied to
+  an argument.
 \end{itemize}
 The following results can then be proved.
 \begin{itemize}
-\item $\q$ terminates on any strongly computable value, and conversely any
-  neutral value (i.e.\ a value which is not a $\lambda$-abstraction) on which
-  $\q$ terminates is strongly computable.
-\item In a strongly computable environment, evaluation terminates and yields
-  strongly computable results.
+\item $\q$ terminates on any SC value, and conversely any neutral value (i.e.\
+  a value which is not a $\lambda$-abstraction) on which
+  $\q$ terminates is SC.
+\item In a SC environment, evaluation terminates and yields SC results.
 \end{itemize}
 Termination of $\norm$ follows from those results. Completeness and
 stability are straightforward. The proof of soundness is more involved, and
@@ -199,30 +198,28 @@ computability with a binary relation on values.
 
 \subsection{BSN for Type Theory and Quotiented Syntax}
 Chapman also considered BSN for dependent type theory in~\cite{chapman2009type},
-but did not provide a full proof of correctness, owing to the important
-syntactic complexity added by the introduction of dependent types.
+but did not provide a full proof of correctness, due to the syntactic
+complexity added by dependent types.
 
 In this work, we propose some methods to simplify the proof of BSN in the case
 of dependent types, allowing us to complete it.
-The most important change is the use of the quotiented syntax of type theory
-proposed in~\cite{kaposi2016type}. By only considering terms quotiented by
-$\beta\eta$-equivalence, the syntax becomes significantly lighter. For instance,
-the coercion constructors which form a large part of the syntactic boilerplate
-encountered in~\cite{chapman2009type} become unnecessary.
+Notably, we use the quotiented syntax of type theory proposed
+in~\cite{kaposi2016type}. By only considering terms quotiented by
+$\beta\eta$-equivalence, the syntax becomes significantly lighter. For
+instance, the coercion constructors which form a large part of the syntactic
+boilerplate encountered in~\cite{chapman2009type} become unnecessary.
 
-In the context of a quotiented syntax, the notion of normalisation changes
-slightly. Let us replace equivalence of terms by equality of quotiented terms
-in our first definition of a normalisation function. Then soundness simply
-states that $\norm$ is correctly defined on the quotiented syntax, while
-completeness and stability state that $\norm$ and $\cul\_\cur$ are inverse of
-each other.
-
-This leads to the following definition proposed in~\cite{kaposi2016normalisation},
-which we use in this work: a normalisation function is simply an isomorphism
-between quotiented terms and normal forms. Obviously, this definition requires
-a sensible notion of normal forms --- the identity should not be considered as
-a normalisation function. Generally, normal forms are expected to have a simple
-inductive definition, which ensures decidability of equality.%
+With a quotiented syntax, the notion of normalisation changes slightly. If
+$\Beq$ is replaced with equality of quotiented terms in the first definition
+of a normalisation function, then soundness simply states that $\norm$ is
+correctly defined on the quotiented syntax, while completeness and stability
+state that $\norm$ and $\cul\_\cur$ are inverse of each other.  This leads to
+the following definition proposed in~\cite{kaposi2016normalisation}: a
+normalisation function is simply an isomorphism between quotiented terms and
+normal forms. Obviously, this definition requires a sensible notion of normal
+forms---one can not consider quotiented terms to be normal forms, and identity
+to be normalisation. Thus, we require normal forms to have a simple inductive
+definition, which ensures decidability of equality.%
 \footnote{%
   In the unquotiented case, the embedding of normal forms into terms (which can
   be proved to be injective) ensures that equality of normal forms is decidable,
@@ -291,7 +288,7 @@ metatheory also adds some minor technical complications. Thus, for simplicity,
 this paper is instead presented in a strict, intentional Martin-Löf Type Theory,
 extended with QIIT. Functional extensionality is assumed, and can in fact be
 proved using the interval quotient type. See \cref{sec:cubical} for more
-details on the implementation of the proof in a cubical metatheory.
+details on the implementation in a cubical metatheory.
 
 Our metatheoretic notations are loosely based on the syntax of Agda. Function
 types are written as $(x : A) \to B$, or simply $A \to B$ for non-dependent
@@ -310,8 +307,8 @@ $x \equiv^p y$. For simplicity and readability, transports and dependent
 equality types will be omitted starting from \cref{sec:weakening}.
 
 Inductive types are introduced by $\data$, followed by the sort of the defined
-type, and the signatures of the constructors. Inductive functions are defined
-by pattern-matching. For instance:
+type, and the signatures of the constructors. Inductive functions are by
+pattern-matching. For instance:
 \begin{flalign*}
   & \data\ \mathbb{N} : \Set\ \where
   && \_+\_ : \mathbb{N} \to \mathbb{N} \to \mathbb{N} && \\ & \ind
@@ -342,9 +339,9 @@ provably equal. For instance, to define a function on $\mathbb{I}$ by induction,
 one must specify the images $f(a)$ and $f(b)$, then prove that $f(a) \equiv f(b)$.
 The reader may refer to~\cite{kaposi2016type} for more details on QIIT.
 
-Finally, we use the convention that free variables in definitions and lemmas are
-implicitly universally quantified. When this is the case, the type can be
-inferred from the context and the naming conventions.
+Finally, all free variables in definitions and lemmas are implicitly
+universally quantified. Omitted types can be inferred from the context and the
+naming conventions.
 
 \section{Quotiented Syntax of Type Theory}
 \label{sec:syntax}
@@ -374,11 +371,13 @@ of presheaves over types. The constructor for dependent function types is
 denoted by $\Pi$. There is a base type $\U$, and a base dependent family $\El$
 indexed by $\U$. One may see $\U$ as a universe, i.e.\ a type whose elements
 are types, when interpreted through $\El$---this is reflected by the names of
-the constructors. However, because we only consider a minimalist type theory,
-it is solely an abstract universe, meaning that no element of $\U$ can be
-built in a closed context. Nonetheless, one may use the contexts to postulate
-some type constructors in $\U$. The constructors are listed below, with
-regular constructors on the left, and equality constructors on the right.
+the constructors. Because we consider a minimalist type theory, it is only an
+abstract universe, meaning that no element of $\U$ can be built in a
+closed context. However, one may use contexts to postulate the existence of
+types in $\U$.
+
+The syntax constructors are listed below, with regular constructors on the
+left, and equality constructors on the right.
 \begin{flalign*}
   % Contexts
   & \data\ \Con\ \where \\ & \ind
