@@ -132,10 +132,10 @@ forms, together with two (computable) maps, $\norm$ from terms to normal forms,
 and an embedding $\cul\_\cur$ of normal forms into terms, satisfying
 \begin{description}
 \item[soundness] If $u \Beq v$, then $\norm\ u = \norm\ v$
-\item[completeness] For every term $u$, $\cul \norm\ u \cur \Beq u$
+\item[completeness\footnotemark] For every term $u$, $\cul \norm\ u \cur \Beq u$
 \item[stability] For every normal form $n$, $\norm\ \cul n \cur = n$
-\end{description}
-\footnote{The choice of the words \emph{soundness} and
+\end{description}%
+\footnotetext{The choice of the words \emph{soundness} and
   \emph{completeness} comes from viewing normal forms as a model.}
 
 The traditional way to define a normalisation function is through rewriting
