@@ -126,10 +126,13 @@
 In the context of typed lambda-calculi, normalisation refers to the process of
 computing a canonical representative, called normal form, in each
 $\beta\eta$-equivalence class of terms.
-
-In the most general sense, a normalisation function is given by a set of normal
-forms, together with two (computable) maps, $\norm$ from terms to normal forms,
+A very general definition of normalisation, previously used in
+e.g.~\cite{altenkirch1995categorical,chapman2009bsn,kaposi2016normalisation},
+is the following.
+Normalisation is given by a set of normal forms and two (computable) maps:
+$\norm$ from terms to normal forms,
 and an embedding $\cul\_\cur$ of normal forms into terms, satisfying
+
 \begin{description}
 \item[soundness] If $u \Beq v$, then $\norm\ u = \norm\ v$
 \item[completeness\footnotemark] For every term $u$, $\cul \norm\ u \cur \Beq u$
@@ -231,8 +234,7 @@ definition, which ensures decidability of equality.%
 }
 
 \subsection{Structure of the Paper}
-\Cref{sec:theory} summarises the metatheory in which this paper is
-presented, and some of the notations and conventions used.
+\Cref{sec:theory} presents the metatheory, notation, and conventions used in this paper.
 
 \Cref{sec:syntax} presents the quotiented syntax of type theory.
 
@@ -1450,24 +1452,28 @@ We have formalised big step normalisation for a simple dependent type theory,
 and proved its correctness. Crucially, a quotiented syntax of type theory based
 on QIIT is used to reduce the complexity of this proof. While the proof of BSN
 for type theory shares many similarities with the case of the simply-typed
-lambda-calculus, we have developed some new techniques specifically for
-dependent types, for instance a simplified induction principle for the syntax
-of types.
-
-This proof is an important step for big step normalisation, as it shows that
-this method is not limited to simple cases of typed lambda calculus, but can
-also be generalised to dependent types. Of course, much remains to do in that
-line of work. We have only generalised big step normalisation to a minimalist
-type theory, and it could be interesting to consider some extension.
-The addition of dependent sum types for instance, would probably be fairly
-straightforward. Introducing equality types and universes may be a more subtle
-problem.
+lambda-calculus, it requires some additional steps, for instance a simplified
+induction principle for the syntax of types.
 
 This work is also an interesting application of the QIIT syntax of type theory,
 since it provides an example in which using this syntax has an important impact
-on the proof. The implementation of the QIIT as HIT in cubical Agda, and its use
-in the formalisation of BSN is also a practical validation of ideas which were
-developed in~\cite{kaposi2016type}.
+on the proof. The implementation of the QIIT syntax using HIT in cubical Agda,
+and its use in the formalisation of BSN is also a practical validation of
+ideas which were developed in~\cite{kaposi2016type}.
+
+Since we have only considered a minimalist type theory in this work, it is
+natural to try to extend it.
+A first step in this direction could be the addition of some inductive types.
+This was already done in the non-dependently typed case
+in~\cite{chapman2009bsn}, by adding integers (System T).
+In order to handle inductive types in BSN, the general idea is to add the
+constructors to values and normal forms, and add the elimination principles to
+neutral values and neutral normal forms, adapting $\eval$ and $\q$ accordingly.
+A next step could then be to add $W$-types, so as to allow the use of
+arbitrary inductive types.
+Another equally interesting extension would be to replace the abstract universe $\U$,
+which contains no closed terms, with a more useful universe equipped with type
+constructors.
 
 \bibliography{types.bib}
 \end{document}
