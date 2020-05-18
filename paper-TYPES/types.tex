@@ -50,7 +50,7 @@
 \newcommand{\sce}{\agdaSymb{sce}}
 \newcommand{\U}{\agdaSymb{U}}
 \newcommand{\El}{\agdaSymb{El}}
-\newcommand{\TV}{\agdaSymb{STy}}
+\newcommand{\TV}{\agdaSymb{Ty^{sf}}}
 \newcommand{\Sk}{\agdaSymb{Sk}}
 \newcommand{\base}{\agdaSymb{base}}
 \newcommand{\skel}{\agdaSymb{skeleton}}
@@ -290,12 +290,11 @@ as~\cite{altenkirch2018quotient,dijkstra2017quotient,kaposi2019quotient}.
 The present work has been formalised using a cubical metatheory~\cite{cchm}
 implemented by Agda~\cite{norell2007agda}. This cubical theory provides a simple
 way to define quotient inductive inductive types (QIIT, cf.~\cite{kaposi2016type})
-as a special case of higher inductive types. However, the use of a cubical
-metatheory also adds some minor technical complications. Thus, for simplicity,
-this paper is instead presented in a strict, intentional Martin-Löf Type Theory,
+as a special case of higher inductive types. However, for simplicy, we prefer
+to present this paper in a strict, intentional Martin-Löf Type Theory,
 extended with QIIT. Functional extensionality is assumed, and can in fact be
-proved using the interval quotient type. See \cref{sec:cubical} for more
-details on the implementation in a cubical metatheory.
+proved using the interval quotient type. See \cref{sec:cubical} for a
+discussion of the implementation in a cubical metatheory.
 
 Our metatheoretic notations are loosely based on the syntax of Agda. Function
 types are written as $(x : A) \to B$, or simply $A \to B$ for non-dependent
@@ -329,8 +328,8 @@ pattern-matching. For instance:
   \end{alignedat}
 \end{flalign*}
 Definitions of QIIT are similar, but allow \emph{equality} or \emph{quotient}
-constructors, which build elements of equality types. For instance, the interval
-type can be defined as follows.
+constructors, which build elements of equality types. A very simple example is the interval
+type, defined by two endpoints and an equality between them.
 \begin{flalign*}
   & \data\ \mathbb{I} : \Set\ \where \\ & \ind
   \begin{alignedat}{2}
@@ -366,7 +365,7 @@ substitutions by $\sigma,\nu,\delta$, and terms by $s,t,u$.
   & \data\ \Ty : \Con \to \Set
   && \text{$\Ty\ \Gamma$ are the types in context $\Gamma$} \\
   & \data\ \Tms : \Con \to \Con \to \Set
-  && \text{$\Ty\ \Gamma\ \Delta$ are the substitutions from $\Delta$ to $\Gamma$}\\
+  && \text{$\Tms\ \Gamma\ \Delta$ are the substitutions from $\Delta$ to $\Gamma$}\\
   & \data\ \Tm : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set
   && \text{$\Tm\ \Gamma\ A$ are the terms of type $A$ in $\Gamma$}
 \end{align*}
@@ -466,15 +465,15 @@ $<\_>$.
 
 As a simple example, let us translate the lambda term $\lambda x^A . \lambda
 y^B . x$ to this syntax. We assume that $A$ is type in context $\Gamma$, and
-$B$ a type in context $\Gamma,A$ (or in short $\Gamma:\Con$, $A:\Ty\ \Gamma$,
-$B:\Ty\ (\Gamma,A)$), so that $\Gamma,A,B$ is a context.
+$B$ a type in context $(\Gamma,A)$ (or in short $\Gamma:\Con$, $A:\Ty\ \Gamma$,
+$B:\Ty\ (\Gamma,A)$), so that $(\Gamma,A,B)$ is a context.
 We start with $\id$, intuitively the substitution containing all variables in
 context.
 \[ \id : \Tms\ (\Gamma,A,B)\ (\Gamma,A,B) \]
 The second to last variable in the context, corresponding to $x$, is retrieved
 through projections.
 \[ \pi_2 (\pi_1\,\id) : \Tm\ (\Gamma,A,B)\ A[\pi_1\,\id] \]
-All that remains is to add the abstractions.
+Finally, the lambda-abstractions are added.
 \[ \lam (\lam (\pi_2 (\pi_1\,\id))) : \Tm\ \Gamma\ (\Pi\ A\ (\Pi\ B\ A[\pi_1\,\id])) \]
 
 \section{Weakenings}
@@ -509,9 +508,9 @@ to the similarity with substitutions.
   & \data\ \Vars\ : \Con \to \Con \to \Set\ \where
   && \cul\_\cur : \Vars\ \Gamma\ \Delta \to \Tms\ \Gamma\ \Delta \\ & \ind
   \begin{alignedat}{2}
-    & \epsilon && : \Vars\ \Gamma\ \epsilon \\
+    & \epsilon && : \Vars\ \Gamma\ \bullet \\
     & \_,\_ && : (\alpha : \Vars\ \Gamma\ \Delta) \to \Var\ \Gamma\ A[\cul \alpha \cur]
-    \to \Var\ \Gamma\ (\Delta,A)
+    \to \Vars\ \Gamma\ (\Delta,A)
   \end{alignedat} &&
   \begin{alignedat}{2}
     & \cul \epsilon \cur && = \epsilon \\
@@ -704,18 +703,17 @@ Firstly, the functions are defined by recursion on terms and substitutions,
 which are QIIT, but we did not bother to verify that equality constructors
 are respected. Perhaps more worryingly, the function is not structurally
 recursive: the last case of $\eval$ applies $\_@\_$ to $\eval\ u\ p$, which
-is an a priori arbitrary term. Thus it is not clear that the evaluator
+a priori is an arbitrary value. Thus it is not clear that the evaluator
 terminates.
 
 The proof of correctness of this algorithm is not trivial, and is the subject
 of \cref{sec:correctness}. For now, we will only define the algorithm, i.e.\
 we consider the previous definition as a \emph{programming} function, rather
-than an (incorrect) mathematical function. However, a program in itself is not
-an object with a formal definition in type theory. In order to transform the
-algorithm into a formal object which we will manipulate in later proofs, we
-redefine it as its big step semantics, that is the relation between inputs and
-outputs of the evaluator. For instance, we denote by $\eval\ t\ \rho \Da v$
-the proposition `$t$ evaluates to $v$ in environment $\rho$'.
+than an (incorrect) mathematical function. In order to formally define this
+algorithm, we represent it by its big step semantics, that is the relation
+between inputs and outputs of the evaluator. For instance, we denote by
+$\eval\ t\ \rho \Da v$ the proposition `$t$ evaluates to $v$ in environment
+$\rho$'.
 \begin{flalign*}
   & \data\ \eval\_\,\_\Da\_ : \Tm\ \Delta\ A \to \Env\ \Gamma\ \Delta \to
                               \Val\ \Gamma\ B \to \Prop\ \where \\ & \ind
@@ -796,7 +794,7 @@ A soundness property follows.
   \]
 \end{lemma}
 \begin{proof}
-  Using \autoref{lem:evalCompl}, and that embeddings of values and
+  Using \cref{lem:evalCompl}, and that embeddings of values and
   environments are injective by $\qVal$ and $\qEnv$.
 \end{proof}
 
@@ -879,7 +877,8 @@ constructors which already appeared in the evaluator, one may note that $\q$ is
 not defined on the $\_[\_]$ type constructor. We will later show that the
 definition for $\_[\_]$ can in fact be inferred from the other cases and the
 equality constraints. For now we again ignore all issues by considering the big
-step semantics of $\q$, with the following signature.
+step semantics of $\q$, with the following signature, and the expected
+definition.
 \begin{align*}
   & \q : \Val\ \Gamma\ A \to \Nf\ \Gamma\ A \to \Prop \\
   & \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop
@@ -953,9 +952,9 @@ on NBE.
 
 Next, we define a partial normalisation of types, and the notion of skeleton of
 a type. Together, they give a very simple induction principle for the syntax of
-dependent types. Using this simplified induction principle, it is fairly straight
-forward to adapt the proof of termination for simple types~\cite{chapman2009bsn},
-based on the strong computability predicate.
+dependent types. Using this simplified induction principle, it is fairly
+straightforward to adapt the proof of termination for simple
+types~\cite{chapman2009bsn}, based on the strong computability predicate.
 
 \subsection{Soundness, by NBE}
 The original presentation of BSN for the simply-typed lambda-calculus proves
@@ -1099,9 +1098,12 @@ Using the skeleton of types as size indicators for induction, the example of
 problematic induction given at the beginning of this subsection becomes valid.
 \begin{lemma}
   \label{lem:typeInduction2}
-  To define a function on types, it suffice to define it on the base types $\U$
-  and $\El$, and to define it on any type $\Pi\ A\ B$ while assuming that it is
-  defined on any type $C$ with the same skeleton as either $A$ or $B$.
+  To define a function $f$ on types, it suffice to
+  \begin{itemize}
+    \item Define $f$ on the base types $\U$ and $\El$.
+    \item Define $f$ on any type $\Pi\ A\ B$, while assuming that $f$ is
+      defined on $C$ for any type $C$ with the same skeleton as either $A$ or $B$.
+  \end{itemize}
 \end{lemma}
 \begin{proof}
   The proof is the same as for \cref{lem:typeInduction}, but additionally
@@ -1116,9 +1118,12 @@ The proof of termination is based on a Tait-style~\cite{tait1967} predicate
 on values, called strong computability. This subsection introduces strong
 computability, together with some important lemmas.
 
-Strong computability is defined by induction on types, as termination of $\q$
-for base types, and stability by application for function types. The
-generalised induction principle of \cref{lem:typeInduction2} is used.
+Strong computability is defined by induction on types, using \cref{lem:typeInduction2}
+\begin{itemize}
+  \item A value $v$ of a base type is SC if $\q$ terminates on $v$.
+  \item A value $f$ of type $\Pi\ A\ B$ is SC if the application of $f$ to a
+    SC value $v$ of type $A$ gives a SC result of type $B$.
+\end{itemize}
 \begin{flalign*}
   & \scv : \{A : \Ty\} \to \Val\ \Gamma\ A \to \Set \\ &
   \begin{alignedat}{3}
@@ -1140,9 +1145,10 @@ $\alpha : \Vars\ \Delta\ \Gamma$ expresses that $\Delta$ is weaker than $\Gamma$
 Secondly, as in the definition of the evaluation relation, we prefer not to
 restrict the result type to simplify the upcoming proofs, hence we merely
 require that there exist a value $w$ of some type $C$. However, the definition
-would not be well-founded without any restriction on $C$, which is why we ask
-for $C$ to have the same skeleton as $B$. In this way, strong computability for
-$\Pi\ A\ B$ is defined based on strong computability for types with the same
+would not be well-founded without any restriction on $C$, since we inductively
+refer to strong computability at type $C$. Thus, we ask for $C$ to have the
+same skeleton as $B$. In this way, strong computability for $\Pi\ A\ B$ is
+defined based on strong computability for types with the same
 skeleton as either $A$ or $B$.
 
 Strong computability is extended to environments pointwise.
@@ -1401,18 +1407,18 @@ sense, i.e.\ uniqueness of identity proofs (UIP) does not holds.
 It follows by Hedberg's theorem~\cite{hedberg1998coherence} that equality is
 undecidable in this syntax, which is definitively not what was expected.
 
-The solution is of course to truncate the syntax to a set, by the addition of
-the following constructors:
+The solution is to truncate the syntax to a set, by the addition of the
+following constructors:
 \begin{alignat*}{2}
   & \isSet\Ty && : \{A\ B : \Ty\ \Gamma\}\ (p\ q : A \equiv B) \to p \equiv q \\
   & \isSet\Tms && : \{\sigma\ \nu : \Tms\ \Gamma\ \Delta\}\ (p\ q : \sigma \equiv \nu) \to p \equiv q \\
   & \isSet\Tm && : \{s\ t : \Tm\ \Gamma\ A\}\ (p\ q : s \equiv t) \to p \equiv q
 \end{alignat*}
 Note that the corresponding constructor for contexts is unnecessary, because
-it can be proved that contexts form a set from the assumption that types are a
+it can be proved that contexts form a set from the fact that types are a
 family of sets.
 
-In order to adapt the proof of big step normalisation to CTT with this new
+In order to adapt the proof of big step normalisation to CTT with this
 implementation of QIIT, there are two problems to solve:
 \begin{itemize}
 \item The proof of BSN uses the UIP axiom of the strict type theory.\footnote{%
@@ -1420,7 +1426,7 @@ implementation of QIIT, there are two problems to solve:
     proof, it is used whenever we prove a lemma of the form
     $L : (x : A) \to f(x) \equiv g(x)$ by induction on a QIIT $A$.
     Indeed, for a quotient constructor of type $a \equiv b$ in $A$, we need to
-    provide an equality between equalities $L(a) \equiv L(b)$, which is trivial
+    provide an equality between equalities $L(a) \equiv L(b)$. This is trivial
     with UIP---hence why such cases are neglected in the proof---but is
     in general problematic in a non-strict metatheory.
     An example is the coherence lemmas for weakening of values.
@@ -1429,18 +1435,17 @@ implementation of QIIT, there are two problems to solve:
 \item The additional truncation constructors of QIIT must be taken into account
   whenever we use induction on a QIIT.
 \end{itemize}
-Both problems can be solved together by proving that all the types used in the
-proof of BSN are in fact sets. Indeed, in that case any use of the UIP axiom
-can be replaced by the proof of UIP for the appropriate type, and when defining
-a function by induction on a QIIT, the set-truncation constructor can be mapped
-to the proof that the codomain is a set.
+Both problems can be solved together by proving that all the types considered
+in the proof of BSN are in fact sets.
+Indeed, any use of the UIP axiom can then be replaced by the proof of UIP for
+the appropriate type, and when defining a function by induction on a QIIT, the
+set-truncation constructor can be mapped to the proof that the codomain is a set.
 
 We will not detail all the proofs of UIP because they are fairly repetitive, but
-explain the general techniques used. There are some trivial cases: all QIIT are
-explicitly truncated to sets, hence there is nothing to prove, and propositional
-types (i.e.\ in which any two elements are equal) such as the big step
-relations and strong computability, are always sets. What remains are regular
-inductive types, such as variables, normal forms, substitution-free types\dots{}
+we will explain the general techniques used.
+There are some trivial cases: all QIIT (terms, types, values) are explicitly truncated to sets.
+Mere propositions (the big step relations, strong computability) are always sets.
+What remains are regular inductive types, such as variables, normal forms, substitution-free types\dots{}
 For such types, Hedberg's theorem~\cite{hedberg1998coherence} is an extremely
 useful tool. For instance, it is easy to verify that equality of variables is
 decidable, which implies that they are a set. Even for types which do not a
@@ -1467,13 +1472,13 @@ A first step in this direction could be the addition of some inductive types.
 This was already done in the non-dependently typed case
 in~\cite{chapman2009bsn}, by adding integers (System T).
 In order to handle inductive types in BSN, the general idea is to add the
-constructors to values and normal forms, and add the elimination principles to
+inductive constructors to values and normal forms, and add the elimination principles to
 neutral values and neutral normal forms, adapting $\eval$ and $\q$ accordingly.
 A next step could then be to add $W$-types, so as to allow the use of
 arbitrary inductive types.
-Another equally interesting extension would be to replace the abstract universe $\U$,
-which contains no closed terms, with a more useful universe equipped with type
-constructors.
+Another equally interesting extension would be to replace the abstract
+universe $\U$---which contains no closed terms---with a more useful universe
+equipped with type constructors.
 
 \bibliography{types.bib}
 \end{document}
