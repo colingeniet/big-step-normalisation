@@ -726,7 +726,7 @@ $\rho$'.
   \end{alignedat}
   \displaybreak[0] \\
   & \data\ \evals\_\,\_\Da\_ : \Tms\ \Delta\ \Theta \to \Env\ \Gamma\ \Delta \to
-                               \Env\ \Gamma\ \Theta \to \Prop \\ & \ind
+                               \Env\ \Gamma\ \Theta \to \Prop\ \where \\ & \ind
   \begin{alignedat}{2}
     & \evals\id      && : \evals\ \id\ \rho \Da \rho \\
     & \evals\circ    && : \evals\ \nu\ \rho \Da \omega \to \evals\ \sigma\ \omega \Da \xi \to
@@ -737,7 +737,7 @@ $\rho$'.
     & \evals\pi_1    && : \evals\ \sigma\ \rho \Da (\omega,v) \to \eval\ (\pi_1\ \sigma)\ \rho \Da \omega
   \end{alignedat}
   \displaybreak[0] \\
-  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop \\ & \ind
+  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop\ \where \\ & \ind
   \begin{alignedat}{2}
     & @\clos && : \eval\ u\ (\rho,v) \Da w \to (\clos\ u\ \rho)\ @\ v \Da w \\
     & @\neu  && : (\neu\ n)\ @\ v \Da (\neu\ (\app\ n\ v))
