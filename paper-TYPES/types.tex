@@ -327,9 +327,27 @@ pattern-matching. For instance:
     & n + (S\ m) && = S\ (n + m)
   \end{alignedat}
 \end{flalign*}
-Definitions of QIIT are similar, but allow \emph{equality} or \emph{quotient}
-constructors, which build elements of equality types. A very simple example is the interval
-type, defined by two endpoints and an equality between them.
+We allow a very general form of mutual induction, called \emph{inductive-inductive} definitions.
+A good example is the following fragment of the syntax of dependent types from next section.
+\begin{flalign*}
+  & \data\ \Con : \Set\ \where
+  && \data\ \Ty : \Con \to \Set\ \where && \\ & \ind
+  \begin{alignedat}{2}
+    & \bullet && : \Con \\
+    & \_,\_ && : (\Gamma : \Con) \to \Ty\ \Gamma \to \Con
+  \end{alignedat} && \ind
+  \begin{alignedat}{2}
+    & \U && : \Ty\ \Gamma \\
+    & \Pi && : (A : \Ty\ \Gamma) \to \Ty\ (\Gamma,A) \to \Ty\ \Gamma
+  \end{alignedat} &&
+\end{flalign*}
+In addition to $\Con$ and $\Ty$ being defined simultaneously, note that $\Ty$
+is a family indexed by $\Con$, and the signature of the constructor $\Pi$ form
+$\Ty$ uses the constructor $\_,\_$ from $\Con$.
+
+QIIT furthermore allow \emph{equality} or \emph{quotient} constructors,
+which build of equalities in the defined type.
+For example the interval type is defined by two endpoints and an equality:
 \begin{flalign*}
   & \data\ \mathbb{I} : \Set\ \where \\ & \ind
   \begin{alignedat}{2}
@@ -341,7 +359,7 @@ type, defined by two endpoints and an equality between them.
 A function defined by induction on a QIIT must be defined inductively on
 regular constructors, and must respect all quotient constructors, meaning that
 it must map the elements equated by a quotient constructors to images which are
-provably equal. For instance, to define a function on $\mathbb{I}$ by induction,
+provably equal. For instance, to define a function by induction on $\mathbb{I}$,
 one must specify the images $f(a)$ and $f(b)$, then prove that $f(a) \equiv f(b)$.
 The reader may refer to~\cite{kaposi2016type} for more details on QIIT.
 
@@ -675,6 +693,12 @@ value to another.
     & \eval\ (\app\ u)\ (\rho,v) && = (\eval\ u\ \rho)\ @\ v
   \end{alignedat}
   \displaybreak[0] \\
+  & \_@\_ : \Val\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \to \Val\ \Gamma\ B[<\cul v \cur>] \\ &
+  \begin{alignedat}{2}
+    & (\clos\ u\ \rho)\ @\ v && = \eval\ u\ (\rho,v) \\
+    & (\neu\ n)\ @\ v && = \neu\ (\app\ n\ v)
+  \end{alignedat}
+  \displaybreak[0] \\
   & \evals : \Tms\ \Delta\ \Theta \to \Env\ \Gamma\ \Delta \to \Env\ \Gamma\ \Theta \\ &
   \begin{alignedat}{2}
     & \evals\ \id\ \rho && = \rho \\
@@ -682,12 +706,6 @@ value to another.
     & \evals\ \epsilon\ \rho && = \epsilon \\
     & \evals\ (\sigma,u)\ \rho && = (\evals\ \sigma\ \rho) , (\eval\ u\ \rho) \\
     & \evals\ (\pi_1\, \sigma)\ \rho && = \Alet\ (\omega,v) = (\evals\ \sigma\ \rho)\ \Ain\ \omega\ \\
-  \end{alignedat}
-  \displaybreak[0] \\
-  & \_@\_ : \Val\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \to \Val\ \Gamma\ B[<\cul v \cur>] \\ &
-  \begin{alignedat}{2}
-    & (\clos\ u\ \rho)\ @\ v && = \eval\ u\ (\rho,v) \\
-    & (\neu\ n)\ @\ v && = \neu\ (\app\ n\ v)
   \end{alignedat}
 \end{flalign*}
 Most cases are straightforward. Note how evaluation of a lambda simply returns
@@ -725,6 +743,12 @@ $\rho$'.
     & \eval\app  && : \eval\ f\ \rho \Da g \to g\ @\ v \Da w \to \eval\ (\app\ f)\ (\rho,v) \Da w
   \end{alignedat}
   \displaybreak[0] \\
+  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop\ \where \\ & \ind
+  \begin{alignedat}{2}
+    & @\clos && : \eval\ u\ (\rho,v) \Da w \to (\clos\ u\ \rho)\ @\ v \Da w \\
+    & @\neu  && : (\neu\ n)\ @\ v \Da (\neu\ (\app\ n\ v))
+  \end{alignedat}
+  \displaybreak[0] \\
   & \data\ \evals\_\,\_\Da\_ : \Tms\ \Delta\ \Theta \to \Env\ \Gamma\ \Delta \to
                                \Env\ \Gamma\ \Theta \to \Prop\ \where \\ & \ind
   \begin{alignedat}{2}
@@ -735,12 +759,6 @@ $\rho$'.
     & \evals,        && : \evals\ \sigma\ \rho \Da \omega \to \eval\ u\ \rho \Da v \to
                           \evals\ (\sigma, u)\ \rho \Da (\omega, v) \\
     & \evals\pi_1    && : \evals\ \sigma\ \rho \Da (\omega,v) \to \eval\ (\pi_1\ \sigma)\ \rho \Da \omega
-  \end{alignedat}
-  \displaybreak[0] \\
-  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop\ \where \\ & \ind
-  \begin{alignedat}{2}
-    & @\clos && : \eval\ u\ (\rho,v) \Da w \to (\clos\ u\ \rho)\ @\ v \Da w \\
-    & @\neu  && : (\neu\ n)\ @\ v \Da (\neu\ (\app\ n\ v))
   \end{alignedat}
 \end{flalign*}
 The types of the above relations may seem surprisingly imprecise. For instance,
@@ -877,12 +895,20 @@ constructors which already appeared in the evaluator, one may note that $\q$ is
 not defined on the $\_[\_]$ type constructor. We will later show that the
 definition for $\_[\_]$ can in fact be inferred from the other cases and the
 equality constraints. For now we again ignore all issues by considering the big
-step semantics of $\q$, with the following signature, and the expected
-definition.
-\begin{align*}
-  & \q : \Val\ \Gamma\ A \to \Nf\ \Gamma\ A \to \Prop \\
-  & \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop
-\end{align*}
+step semantics of $\q$.
+\begin{flalign*}
+  & \q : \Val\ \Gamma\ A \to \Nf\ \Gamma\ A \to \Prop\ \where \\ & \ind
+  \begin{alignedat}{2}
+    & \q\U && : \{v : \NV\ \U\} \to \qn\ v \Da n \to \q\ (\neu\ v) \Da (\neu\ n) \\
+    & \q\El && : \{v : \NV\ (\El\ t)\} \to \qn\ v \Da n \to \q\ (\neu\ v) \Da (\neu\ n) \\
+    & \q\Pi && : f^{+A}\ @\ (\neu\ (\var\ \vz)) \Da v \to \q\ v \Da n \to \q\ f \Da (\lambda\ n)
+  \end{alignedat} \\
+  & \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop\ \where \\ & \ind
+  \begin{alignedat}{2}
+    & \qn\var && : \qn\ (\var\ x) \Da (\var\ x) \\
+    & \qn\app && : \qn\ f \Da m \to \q\ v \Da n \to \qn\ (\app\ f\ v) \Da (\app\ m\ n)
+  \end{alignedat}
+\end{flalign*}
 
 A coherence result in the style of \cref{lem:evalCompl} is proved by
 induction on the relation.
