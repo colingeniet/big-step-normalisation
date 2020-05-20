@@ -1,7 +1,5 @@
 \documentclass[a4paper,UKenglish,cleveref]{lipics-v2019}
 
-\overfullrule=1mm
-
 \usepackage{bussproofs}
 \EnableBpAbbreviations
 
@@ -296,21 +294,20 @@ extended with QIIT. Functional extensionality is assumed, and can in fact be
 proved using the interval quotient type. See \cref{sec:cubical} for a
 discussion of the implementation in a cubical metatheory.
 
-Our metatheoretic notations are loosely based on the syntax of Agda. Function
-types are written as $(x : A) \to B$, or simply $A \to B$ for non-dependent
-functions. For ease of notations, we sometimes use infix arguments, denoted by
-underscores, e.g.\ $\_,\_$ applied to $x$ and $y$ is written as $x,y$.
-Functions with implicit arguments are defined as $f : \{x : A\} \to B$, and the
-argument can be either omitted, or given in subscript as $f_x$. Sum types
-(dependent pairs) are denoted by $\Sigma(x : A),\ B$.
-We denote by $\Set$ the universe of types, and by $\Prop$ the universe of mere
-propositions, i.e.\ the types in which all elements are equal.
-The equality type is denoted by $x \equiv y$, while $=$ is only used in
-definitions. The transport of $x : P\ a$ along an equality $p : a \equiv b$ is
-denoted by $_{p*}x : P\ b$. If $p : a \equiv b$, the type of dependent
-equalities between $x : P\ a$ and $y : P\ b$ lying over $p$ is denoted by
-$x \equiv^p y$. For simplicity and readability, transports and dependent
-equality types will be omitted starting from \cref{sec:weakening}.
+Our metatheoretic notations are loosely based on the syntax of Agda.
+Function types are written as $(x : A) \to B$, or simply $A \to B$ for non-dependent functions.
+We use infix arguments denoted by underscores, e.g.\ $\_,\_$ applied to $x$ and $y$ is written as $x,y$.
+Functions with implicit arguments are defined as $f : \{x : A\} \to B$,
+and the argument can be either omitted, or given in subscript as $f_x$.
+Sum types (dependent pairs) are denoted by $\Sigma(x : A),\ B$.
+We denote by $\Set$ the universe of types, and by $\Prop$ the universe of mere propositions,
+i.e.\ the types in which all elements are equal.
+The equality type is denoted by $x \equiv y$, while $=$ is only used in definitions.
+The transport of $x : P\ a$ along an equality $p : a \equiv b$ is denoted by $_{p*}x : P\ b$.
+If $p : a \equiv b$, the type of dependent equalities between $x : P\ a$ and
+$y : P\ b$ lying over $p$ is denoted by $x \equiv^p y$.
+For simplicity and readability, transports and dependent equality types will
+be omitted starting from \cref{sec:weakening}.
 
 Inductive types are introduced by $\data$, the sort of the defined type, and
 the signatures of the constructors. Inductive functions are defined by
@@ -648,15 +645,13 @@ denoted by $\rho,\omega$), together with the associated embeddings.
     & \cul \rho,v \cur && = \cul \rho \cur , \cul v \cur
   \end{alignedat}
 \end{flalign*}
-
-This definition would be used with an unquotiented syntax such as in~\cite{chapman2009bsn},
-but does not work with the quotiented syntax because values can be equivalent
-as terms (formally, have equal embeddings), but not equal. For instance, in a
-closure $\clos\ u\ \rho$, if the body $u$ never refers to the environment $\rho$,
-then modifying $\rho$ yields a distinct but equivalent value. Then, evaluation
-would map equivalent terms to distinct values, hence could not be defined on the
-quotiented syntax. This is fixed by the following quotient constructor,
-which forces equivalent values to be equal.
+This definition has an issue when used with a quotiented syntax:
+values can be equivalent as terms (formally, have equal embeddings), but not equal.
+For instance, in a closure $\clos\ u\ \rho$, if the body $u$ never refers to
+the environment $\rho$, then modifying $\rho$ yields a distinct but equivalent value.
+Then, evaluation would map equivalent terms to distinct values,
+hence could not be defined on the quotiented syntax.
+This is fixed by forcing equivalent values to be equal with the following quotient constructor.
 \begin{flalign*}
   & \data\ \Val\ \where \\
   & \ind \qVal : (v\ w : \Val\ \Gamma\ A) \to \cul v \cur \equiv \cul w \cur \to v \equiv w
@@ -664,6 +659,7 @@ which forces equivalent values to be equal.
 The corresponding result for environments can be proved by induction on contexts.
 \[ \qEnv : (\rho\ \omega : \Env\ \Gamma\ \Delta) \to
   \cul \rho \cur \equiv \cul \omega \cur \to \rho \equiv \omega \]
+
 Weakening is defined by induction on values, neutral values, and environments,
 we omit the definitions and the associated lemmas. Finally, the identity
 environment is defined by induction on the context, and uses weakening of
@@ -693,12 +689,6 @@ value to another.
     & \eval\ (\app\ u)\ (\rho,v) && = (\eval\ u\ \rho)\ @\ v
   \end{alignedat}
   \displaybreak[0] \\
-  & \_@\_ : \Val\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \to \Val\ \Gamma\ B[<\cul v \cur>] \\ &
-  \begin{alignedat}{2}
-    & (\clos\ u\ \rho)\ @\ v && = \eval\ u\ (\rho,v) \\
-    & (\neu\ n)\ @\ v && = \neu\ (\app\ n\ v)
-  \end{alignedat}
-  \displaybreak[0] \\
   & \evals : \Tms\ \Delta\ \Theta \to \Env\ \Gamma\ \Delta \to \Env\ \Gamma\ \Theta \\ &
   \begin{alignedat}{2}
     & \evals\ \id\ \rho && = \rho \\
@@ -706,6 +696,12 @@ value to another.
     & \evals\ \epsilon\ \rho && = \epsilon \\
     & \evals\ (\sigma,u)\ \rho && = (\evals\ \sigma\ \rho) , (\eval\ u\ \rho) \\
     & \evals\ (\pi_1\, \sigma)\ \rho && = \Alet\ (\omega,v) = (\evals\ \sigma\ \rho)\ \Ain\ \omega\ \\
+  \end{alignedat}
+  \displaybreak[0] \\
+  & \_@\_ : \Val\ \Gamma\ (\Pi\ A\ B) \to (v : \Val\ \Gamma\ A) \to \Val\ \Gamma\ B[<\cul v \cur>] \\ &
+  \begin{alignedat}{2}
+    & (\clos\ u\ \rho)\ @\ v && = \eval\ u\ (\rho,v) \\
+    & (\neu\ n)\ @\ v && = \neu\ (\app\ n\ v)
   \end{alignedat}
 \end{flalign*}
 Most cases are straightforward. Note how evaluation of a lambda simply returns
@@ -743,12 +739,6 @@ $\rho$'.
     & \eval\app  && : \eval\ f\ \rho \Da g \to g\ @\ v \Da w \to \eval\ (\app\ f)\ (\rho,v) \Da w
   \end{alignedat}
   \displaybreak[0] \\
-  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop\ \where \\ & \ind
-  \begin{alignedat}{2}
-    & @\clos && : \eval\ u\ (\rho,v) \Da w \to (\clos\ u\ \rho)\ @\ v \Da w \\
-    & @\neu  && : (\neu\ n)\ @\ v \Da (\neu\ (\app\ n\ v))
-  \end{alignedat}
-  \displaybreak[0] \\
   & \data\ \evals\_\,\_\Da\_ : \Tms\ \Delta\ \Theta \to \Env\ \Gamma\ \Delta \to
                                \Env\ \Gamma\ \Theta \to \Prop\ \where \\ & \ind
   \begin{alignedat}{2}
@@ -759,6 +749,12 @@ $\rho$'.
     & \evals,        && : \evals\ \sigma\ \rho \Da \omega \to \eval\ u\ \rho \Da v \to
                           \evals\ (\sigma, u)\ \rho \Da (\omega, v) \\
     & \evals\pi_1    && : \evals\ \sigma\ \rho \Da (\omega,v) \to \eval\ (\pi_1\ \sigma)\ \rho \Da \omega
+  \end{alignedat}
+  \displaybreak[0] \\
+  & \data\ \_@\_\Da\_ : \Val\ \Gamma\ A \to \Val\ \Gamma\ B \to \Val\ \Gamma\ C \to \Prop\ \where \\ & \ind
+  \begin{alignedat}{2}
+    & @\clos && : \eval\ u\ (\rho,v) \Da w \to (\clos\ u\ \rho)\ @\ v \Da w \\
+    & @\neu  && : (\neu\ n)\ @\ v \Da (\neu\ (\app\ n\ v))
   \end{alignedat}
 \end{flalign*}
 The types of the above relations may seem surprisingly imprecise. For instance,
@@ -839,7 +835,8 @@ ensures that normal forms are sufficiently $\eta$-expanded.
     & \cul \lam n \cur && = \lam\, \cul n \cur \\
     & \cul \neu\U\ n \cur && = \cul n \cur \\
     & \cul \neu\El\ n \cur && = \cul n \cur
-  \end{alignedat} \\
+  \end{alignedat}
+  \displaybreak[0] \\
   & \data\ \NN : (\Gamma : \Con) \to \Ty\ \Gamma \to \Set\ \where
   && \cul\_\cur : \NN\ \Gamma\ A \to \Tm\ \Gamma\ A \\ & \ind
   \begin{alignedat}{3}
@@ -897,13 +894,14 @@ definition for $\_[\_]$ can in fact be inferred from the other cases and the
 equality constraints. For now we again ignore all issues by considering the big
 step semantics of $\q$.
 \begin{flalign*}
-  & \q : \Val\ \Gamma\ A \to \Nf\ \Gamma\ A \to \Prop\ \where \\ & \ind
+  & \data\ \q : \Val\ \Gamma\ A \to \Nf\ \Gamma\ A \to \Prop\ \where \\ & \ind
   \begin{alignedat}{2}
     & \q\U && : \{v : \NV\ \U\} \to \qn\ v \Da n \to \q\ (\neu\ v) \Da (\neu\ n) \\
     & \q\El && : \{v : \NV\ (\El\ t)\} \to \qn\ v \Da n \to \q\ (\neu\ v) \Da (\neu\ n) \\
     & \q\Pi && : f^{+A}\ @\ (\neu\ (\var\ \vz)) \Da v \to \q\ v \Da n \to \q\ f \Da (\lambda\ n)
-  \end{alignedat} \\
-  & \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop\ \where \\ & \ind
+  \end{alignedat}
+  \displaybreak[0]\\
+  & \data\ \qn : \NV\ \Gamma\ A \to \NN\ \Gamma\ A \to \Prop\ \where \\ & \ind
   \begin{alignedat}{2}
     & \qn\var && : \qn\ (\var\ x) \Da (\var\ x) \\
     & \qn\app && : \qn\ f \Da m \to \q\ v \Da n \to \qn\ (\app\ f\ v) \Da (\app\ m\ n)
@@ -1417,7 +1415,7 @@ Agda~\cite{norell2007agda}. Precisely, \cref{sec:syntax,sec:weakening,sec:normal
 have been fully formalised, and \cref{sec:correctness} partially so---what
 remains to do in the latter is equality reasoning.
 This formalisation is expressed in a cubical type theory (CTT, cf.~\cite{cchm})
-using the cubical mode of Agda. This differs from the the present paper, which
+using the cubical mode of Agda. This differs from the present paper, which
 uses a strict type theory for simplicity. The choice of CTT allows to easily
 express QIIT as a special case of higher inductive types (HIT, cf.~\cite{hott}),
 which from the technical point of view is a notable improvement over previous
@@ -1496,7 +1494,7 @@ Since we have only considered a minimalist type theory in this work, it is
 natural to try to extend it.
 A first step in this direction could be the addition of some inductive types.
 This was already done in the non-dependently typed case
-in~\cite{chapman2009bsn}, by adding integers (System T).
+in~\cite{chapman2009bsn}, by adding integers (System~T).
 In order to handle inductive types in BSN, the general idea is to add the
 inductive constructors to values and normal forms, and add the elimination principles to
 neutral values and neutral normal forms, adapting $\eval$ and $\q$ accordingly.
@@ -1508,8 +1506,3 @@ equipped with type constructors.
 
 \bibliography{types.bib}
 \end{document}
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: t
-%%% End:
